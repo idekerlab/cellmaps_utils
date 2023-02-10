@@ -72,6 +72,25 @@ Output:
    dockerbuild          build docker image and store in local repository
    dockerpush           push image to dockerhub
 
+For developers
+-------------------------------------------
+
+To deploy development versions of this package
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Below are steps to make changes to this code base, deploy, and then run
+against those changes.
+
+#. Make changes
+
+Modify code in this repo as desired
+
+#. Build and deploy
+
+.. code-block::
+
+    # From base directory of this repo cellmaps_hierarchyeval
+    pip uninstall cellmaps_utils -y ; make clean dist; pip install dist/cellmaps_utils*whl
 
 
 
