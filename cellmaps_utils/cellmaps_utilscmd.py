@@ -7,7 +7,8 @@ import logging.config
 
 import cellmaps_utils
 from cellmaps_utils.runner import CellmapsutilsRunner
-from cellmaps_utils import cellmaps_io
+from cellmaps_utils import constants
+from cellmaps_utils import logutils
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def _parse_arguments(desc, args):
     :rtype: :py:class:`argparse.Namespace`
     """
     parser = argparse.ArgumentParser(description=desc,
-                                     formatter_class=cellmaps_io.Formatter)
+                                     formatter_class=constants.Formatter)
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -69,7 +70,7 @@ def main(args):
     theargs.version = cellmaps_utils.__version__
 
     try:
-        cellmaps_io.setup_cmd_logging(theargs)
+        logutils.setup_cmd_logging(theargs)
         return CellmapsutilsRunner(theargs.exitcode).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))

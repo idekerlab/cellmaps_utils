@@ -28,14 +28,21 @@ cellmaps\_utils.runner module
    :undoc-members:
    :show-inheritance:
 
-cellmaps\_utils.cellmaps_io module
+cellmaps\_utils.logutils module
 ------------------------------------
 
-.. automodule:: cellmaps_utils.cellmaps_io
+.. automodule:: cellmaps_utils.logutils
    :members:
    :undoc-members:
    :show-inheritance:
 
+cellmaps\_utils.constants module
+------------------------------------
+
+.. automodule:: cellmaps_utils.constants
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 Module contents

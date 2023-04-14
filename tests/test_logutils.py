@@ -9,7 +9,7 @@ import shutil
 import tempfile
 import unittest
 
-from cellmaps_utils import cellmaps_io
+from cellmaps_utils import logutils
 
 
 class TestCellmapsIO(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestCellmapsIO(unittest.TestCase):
     def test_setup_logging(self):
         """ Tests logging setup"""
         try:
-            cellmaps_io.setup_cmd_logging(None)
+            logutils.setup_cmd_logging(None)
             self.fail('Expected AttributeError')
         except AttributeError:
             pass
@@ -33,7 +33,7 @@ class TestCellmapsIO(unittest.TestCase):
         p = argparse.Namespace()
         p.logconf = None
         p.verbose = 0
-        cellmaps_io.setup_cmd_logging(p)
+        logutils.setup_cmd_logging(p)
 
         # args.logconf set to a file
         try:
@@ -67,7 +67,7 @@ format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
             p.logconf = logfile
             p.verbose = 0
 
-            cellmaps_io.setup_cmd_logging(p)
+            logutils.setup_cmd_logging(p)
 
         finally:
             shutil.rmtree(temp_dir)

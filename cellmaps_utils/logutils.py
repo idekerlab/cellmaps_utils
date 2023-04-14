@@ -6,22 +6,10 @@ import getpass
 import platform
 import logging
 import argparse
+from cellmaps_utils import constants
+
 
 logger = logging.getLogger(__name__)
-
-
-LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
-             "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
-
-
-class Formatter(argparse.ArgumentDefaultsHelpFormatter,
-                argparse.RawDescriptionHelpFormatter):
-    """
-    Combine two Formatters to get help and default values
-    displayed when showing help
-
-    """
-    pass
 
 
 def setup_cmd_logging(args):
@@ -54,7 +42,7 @@ def setup_cmd_logging(args):
 
     if args.logconf is None:
         level = (50 - (10 * args.verbose))
-        logging.basicConfig(format=LOG_FORMAT,
+        logging.basicConfig(format=constants.LOG_FORMAT,
                             level=level)
         logger.setLevel(level)
         return
@@ -181,7 +169,6 @@ def setup_filelogger(outdir=None, handlerprefix='cellmaps'):
     :type outdir: str
     :param handlerprefix: prefix of name to give to handlers and formatters
     :type handlerprefix: str
-    :return:
     """
     logging.config.dictConfig({'version': 1,
                                'disable_existing_loggers': False,
@@ -210,7 +197,7 @@ def setup_filelogger(outdir=None, handlerprefix='cellmaps'):
                                },
                                'formatters': {
                                    handlerprefix + '_formatter': {
-                                       'format': '%(asctime)-15s %(levelname)s %(relativeCreated)dms %(filename)s::%(funcName)s():%(lineno)d %(message)s'
+                                       'format': constants.LOG_FORMAT
                                    }
                                }
                                })
