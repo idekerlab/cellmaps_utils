@@ -35,53 +35,6 @@ class TestCellmaps_utils(unittest.TestCase):
         self.assertEqual(res.logconf, 'hi')
         self.assertEqual(res.exitcode, 3)
 
-    def test_setup_logging(self):
-        """ Tests logging setup"""
-        try:
-            cellmaps_utilscmd._setup_logging(None)
-            self.fail('Expected AttributeError')
-        except AttributeError:
-            pass
-
-        # args.logconf is None
-        res = cellmaps_utilscmd._parse_arguments('hi', [])
-        cellmaps_utilscmd._setup_logging(res)
-
-        # args.logconf set to a file
-        try:
-            temp_dir = tempfile.mkdtemp()
-
-            logfile = os.path.join(temp_dir, 'log.conf')
-            with open(logfile, 'w') as f:
-                f.write("""[loggers]
-keys=root
-
-[handlers]
-keys=stream_handler
-
-[formatters]
-keys=formatter
-
-[logger_root]
-level=DEBUG
-handlers=stream_handler
-
-[handler_stream_handler]
-class=StreamHandler
-level=DEBUG
-formatter=formatter
-args=(sys.stderr,)
-
-[formatter_formatter]
-format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
-
-            res = cellmaps_utilscmd._parse_arguments('hi', ['--logconf',
-                                                                       logfile])
-            cellmaps_utilscmd._setup_logging(res)
-
-        finally:
-            shutil.rmtree(temp_dir)
-
     def test_main(self):
         """Tests main function"""
 

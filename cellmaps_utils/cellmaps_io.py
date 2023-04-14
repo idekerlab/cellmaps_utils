@@ -5,8 +5,63 @@ import json
 import getpass
 import platform
 import logging
+import argparse
 
 logger = logging.getLogger(__name__)
+
+
+LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
+             "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
+
+
+class Formatter(argparse.ArgumentDefaultsHelpFormatter,
+                argparse.RawDescriptionHelpFormatter):
+    """
+    Combine two Formatters to get help and default values
+    displayed when showing help
+
+    """
+    pass
+
+
+def setup_cmd_logging(args):
+    """
+    Sets up logging based on parsed command line arguments.
+    If **args.logconf** is set use that configuration otherwise look
+    at **args.verbose** and set logging for this module
+
+    This function assumes the following:
+
+    * **args.logconf** exists and is ``None`` or set to :py:class:`str`
+      containing path to logconf file
+
+    * **args.verbose** exists and is set to :py:class:`int` to one of
+      these values:
+
+      * ``0`` = no logging
+      * ``1`` = critical
+      * ``2`` = error
+      * ``3`` = warning
+      * ``4`` = info
+      * ``5`` = debug
+
+    :param args: parsed command line arguments from argparse
+    :type args: :py:class:`argparse.Namespace`
+    :raises AttributeError: If args is ``None`` or
+                            if **args.logconf** is None or missing or
+                            if **args.verbose** is None or missing
+    """
+
+    if args.logconf is None:
+        level = (50 - (10 * args.verbose))
+        logging.basicConfig(format=LOG_FORMAT,
+                            level=level)
+        logger.setLevel(level)
+        return
+
+    # logconf was set use that file
+    logging.config.fileConfig(args.logconf,
+                              disable_existing_loggers=False)
 
 
 def write_task_start_json(outdir=None, start_time=None,
