@@ -5,6 +5,7 @@ import json
 import getpass
 import platform
 import logging
+import logging.config
 import argparse
 from cellmaps_utils import constants
 
