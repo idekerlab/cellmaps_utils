@@ -57,17 +57,18 @@ def write_task_start_json(outdir=None, start_time=None,
                           data=None,
                           version=None):
     """
-    Writes **task_##_ start.json** file with information about
+    Writes :py:const:`~cellmaps_utils.constants.TASK_FILE_PREFIX` **##** :py:const:`~cellmaps_utils.constants.TASK_START_FILE_SUFFIX`
+    file with information about
     what is to be run. The **##** in name is value of **start_time**
 
     .. code-block::
 
-        from cellmaps_utils import cellmaps_io
+        from cellmaps_utils import logutils
         import time
 
-        cellmaps_io.write_task_start_json(outdir='./mydir', start_time=int(time.time()),
-                                          data={'someparam': 'some value'},
-                                          version='1.0.0')
+        logutils.write_task_start_json(outdir='./mydir', start_time=int(time.time()),
+                                       data={'someparam': 'some value'},
+                                       version='1.0.0')
 
     :param outdir: directory to write file
     :type outdir: str
@@ -104,25 +105,26 @@ def write_task_start_json(outdir=None, start_time=None,
         task.update(data)
 
     with open(os.path.join(outdir,
-                           'task_' + str(start_time) +
-                           '_start.json'), 'w') as f:
+                           constants.TASK_FILE_PREFIX +
+                           str(start_time) +
+                           constants.TASK_START_FILE_SUFFIX), 'w') as f:
         json.dump(task, f, indent=2)
 
 
 def write_task_finish_json(outdir=None, start_time=None,
                            end_time=None, status=None):
         """
-        Writes **task_##_finish.json** file in **outdir** directory
-        where **##** is the **start_time** value
+        Writes :py:const:`~cellmaps_utils.constants.TASK_FILE_PREFIX` **##** :py:const:`~cellmaps_utils.constants.TASK_FINISH_FILE_SUFFIX`
+        file in **outdir** directory where **##** is the **start_time** value
 
         .. code-block::
 
-            from cellmaps_utils import cellmaps_io
+            from cellmaps_utils import logutils
             import time
 
-            cellmaps_io.write_task_finish_json(outdir='./mydir', start_time=int(time.time())-10,
-                                               end_time=int(time.time()),
-                                               status=0)
+            logutils.write_task_finish_json(outdir='./mydir', start_time=int(time.time())-10,
+                                            end_time=int(time.time()),
+                                            status=0)
 
         :param outdir: directory to write file
         :type outdir: str
@@ -153,24 +155,31 @@ def write_task_finish_json(outdir=None, start_time=None,
                 'status': str(status)
                 }
         with open(os.path.join(outdir,
-                               'task_' + str(start_time) +
-                               '_finish.json'), 'w') as f:
+                               constants.TASK_FILE_PREFIX +
+                               str(start_time) +
+                               constants.TASK_FINISH_FILE_SUFFIX), 'w') as f:
             json.dump(task, f, indent=2)
 
 
 def setup_filelogger(outdir=None, handlerprefix='cellmaps'):
     """
     Sets up a logger to write all debug and higher logs
-    to output **outdir**/output.log
+    to output **outdir**/:py:const:`~cellmaps_utils.constants.OUTPUT_LOG_FILE`
     and all error level log messages and higher
-    to output **outdir**/error.log
+    to output **outdir**/:py:const:`~cellmaps_utils.constants.ERROR_LOG_FILE`
 
-    :param outdir: directory where to store ``output.log``
-                   and ``error.log`` files
+    :param outdir: directory where to store :py:const:`~cellmaps_utils.constants.OUTPUT_LOG_FILE`
+                   and :py:const:`~cellmaps_utils.constants.ERROR_LOG_FILE` files
     :type outdir: str
-    :param handlerprefix: prefix of name to give to handlers and formatters
+    :param handlerprefix: prefix of name to give to handlers and formatters,
+                          if ``None`` code will set value to ``cellmaps``
     :type handlerprefix: str
     """
+    if handlerprefix is None:
+        handlerprefix = 'cellmaps'
+
+    err_log_file = os.path.join(outdir, constants.ERROR_LOG_FILE)
+    out_log_file = os.path.join(outdir, constants.OUTPUT_LOG_FILE)
     logging.config.dictConfig({'version': 1,
                                'disable_existing_loggers': False,
                                'loggers': {
@@ -185,14 +194,14 @@ def setup_filelogger(outdir=None, handlerprefix='cellmaps'):
                                        'level': 'DEBUG',
                                        'class': 'logging.FileHandler',
                                        'formatter': handlerprefix + '_formatter',
-                                       'filename': os.path.join(outdir, 'output.log'),
+                                       'filename': out_log_file,
                                        'mode': 'a'
                                    },
                                    handlerprefix + '_error_file_handler': {
                                        'level': 'ERROR',
                                        'class': 'logging.FileHandler',
                                        'formatter': handlerprefix + '_formatter',
-                                       'filename': os.path.join(outdir, 'error.log'),
+                                       'filename': err_log_file,
                                        'mode': 'a'
                                    }
                                },
