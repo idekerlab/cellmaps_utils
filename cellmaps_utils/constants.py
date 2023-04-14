@@ -9,8 +9,8 @@ Sets format of logging messages
 """
 
 
-class Formatter(argparse.ArgumentDefaultsHelpFormatter,
-                argparse.RawDescriptionHelpFormatter):
+class ArgParseFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                        argparse.RawDescriptionHelpFormatter):
     """
     Combine two :py:class:`argparse` Formatters to get help
     and default values
