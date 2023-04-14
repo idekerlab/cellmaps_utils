@@ -7,21 +7,26 @@ from scipy.spatial.distance import canberra
 
 
 def upper_tri_values(df):
-    ''' Return array with values of upper triangle of the DataFrame.
+    """
+    Return array with values of upper triangle of the DataFrame
 
-    Args:
-        df: Symmetric DataFrame
-
-    Return:
-        Numpy array
-    '''
+    :param df: Symmetric DataFrame
+    :type df: :py:class:`pandas.DataFrame`
+    :return:
+    :rtype: :py:func:`numpy.array`
+    """
     m = df.values
     return m[np.triu_indices(df.shape[0], k=1)]
 
 
 def znorm(df):
-    ''' Z-transform within each column.
-    '''
+    """
+    Z-transform within each column.
+
+    :param df:
+    :return:
+    :rtype: :py:class:`pandas.DataFrame`
+    """
     norm_df = pd.DataFrame(index=df.index, columns=df.columns)
     for c in df.columns:
         value = df[c]
@@ -30,9 +35,14 @@ def znorm(df):
 
 
 def cosine_similarity_scaled(df):
-    ''' Calculate Cosine similarity between each pair of rows in a DataFrame.
-        Similarity scaled into [0, 1]
-    '''
+    """
+    Calculate Cosine similarity between each pair of rows in a DataFrame.
+    Similarity scaled into [0, 1]
+
+    :param df:
+    :return:
+    :rtype: :py:class:`pandas.DataFrame`
+    """
     sim = cosine_similarity(df)
     shift = sim.min()
     sim -= shift
@@ -42,9 +52,14 @@ def cosine_similarity_scaled(df):
 
 
 def manhattan_similarity(df):
-    ''' Calculate Manhattan similarity between each pair of rows in a DataFrame.
-        Similarity scaled into [0, 1]
-    '''
+    """
+    Calculate Manhattan similarity between each pair of rows in a DataFrame.
+    Similarity scaled into [0, 1]
+
+    :param df:
+    :return:
+    :rtype: :py:class:`pandas.DataFrame`
+    """
     # Get manhattan distance
     dist = manhattan_distances(df)
     # Convert distance to similarity by max-minus
@@ -55,9 +70,14 @@ def manhattan_similarity(df):
 
 
 def euclidean_similarity(df):
-    ''' Calculate Euclidean similarity between each pair of rows in a DataFrame.
-        Similarity scaled into [0, 1]
-    '''
+    """
+    Calculate Euclidean similarity between each pair of rows in a DataFrame.
+    Similarity scaled into [0, 1]
+
+    :param df:
+    :return:
+    :rtype: :py:class:`pandas.DataFrame`
+    """
     # Get euclidean distance
     dist = euclidean_distances(df)
     # Convert distance to similarity by max-minus
@@ -68,9 +88,14 @@ def euclidean_similarity(df):
 
 
 def canberra_similarity(df):
-    ''' Calculate Canberra similarity between each pair of rows in a DataFrame.
-        Similarity scaled into [0, 1]
-    '''
+    """
+    Calculate Canberra similarity between each pair of rows in a DataFrame.
+    Similarity scaled into [0, 1]
+
+    :param df:
+    :return:
+    :rtype: :py:class:`pandas.DataFrame`
+    """
     index = df.index.values
     dist = pd.DataFrame(0, index=index, columns=index, dtype=float)
     for i in range(len(index) - 1):
@@ -89,9 +114,14 @@ def canberra_similarity(df):
 
 
 def pearson_scaled(df):
-    ''' Calculate Pearson correlation between each pair of rows in a DataFrame.
-        Correlation scaled into [0, 1]
-    '''
+    """
+    Calculate Pearson correlation between each pair of rows in a DataFrame.
+    Correlation scaled into [0, 1]
+
+    :param df:
+    :return:
+    :rtype: :py:class:`pandas.DataFrame`
+    """
     corr = df.T.corr(method='pearson')
     shift = corr.min().min()
     corr -= shift
@@ -101,9 +131,13 @@ def pearson_scaled(df):
 
 
 def spearman_scaled(df):
-    ''' Calculate Spearman correlation between each pair of rows in a DataFrame.
-        Correlation scaled into [0, 1]
-    '''
+    """
+    Calculate Spearman correlation between each pair of rows in a DataFrame.
+    Correlation scaled into [0, 1]
+
+    :param df:
+    :return:
+    """
     corr = df.T.corr(method='spearman')
     shift = corr.min().min()
     corr -= shift
@@ -113,9 +147,13 @@ def spearman_scaled(df):
 
 
 def kendall_scaled(df):
-    ''' Calculate Kendall correlation between each pair of rows in a DataFrame.
-        Correlation scaled into [0, 1]
-    '''
+    """
+    Calculate Kendall correlation between each pair of rows in a DataFrame.
+    Correlation scaled into [0, 1]
+
+    :param df:
+    :return:
+    """
     corr = df.T.corr(method='kendall')
     shift = corr.min().min()
     corr -= shift
@@ -125,19 +163,27 @@ def kendall_scaled(df):
 
 
 def check_symmetric(a, rtol=1e-05, atol=1e-08):
-    ''' Check if the given numpy matrix is symmetric or not.
-    '''
+    """
+    Check if the given numpy matrix is symmetric or not.
+
+    :param a:
+    :param rtol:
+    :param atol:
+    :return:
+    """
     return np.allclose(a, a.T, rtol=rtol, atol=atol)
 
 
 def save_obj(obj, fname, method='pickle'):
-    ''' Saving objects to designated filename in pickle format
+    """
 
-    Args:
-        obj: object that want to be saved
-        fname: path to saved file
-        method: {pickle, dill} specify package used for compressing
-    '''
+    :param obj: object that want to be saved
+    :param fname: path to saved file
+    :type fname: str
+    :param method: {pickle, dill} specify package used for compressing
+    :type method: str
+    :raises ValueError: if **method** is not set to ``pickle`` or ``dill``
+    """
     with open(fname, 'wb') as f:
         if method == 'pickle':
             pickle.dump(obj, f)
@@ -149,12 +195,15 @@ def save_obj(obj, fname, method='pickle'):
 
 
 def load_obj(fname, method='pickle'):
-    ''' Loading object that was saved in pickle format
+    """
+    Loading object that was saved in pickle format
 
-    Args:
-        fname: path to file
-        method: {pickle, dill} specify package used for compressing
-    '''
+    :param fname: path to file
+    :type fname: str
+    :param method: {pickle, dill} specify package used for compressing
+    :type method: str
+    :raises ValueError: if **method** is not set to ``pickle`` or ``dill``
+    """
     with open(fname, 'rb') as f:
         if method == 'pickle':
             return pickle.load(f)
@@ -166,13 +215,32 @@ def load_obj(fname, method='pickle'):
 
 
 def jaccard(setA, setB):
+    """
+    Calculates jaccard
+
+    :param setA:
+    :param setB:
+    :return:
+    """
     return len(setA.intersection(setB)) / len(setA.union(setB))
 
 
 def scaled_P_to_nm(scaled_P):
+    """
+    TODO: Add doc here
+
+    :param scaled_P:
+    :return:
+    """
     power = -3.968 * scaled_P + 4.326
     return 10 ** power
 
 
 def num_comb(x):
+    """
+    TODO: Add doc here
+
+    :param x:
+    :return:
+    """
     return x * (x - 1) / 2
