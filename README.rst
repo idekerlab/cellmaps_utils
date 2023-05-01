@@ -69,8 +69,6 @@ Output:
    release              package and upload a release
    dist                 builds source and wheel package
    install              install the package to the active Python's site-packages
-   dockerbuild          build docker image and store in local repository
-   dockerpush           push image to dockerhub
 
 For developers
 -------------------------------------------
@@ -100,31 +98,6 @@ Needed files
 **TODO:** Add description of needed files
 
 
-Usage
------
-
-For information invoke :code:`cellmaps_utilscmd.py -h`
-
-**Example usage**
-
-**TODO:** Add information about example usage
-
-.. code-block::
-
-   cellmaps_utilscmd.py # TODO Add other needed arguments here
-
-
-Via Docker
-~~~~~~~~~~~~~~~~~~~~~~
-
-**Example usage**
-
-**TODO:** Add information about example usage
-
-
-.. code-block::
-
-   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_utils:0.1.0 cellmaps_utilscmd.py # TODO Add other needed arguments here
 
 
 Credits
