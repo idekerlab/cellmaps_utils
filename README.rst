@@ -42,7 +42,7 @@ Installation
    git clone https://github.com/idekerlab/cellmaps_utils
    cd cellmaps_utils
    make dist
-   pip install dist/cellmaps_utilscmd*whl
+   pip install dist/cellmaps_utils*whl
 
 
 Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
