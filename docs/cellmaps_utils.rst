@@ -9,6 +9,22 @@ cellmaps\_utils.logutils module
    :undoc-members:
    :show-inheritance:
 
+cellmaps\_utils.provenance module
+------------------------------------
+
+.. automodule:: cellmaps_utils.provenance
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+cellmaps\_utils.exceptions module
+------------------------------------
+
+.. automodule:: cellmaps_utils.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 cellmaps\_utils.constants module
 ------------------------------------
 
