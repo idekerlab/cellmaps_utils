@@ -181,6 +181,7 @@ def setup_filelogger(outdir=None, handlerprefix='cellmaps'):
     err_log_file = os.path.join(outdir, constants.ERROR_LOG_FILE)
     out_log_file = os.path.join(outdir, constants.OUTPUT_LOG_FILE)
     logging.config.dictConfig({'version': 1,
+                               'propagate': True,
                                'disable_existing_loggers': False,
                                'loggers': {
                                  '': {
