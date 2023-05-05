@@ -2,6 +2,7 @@
 import os
 import subprocess
 import logging
+from datetime import date
 
 from cellmaps_utils.exceptions import CellMapsProvenanceError
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ class ProvenanceUtil(object):
         """
         self._binary = fairscape_binary
 
-    def _run_cmd(self, cmd):
+    def _run_cmd(self, cmd, timeout=360):
         """
         Runs command as a command line process
 
@@ -33,18 +34,33 @@ class ProvenanceUtil(object):
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-
-        out, err = p.communicate()
+        try:
+            out, err = p.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            logger.warning('Timeout reached. Killing process')
+            p.kill()
+            out, err = p.communicate()
+            raise CellMapsProvenanceError('Process timed out. exit code: ' +
+                                          str(p.returncode) +
+                                          ' stdout: ' + str(out) +
+                                          ' stderr: ' + str(err))
 
         return p.returncode, out, err
 
     @staticmethod
     def example_dataset_provenance(requiredonly=True, with_ids=False):
         """
+        Returns example provenance dataset dict
 
-        :param requiredonly:
-        :param with_ids:
-        :return:
+        :param requiredonly: If ``True`` only output required fields,
+                             otherwise output all fields. This is ignored
+                             if **with_ids** parameter is ``True``
+        :type requiredonly: bool
+        :param with_ids: If ``True`` ignore **requiredonly** and just output
+                         dict where caller has dataset id
+        :type with_ids: bool
+        :return: Example provenance dictionary
+        :rtype: dict
         """
         if with_ids is not None and with_ids is True:
             return {'guid': 'ID of dataset'}
@@ -83,7 +99,7 @@ class ProvenanceUtil(object):
                '--project-name', project_name,
                rocrate_path]
 
-        exit_code, out_str, err_str = self._run_cmd(cmd)
+        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
         logger.debug('creation of crate stdout: ' + str(out_str))
         logger.debug('creation of crate stdout: ' + str(err_str))
         logger.debug('creation of crate exit code: ' + str(exit_code))
@@ -92,7 +108,8 @@ class ProvenanceUtil(object):
                                           str(out_str) + ' : ' + str(err_str))
 
     def register_computation(self, rocrate_path, name='',
-                             author='', run_by='', command='',
+                             run_by='', command='',
+                             date_created=date.today().strftime('%m-%d-%Y'),
                              description='', used_software=[],
                              used_dataset=[], generated=[]):
 
@@ -125,8 +142,8 @@ class ProvenanceUtil(object):
         """
         cmd = [self._binary, 'rocrate', 'add', 'computation',
                '--name', name,
-               '--author', author,
                '--run-by', run_by,
+               '--date-created', date_created,
                '--command', command,
                '--description', description]
         if used_software is not None:
@@ -143,14 +160,16 @@ class ProvenanceUtil(object):
                 cmd.append('--generated')
                 cmd.append(entry)
         cmd.append(rocrate_path)
-
-        exit_code, out_str, err_str = self._run_cmd(cmd)
+        exit_code, out_str, err_str = self._run_cmd(cmd,
+                                                    timeout=60)
         logger.debug('add dataset exit code: ' + str(exit_code))
         if exit_code != 0:
             raise CellMapsProvenanceError('Error adding dataset: ' +
                                           str(out_str) + ' : ' + str(err_str))
+
         logger.debug('add data set out_str: ' + str(out_str))
         logger.debug('add data set err_str: ' + str(err_str))
+        return out_str
 
     def register_software(self, rocrate_path, name='unknown', description='',
                           author='', version='', file_format='', url=''):
@@ -158,6 +177,11 @@ class ProvenanceUtil(object):
         Registers software by adding information to
         ``ro-crate-metadata.json`` file stored in **rocrate_path**
         directory.
+
+        .. warning::
+
+            `fairscape-cli <https://github.com/fairscape>`__ 0.1.5 always fails this call
+            `See Issue #7 <https://github.com/fairscape/fairscape-cli/issues/7>`__
 
         :param name: Name of software
         :type name: str
@@ -185,18 +209,18 @@ class ProvenanceUtil(object):
                '--file-format', file_format,
                '--url', url,
                rocrate_path]
-        exit_code, out_str, err_str = self._run_cmd(cmd)
+        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
 
-        logger.debug('add dataset exit code: ' + str(exit_code))
+        logger.debug('add software exit code: ' + str(exit_code))
         if exit_code != 0:
-            raise CellMapsProvenanceError('Error adding dataset: ' +
+            raise CellMapsProvenanceError('Error adding software: ' +
                                           str(out_str) + ' : ' + str(err_str))
-        logger.debug('add data set out_str: ' + str(out_str))
-        logger.debug('add data set err_str: ' + str(err_str))
+        logger.debug('add software out_str: ' + str(out_str))
+        logger.debug('add software err_str: ' + str(err_str))
         return out_str
 
-    def add_dataset_to_rocrate(self, rocrate_path, data_dict=None,
-                               source_file=None, skip_copy=True):
+    def register_dataset(self, rocrate_path, data_dict=None,
+                         source_file=None, skip_copy=True):
         """
         Adds a dataset to existing rocrate specified by **rocrate_path**
         by adding information to ``ro-crate-metadata.json`` file
@@ -214,6 +238,13 @@ class ProvenanceUtil(object):
              'date-published': 'Date dataset was published MM-DD-YYYY',
              'description': 'Description of dataset',
              'data-format': 'Format of data'}
+
+        .. warning::
+
+            `fairscape-cli <https://github.com/fairscape>`__ 0.1.5 fails when
+            skipping copy is ``True`` or if performing copy where
+            **source_file** is already in **rocrate_path** directory.
+            `See Issue #6 <https://github.com/fairscape/fairscape-cli/issues/6>`__
 
 
         :param rocrate_path: Path to directory with registered rocrate
@@ -242,7 +273,7 @@ class ProvenanceUtil(object):
             cmd.append(os.path.join(rocrate_path,
                                     os.path.basename(source_file)))
         cmd.append(rocrate_path)
-        exit_code, out_str, err_str = self._run_cmd(cmd)
+        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
         logger.debug('add dataset exit code: ' + str(exit_code))
         if exit_code != 0:
             raise CellMapsProvenanceError('Error adding dataset: ' +
