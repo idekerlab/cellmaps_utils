@@ -7,6 +7,7 @@ import os
 import sys
 import shutil
 import tempfile
+from datetime import date
 import unittest
 from unittest.mock import patch
 
@@ -126,7 +127,7 @@ class TestProvenanceUtil(unittest.TestCase):
                                              '--name', 'aname',
                                              '--run-by', 'user',
                                              '--date-created',
-                                             '05-05-2023',
+                                             date.today().strftime('%m-%d-%Y'),
                                              '--command', '',
                                              '--description',
                                              'desc', 'foo'], timeout=60)
