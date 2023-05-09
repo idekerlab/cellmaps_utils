@@ -44,6 +44,21 @@ ERROR_LOG_FILE = 'error.log'
 Error log file name
 """
 
+IMAGE_EMBEDDING_FILE = 'image_emd.tsv'
+"""
+Name of image embedding file
+"""
+
+PPI_EMBEDDING_FILE = 'ppi_emd.tsv'
+"""
+Name of Protein to Protein embedding file
+"""
+
+COEMBEDDING_FILE = 'coembedding_emd.tsv'
+"""
+Name of file containing coembedding
+"""
+
 IMAGE_GENE_NODE_ATTR_FILE = 'image_gene_node_attributes.tsv'
 """
 Image gene node attributes filename
@@ -74,7 +89,6 @@ PPI_GENE_NODE_ATTR_FILE = 'ppi_gene_node_attributes.tsv'
 """
 Protein to Protein gene node attributes file
 """
-
 
 PPI_GENE_NODE_COLS = ['name', 'represents', 'ambiguous', 'bait']
 """
