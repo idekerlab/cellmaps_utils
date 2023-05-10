@@ -148,14 +148,11 @@ PPI_GENE_NODE_ERRORS_FILE = 'ppi_gene_node_attributes.errors'
 Protein to Protein gene node attributes error filename
 """
 
-HIERARCHY_CX_FILENAME = 'hierarchy.cx'
+PPI_NETWORK_PREFIX = 'ppi'
+
+HIERARCHY_NETWORK_PREFIX = 'hierarchy'
 """
 CX format hierarchy filename
-"""
-
-HIERARCHY_HCX_FILENAME = 'hierarchy.hcx'
-"""
-HCX format hierarchy filename
 """
 
 RED = 'red'
