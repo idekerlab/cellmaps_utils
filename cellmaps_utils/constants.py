@@ -69,8 +69,36 @@ IMAGE_GENE_NODE_ERRORS_FILE = 'image_gene_node_attributes.errors'
 Image gene node attributes errors filename
 """
 
-IMAGE_GENE_NODE_COLS = ['name', 'represents', 'ambiguous',
-                        'antibody', 'filename']
+IMAGE_GENE_NODE_NAME_COL = 'name'
+"""
+Gene Symbol name column
+"""
+
+IMAGE_GENE_NODE_REPRESENTS_COL = 'represents'
+"""
+Ensembl ids column
+"""
+
+IMAGE_GENE_NODE_AMBIGUOUS_COL = 'ambiguous'
+"""
+Ambiguous column
+"""
+
+IMAGE_GENE_NODE_ANTIBODY_COL = 'antibody'
+"""
+Antibody name column
+"""
+
+IMAGE_GENE_NODE_FILENAME_COL = 'filename'
+"""
+File name column
+"""
+
+IMAGE_GENE_NODE_COLS = [IMAGE_GENE_NODE_NAME_COL,
+                        IMAGE_GENE_NODE_REPRESENTS_COL,
+                        IMAGE_GENE_NODE_AMBIGUOUS_COL,
+                        IMAGE_GENE_NODE_ANTIBODY_COL,
+                        IMAGE_GENE_NODE_FILENAME_COL]
 """
 Columns in :py:const:`IMAGE_GENE_NODE_ATTR_FILE` file
 """
@@ -80,7 +108,18 @@ PPI_EDGELIST_FILE = 'ppi_edgelist.tsv'
 Protein to Protein interaction edgelist file name
 """
 
-PPI_EDGELIST_COLS = ['geneA', 'geneB']
+PPI_EDGELIST_GENEA_COL = 'geneA'
+"""
+First column name
+"""
+
+PPI_EDGELIST_GENEB_COL = 'geneB'
+"""
+Second column name
+"""
+
+PPI_EDGELIST_COLS = [PPI_EDGELIST_GENEA_COL,
+                     PPI_EDGELIST_GENEB_COL]
 """
 Columns in :py:const:`PPI_EDGELIST_FILE`
 """
@@ -98,6 +137,16 @@ Columns in :py:const:`PPI_GENE_NODE_ATTR_FILE`
 PPI_GENE_NODE_ERRORS_FILE = 'ppi_gene_node_attributes.errors'
 """
 Protein to Protein gene node attributes error filename
+"""
+
+HIERARCHY_CX_FILENAME = 'hierarchy.cx'
+"""
+CX format hierarchy filename
+"""
+
+HIERARCHY_HCX_FILENAME = 'hierarchy.hcx'
+"""
+HCX format hierarchy filename
 """
 
 RED = 'red'
