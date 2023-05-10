@@ -124,6 +124,15 @@ PPI_EDGELIST_COLS = [PPI_EDGELIST_GENEA_COL,
 Columns in :py:const:`PPI_EDGELIST_FILE`
 """
 
+WEIGHTED_PPI_EDGELIST_WEIGHT_COL = 'Weight'
+"""
+weight column
+"""
+
+WEIGHTED_PPI_EDGELIST_COLS = [PPI_EDGELIST_GENEA_COL,
+                              PPI_EDGELIST_GENEB_COL,
+                              WEIGHTED_PPI_EDGELIST_WEIGHT_COL]
+
 PPI_GENE_NODE_ATTR_FILE = 'ppi_gene_node_attributes.tsv'
 """
 Protein to Protein gene node attributes file
