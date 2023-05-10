@@ -54,7 +54,7 @@ PPI_EMBEDDING_FILE = 'ppi_emd.tsv'
 Name of Protein to Protein embedding file
 """
 
-COEMBEDDING_FILE = 'coembedding_emd.tsv'
+CO_EMBEDDING_FILE = 'coembedding_emd.tsv'
 """
 Name of file containing coembedding
 """
