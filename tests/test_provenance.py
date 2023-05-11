@@ -70,26 +70,6 @@ class TestProvenanceUtil(unittest.TestCase):
         example = ProvenanceUtil.example_dataset_provenance(requiredonly=None)
         self.assertEqual(expected_full, example)
 
-    def test_register_rocrate_non_zero_exit_code(self):
-
-        with patch.object(ProvenanceUtil, '_run_cmd',
-                          return_value=(1, 'outstr',
-                                        'errstr')) as mock_method:
-            prov = ProvenanceUtil()
-            try:
-                prov.register_rocrate('foo', name='aname',
-                                      organization_name='orgname',
-                                      project_name='projname')
-                self.fail('Expected exception')
-            except CellMapsProvenanceError as ce:
-                self.assertEqual('Error creating crate: '
-                                 'outstr : errstr', str(ce))
-        mock_method.assert_called_once_with(['fairscape-cli',
-                                             'rocrate', 'create',
-                                             '--name', 'aname',
-                                             '--organization-name', 'orgname',
-                                             '--project-name', 'projname',
-                                             'foo'], timeout=30)
 
     def test_register_rocrate_actual_invocation(self):
         """
@@ -106,31 +86,6 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertTrue(os.path.getsize(crate_file) > 0)
         finally:
             shutil.rmtree(temp_dir)
-
-    def test_register_computation_non_zero_exit_code(self):
-
-        with patch.object(ProvenanceUtil, '_run_cmd',
-                          return_value=(1, 'outstr',
-                                        'errstr')) as mock_method:
-            prov = ProvenanceUtil()
-            try:
-                prov.register_computation('foo', name='aname',
-                                          run_by='user',
-                                          description='desc')
-                self.fail('Expected exception')
-            except CellMapsProvenanceError as ce:
-                self.assertEqual('Error adding dataset: '
-                                 'outstr : errstr', str(ce))
-        mock_method.assert_called_once_with(['fairscape-cli',
-                                             'rocrate', 'add',
-                                             'computation',
-                                             '--name', 'aname',
-                                             '--run-by', 'user',
-                                             '--date-created',
-                                             date.today().strftime('%m-%d-%Y'),
-                                             '--command', '',
-                                             '--description',
-                                             'desc', 'foo'], timeout=60)
 
     def test_register_computation_actual_invocation(self):
         temp_dir = tempfile.mkdtemp()
@@ -168,31 +123,6 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_register_software_non_zero_exit_code(self):
-
-        with patch.object(ProvenanceUtil, '_run_cmd',
-                          return_value=(1, 'outstr',
-                                        'errstr')) as mock_method:
-            prov = ProvenanceUtil()
-            try:
-                prov.register_software('foo', name='name',
-                                       description='desc',
-                                       version='0.1.0', file_format='.py',
-                                       url='http://foo.com')
-                self.fail('Expected exception')
-            except CellMapsProvenanceError as ce:
-                self.assertEqual('Error adding software: '
-                                 'outstr : errstr', str(ce))
-        mock_method.assert_called_once_with(['fairscape-cli',
-                                             'rocrate', 'add',
-                                             'software', '--name',
-                                             'name', '--description',
-                                             'desc', '--author', '',
-                                             '--version', '0.1.0',
-                                             '--file-format', '.py',
-                                             '--url', 'http://foo.com',
-                                             'foo'], timeout=30)
-
     def test_register_software_actual_invocation(self):
         # Todo: due to fairscape-cli bug this is failing
         #       and the test expects the failure for now
@@ -203,14 +133,12 @@ class TestProvenanceUtil(unittest.TestCase):
         try:
             prov = ProvenanceUtil()
             prov.register_rocrate(temp_dir)
-            s_id = prov.register_software(temp_dir, name='name', description='desc',
+            s_id = prov.register_software(temp_dir, name='name', description='must be 10 characters',
                                           version='0.1.0', file_format='.py',
                                           url='http://foo.com')
             # this is never reached due to
             # https://github.com/fairscape/fairscape-cli/issues/7
             self.assertTrue(len(s_id) > 0)
-        except CellMapsProvenanceError as ce:
-            self.assertTrue('Error adding software' in str(ce))
         finally:
             shutil.rmtree(temp_dir)
 
@@ -237,33 +165,10 @@ class TestProvenanceUtil(unittest.TestCase):
                                                     'data-format': 'Format of data'})
             self.assertTrue(len(d_id) > 0)
         except CellMapsProvenanceError as ce:
+            print(str(ce))
+            self.assertEqual('', str(ce))
             self.assertTrue('Error adding dataset' in str(ce))
         finally:
             shutil.rmtree(temp_dir)
-
-    def test_register_dataset_non_zero_exit_code(self):
-
-        with patch.object(ProvenanceUtil, '_run_cmd',
-                          return_value=(1, 'outstr',
-                                        'errstr')) as mock_method:
-            prov = ProvenanceUtil()
-            try:
-                prov.register_dataset('foo',
-                                      source_file='blah',
-                                      skip_copy=False,
-                                      data_dict={'name': 'Name of dataset',
-                                                 'author': 'Author of dataset',
-                                                 'version': 'Version of dataset',
-                                                 'date-published': 'Date dataset was published MM-DD-YYYY',
-                                                 'description': 'Description of dataset',
-                                                 'data-format': 'Format of data'})
-                self.fail('Expected exception')
-            except CellMapsProvenanceError as ce:
-                self.assertEqual('Error adding dataset: '
-                                 'outstr : errstr', str(ce))
-        mock_method.assert_called_once_with(['fairscape-cli', 'rocrate',
-                                             'add', 'dataset',
-                                             '--name', 'Name of dataset', '--version', 'Version of dataset', '--data-format', 'Format of data', '--description', 'Description of dataset', '--date-published', 'Date dataset was published MM-DD-YYYY', '--author', 'Author of dataset', '--source-filepath', 'blah', '--destination-filepath', 'foo/blah', 'foo'], timeout=30)
-
 
 

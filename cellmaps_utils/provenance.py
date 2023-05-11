@@ -2,6 +2,7 @@
 import os
 import subprocess
 import logging
+import uuid
 from datetime import date
 
 from cellmaps_utils.exceptions import CellMapsProvenanceError
@@ -21,7 +22,7 @@ class ProvenanceUtil(object):
         """
         self._binary = fairscape_binary
 
-    def _run_cmd(self, cmd, timeout=360):
+    def _run_cmd(self, cmd, cwd=None, timeout=360):
         """
         Runs command as a command line process
 
@@ -30,8 +31,9 @@ class ProvenanceUtil(object):
         :return: (return code, standard out, standard error)
         :rtype: tuple
         """
-        logger.debug('Running command: ' + str(cmd))
-        p = subprocess.Popen(cmd,
+        logger.debug('Running command under ' + str(cwd) +
+                     ' path: ' + str(cmd))
+        p = subprocess.Popen(cmd, cwd=cwd,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         try:
@@ -80,7 +82,8 @@ class ProvenanceUtil(object):
         return field_dict
 
     def register_rocrate(self, rocrate_path, name='',
-                         organization_name='', project_name=''):
+                         organization_name='', project_name='',
+                         guid=str(uuid.uuid4())):
         """
         Creates/registers rocreate in directory specified by **rocrate_path**
         Upon completion a ``ro-crate-metadata.json`` file will be created
@@ -93,13 +96,17 @@ class ProvenanceUtil(object):
         :param project_name:
         :return:
         """
-        cmd = [self._binary, 'rocrate', 'create',
+        cmd = [self._binary, 'rocrate', 'init',
                '--name', name,
                '--organization-name', organization_name,
-               '--project-name', project_name,
-               rocrate_path]
+               '--project-name', project_name]
 
-        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
+        if guid is not None:
+            cmd.append('--guid')
+            cmd.append(guid)
+
+        exit_code, out_str, err_str = self._run_cmd(cmd, cwd=rocrate_path,
+                                                    timeout=30)
         logger.debug('creation of crate stdout: ' + str(out_str))
         logger.debug('creation of crate stdout: ' + str(err_str))
         logger.debug('creation of crate exit code: ' + str(exit_code))
@@ -110,8 +117,9 @@ class ProvenanceUtil(object):
     def register_computation(self, rocrate_path, name='',
                              run_by='', command='',
                              date_created=date.today().strftime('%m-%d-%Y'),
-                             description='', used_software=[],
-                             used_dataset=[], generated=[]):
+                             description='Must be at least 10 characters', used_software=[],
+                             used_dataset=[], generated=[],
+                             guid=str(uuid.uuid4())):
 
         """
         Registers computation adding information to
@@ -140,12 +148,16 @@ class ProvenanceUtil(object):
         :type generated: list
         :return:
         """
-        cmd = [self._binary, 'rocrate', 'add', 'computation',
+        cmd = [self._binary, 'rocrate', 'register', 'computation',
                '--name', name,
                '--run-by', run_by,
                '--date-created', date_created,
                '--command', command,
                '--description', description]
+        if guid is not None:
+            cmd.append('--guid')
+            cmd.append(guid)
+
         if used_software is not None:
             for entry in used_software:
                 cmd.append('--used-software')
@@ -171,8 +183,11 @@ class ProvenanceUtil(object):
         logger.debug('add data set err_str: ' + str(err_str))
         return out_str
 
-    def register_software(self, rocrate_path, name='unknown', description='',
-                          author='', version='', file_format='', url=''):
+    def register_software(self, rocrate_path, name='unknown',
+                          description='Must be at least 10 characters',
+                          author='', version='', file_format='', url='',
+                          date_modified='01-01-1969',
+                          guid=str(uuid.uuid4())):
         """
         Registers software by adding information to
         ``ro-crate-metadata.json`` file stored in **rocrate_path**
@@ -201,14 +216,21 @@ class ProvenanceUtil(object):
         :return: guid of software from `FAIRSCAPE <https://fairscape.github.io>`__
         :rtype: str
         """
-        cmd = [self._binary, 'rocrate', 'add', 'software',
+        cmd = [self._binary, 'rocrate', 'register', 'software',
                '--name', name,
                '--description', description,
                '--author', author,
                '--version', version,
                '--file-format', file_format,
                '--url', url,
-               rocrate_path]
+               '--date-modified', date_modified]
+        if guid is not None:
+            cmd.append('--guid')
+            cmd.append(guid)
+
+        cmd.append('--filepath')
+        cmd.append(url)
+        cmd.append(rocrate_path)
         exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
 
         logger.debug('add software exit code: ' + str(exit_code))
@@ -220,7 +242,8 @@ class ProvenanceUtil(object):
         return out_str
 
     def register_dataset(self, rocrate_path, data_dict=None,
-                         source_file=None, skip_copy=True):
+                         source_file=None, skip_copy=True,
+                         guid=str(uuid.uuid4())):
         """
         Adds a dataset to existing rocrate specified by **rocrate_path**
         by adding information to ``ro-crate-metadata.json`` file
@@ -260,24 +283,34 @@ class ProvenanceUtil(object):
         :return: id of dataset from `FAIRSCAPE <https://fairscape.github.io>`__
         :rtype: str
         """
-        cmd = [self._binary, 'rocrate', 'add', 'dataset',
+        operation_name = 'register'
+        if skip_copy is not None and skip_copy is False:
+            operation_name = 'add'
+
+        cmd = [self._binary, 'rocrate', operation_name,
+               'dataset',
                '--name', data_dict['name'],
                '--version', data_dict['version'],
                '--data-format', data_dict['data-format'],
                '--description', data_dict['description'],
                '--date-published', data_dict['date-published'],
-               '--author', data_dict['author'],
-               '--source-filepath', source_file]
+               '--author', data_dict['author']]
+        if guid is not None:
+            cmd.append('--guid')
+            cmd.append(guid)
+
         if skip_copy is not None and skip_copy is False:
+            cmd.append('--source-filepath')
+            cmd.append(source_file)
             cmd.append('--destination-filepath')
             cmd.append(os.path.join(rocrate_path,
                                     os.path.basename(source_file)))
         cmd.append(rocrate_path)
         exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
-        logger.debug('add dataset exit code: ' + str(exit_code))
+        logger.debug(operation_name + ' dataset exit code: ' + str(exit_code))
         if exit_code != 0:
             raise CellMapsProvenanceError('Error adding dataset: ' +
                                           str(out_str) + ' : ' + str(err_str))
-        logger.debug('add data set out_str: ' + str(out_str))
-        logger.debug('add data set err_str: ' + str(err_str))
+        logger.debug(operation_name + ' data set out_str: ' + str(out_str))
+        logger.debug(operation_name + ' data set err_str: ' + str(err_str))
         return out_str
