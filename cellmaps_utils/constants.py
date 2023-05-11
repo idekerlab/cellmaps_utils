@@ -155,6 +155,21 @@ HIERARCHY_NETWORK_PREFIX = 'hierarchy'
 CX format hierarchy filename
 """
 
+CX_SUFFIX = '.cx'
+"""
+Suffix for files in `CX <https://cytoscape.org/cx/specification/2022/01/11/cytoscape-exchange-format-specification-(version-1).html>`__ format
+"""
+
+CX2_SUFFIX = '.cx2'
+"""
+Suffix for files in `CX 2.0<https://cytoscape.org/cx/cx2/specification/2022/12/01/cytoscape-exchange-format-specification-(version-2).html>`__ format
+"""
+
+HCX_SUFFIX = '.hcx'
+"""
+Suffix for files in `HCX <https://cytoscape.org/cx>`__ format
+"""
+
 RED = 'red'
 """
 Red color directory name and color name
