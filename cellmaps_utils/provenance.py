@@ -4,7 +4,9 @@ import subprocess
 import logging
 import uuid
 from datetime import date
+import json
 
+from cellmaps_utils import constants
 from cellmaps_utils.exceptions import CellMapsProvenanceError
 logger = logging.getLogger(__name__)
 
@@ -80,6 +82,29 @@ class ProvenanceUtil(object):
                                'associated-publication': '?',
                                'additional-documentation': '?'})
         return field_dict
+
+
+    def get_id_of_rocrate(self, rocrate_path):
+        """
+
+        :param rocrate_path:
+        :return:
+        """
+        if rocrate_path is None:
+            raise CellMapsProvenanceError('rocrate_path is None')
+
+        if os.path.isdir(rocrate_path):
+            rocrate_file = os.path.join(rocrate_path, constants.RO_CRATE_METADATA_FILE)
+        else:
+            rocrate_file = rocrate_path
+
+        try:
+            with open(rocrate_file, 'r') as f:
+                data = json.load(f)
+            return data['@id']
+        except Exception as e:
+            raise CellMapsProvenanceError('Error parsing ' + str(rocrate_file) +
+                                          ' ' + str(e))
 
     def register_rocrate(self, rocrate_path, name='',
                          organization_name='', project_name='',

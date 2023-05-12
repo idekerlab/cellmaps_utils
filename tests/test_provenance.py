@@ -7,10 +7,12 @@ import os
 import sys
 import shutil
 import tempfile
+import json
 from datetime import date
 import unittest
 from unittest.mock import patch
 
+from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
 from cellmaps_utils.exceptions import CellMapsProvenanceError
 
@@ -70,7 +72,6 @@ class TestProvenanceUtil(unittest.TestCase):
         example = ProvenanceUtil.example_dataset_provenance(requiredonly=None)
         self.assertEqual(expected_full, example)
 
-
     def test_register_rocrate_actual_invocation(self):
         """
         Registers temp directory as a crate
@@ -81,7 +82,7 @@ class TestProvenanceUtil(unittest.TestCase):
         try:
             prov = ProvenanceUtil()
             prov.register_rocrate(temp_dir)
-            crate_file = os.path.join(temp_dir, 'ro-crate-metadata.json')
+            crate_file = os.path.join(temp_dir, constants.RO_CRATE_METADATA_FILE)
             self.assertTrue(os.path.isfile(crate_file))
             self.assertTrue(os.path.getsize(crate_file) > 0)
         finally:
@@ -123,7 +124,7 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_register_software_actual_invocation(self):
+    def test_register_software(self):
         # Todo: due to fairscape-cli bug this is failing
         #       and the test expects the failure for now
         #       once fairscape-cli fixes
@@ -142,7 +143,7 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_register_dataset_actual_invocation(self):
+    def test_register_dataset(self):
 
         temp_dir = tempfile.mkdtemp()
         try:
@@ -164,6 +165,35 @@ class TestProvenanceUtil(unittest.TestCase):
                                                     'description': 'Description of dataset',
                                                     'data-format': 'Format of data'})
             self.assertTrue(len(d_id) > 0)
+
+        except CellMapsProvenanceError as ce:
+            print(str(ce))
+            self.assertEqual('', str(ce))
+            self.assertTrue('Error adding dataset' in str(ce))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_dataset_skipcopy_true(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            src_file = os.path.join(temp_dir, 'xx')
+            with open(src_file, 'w') as f:
+                f.write('hi')
+
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir)
+            d_id = prov.register_dataset(temp_dir,
+                                         source_file=src_file,
+                                         skip_copy=True,
+                                         data_dict={'name': 'Name of dataset',
+                                                    'author': 'Author of dataset',
+                                                    'version': 'Version of dataset',
+                                                    'date-published': 'Date dataset was published MM-DD-YYYY',
+                                                    'description': 'Description of dataset',
+                                                    'data-format': 'Format of data'})
+            self.assertTrue(len(d_id) > 0)
+
         except CellMapsProvenanceError as ce:
             print(str(ce))
             self.assertEqual('', str(ce))
