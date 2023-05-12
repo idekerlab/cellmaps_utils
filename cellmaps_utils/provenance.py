@@ -83,11 +83,13 @@ class ProvenanceUtil(object):
                                'additional-documentation': '?'})
         return field_dict
 
-
-    def get_id_of_rocrate(self, rocrate_path):
+    def get_rocrate_as_dict(self, rocrate_path):
         """
+        Loads rocrate as a dict
 
-        :param rocrate_path:
+        :param rocrate_path: Directory containing `ro-crate-metadata.json` file or
+                             path to file assumed to be ro-crate meta data file
+        :type rocrate_path: str
         :return:
         """
         if rocrate_path is None:
@@ -101,10 +103,48 @@ class ProvenanceUtil(object):
         try:
             with open(rocrate_file, 'r') as f:
                 data = json.load(f)
-            return data['@id']
+            return data
         except Exception as e:
             raise CellMapsProvenanceError('Error parsing ' + str(rocrate_file) +
                                           ' ' + str(e))
+
+    def get_id_of_rocrate(self, rocrate):
+        """
+        Gets id of rocrate
+
+        :param rocrate:
+        :return:
+        """
+        if isinstance(rocrate, dict):
+            data = rocrate
+        else:
+            data = self.get_rocrate_as_dict(rocrate)
+        return data['@id']
+
+    def get_name_project_org_of_rocrate(self, rocrate):
+        """
+        Gets name, project, and organization name of rocrate
+
+        :param rocrate:
+        :type rocrate: str or dict
+        :return: (name, project, organization-name)
+        :rtype: tuple
+        """
+        if isinstance(rocrate, dict):
+            data = rocrate
+        else:
+            data = self.get_rocrate_as_dict(rocrate)
+
+        name = data['name']
+        org_name = None
+        proj_name = None
+        for entry in data['isPartOf']:
+            if '@type' in entry:
+                if entry['@type'] == 'Organization':
+                    org_name = entry['name']
+                elif entry['@type'] == 'Project':
+                    proj_name = entry['name']
+        return name, proj_name, org_name
 
     def register_rocrate(self, rocrate_path, name='',
                          organization_name='', project_name='',
