@@ -19,6 +19,11 @@ LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
 Sets format of logging messages
 """
 
+RO_CRATE_METADATA_FILE = 'ro-crate-metadata.json'
+"""
+`rocrate <https://www.researchobject.org/ro-crate>`__ metadata JSON file name
+"""
+
 TASK_FILE_PREFIX = 'task_'
 """
 Prefix for task file
