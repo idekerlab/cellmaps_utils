@@ -3,6 +3,7 @@ import os
 import subprocess
 import logging
 import uuid
+import getpass
 from datetime import date
 import json
 
@@ -82,6 +83,19 @@ class ProvenanceUtil(object):
                                'associated-publication': '?',
                                'additional-documentation': '?'})
         return field_dict
+
+    def get_login(self):
+        """
+        Attempts to get login of user
+
+        :return: login of user or empty string if unable to obtain
+        :rtype: str
+        """
+        try:
+            return getpass.getuser()
+        except Exception as e:
+            logger.error('Unable to get login for user: ' + str(e))
+        return ''
 
     def get_rocrate_as_dict(self, rocrate_path):
         """

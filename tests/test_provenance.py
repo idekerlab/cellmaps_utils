@@ -72,6 +72,24 @@ class TestProvenanceUtil(unittest.TestCase):
         example = ProvenanceUtil.example_dataset_provenance(requiredonly=None)
         self.assertEqual(expected_full, example)
 
+    def test_get_login(self):
+        prov = ProvenanceUtil()
+        res = prov.get_login()
+        self.assertTrue(res is not None)
+
+        orig_logname = None
+        if 'LOGNAME' in os.environ:
+            orig_logname = os.environ['LOGNAME']
+        try:
+            # set LOGNAME to different value
+            os.environ['LOGNAME'] = 'smith'
+
+            # check we get it back and then reset it
+            self.assertEqual('smith', prov.get_login())
+        finally:
+            if orig_logname is not None:
+                os.environ['LOGNAME'] = orig_logname
+
     def test_register_rocrate_actual_invocation(self):
         """
         Registers temp directory as a crate
