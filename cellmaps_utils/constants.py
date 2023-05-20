@@ -203,4 +203,35 @@ COLORS = [RED, BLUE, GREEN, YELLOW]
 List of colors
 """
 
+IMAGE_DOWNLOAD_STEP_DIR = '1.image_download'
+"""
+Name of directory where downloaded images are stored
+"""
+
+PPI_DOWNLOAD_STEP_DIR = '1.ppi_download'
+"""
+Name of directory where downloaded PPI edge and
+baitlist are stored
+"""
+
+PPI_EMBEDDING_STEP_DIR = '2.ppi_embedding'
+"""
+Name of directory where PPI embeddings are stored
+"""
+
+IMAGE_EMBEDDING_STEP_DIR = '2.image_embedding'
+"""
+Name of directory where image embeddings are stored
+"""
+
+COEMBEDDING_STEP_DIR = '3.coembedding'
+"""
+Name of directory where co-embeddings are stored
+"""
+
+HIERARCHY_STEP_DIR = '4.hierarchy'
+"""
+Name of directory where hierarchies are stored
+"""
+
 
