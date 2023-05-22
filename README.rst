@@ -27,12 +27,17 @@ Utilities needed for Cell Maps for AI
 Dependencies
 ------------
 
-* TODO add
+* `fairscape-cli <https://pypi.org/project/fairscape-cli>`__
+* `scipy <https://pypi.org/project/scipy>`__
+* `scikit-learn <https://pypi.org/project/scikit-learn>`__
+* `pandas <https://pypi.org/project/pandas>`__
+* `numpy <https://pypi.org/project/numpy>`__
+* `dill <https://pypi.org/project/dill>`__
 
 Compatibility
 -------------
 
-* Python 3.3+
+* Python 3.8+
 
 Installation
 ------------
