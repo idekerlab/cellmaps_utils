@@ -1,6 +1,6 @@
-==============
-cellmaps_utils
-==============
+===========================
+Cell Maps for AI Utilities
+===========================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_utils.svg
@@ -13,10 +13,7 @@ cellmaps_utils
         :target: https://cellmaps-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-
-
-
-Utilities needed for Cell Maps for AI
+Contains utilities needed by various tools created for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 
 * Free software: MIT license
