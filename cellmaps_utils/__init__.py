@@ -4,4 +4,4 @@
 
 __author__ = """CM4AI"""
 __email__ = 'cchuras@ucsd.edu'
-__version__ = '0.1.0a11'
+__version__ = '0.1.0a12'
