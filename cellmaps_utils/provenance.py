@@ -137,7 +137,11 @@ class ProvenanceUtil(object):
         """
         Gets id of rocrate
 
-        :param rocrate:
+        :param rocrate: rocrate :py:class:`dict` or directory containing
+                        `ro-crate-metadata.json` file or
+                        path to file assumed to be ro-crate meta data
+                        file
+        :type rocrate: str or dict
         :return:
         """
         if isinstance(rocrate, dict):
@@ -150,7 +154,10 @@ class ProvenanceUtil(object):
         """
         Gets name, project, and organization name of rocrate
 
-        :param rocrate:
+        :param rocrate: rocrate :py:class:`dict` or directory containing
+                        `ro-crate-metadata.json` file or
+                        path to file assumed to be ro-crate meta data
+                        file
         :type rocrate: str or dict
         :return: (name, project, organization-name)
         :rtype: tuple
