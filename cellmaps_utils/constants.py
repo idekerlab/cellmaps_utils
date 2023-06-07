@@ -203,6 +203,16 @@ COLORS = [RED, BLUE, GREEN, YELLOW]
 List of colors
 """
 
+COLOR_INDEXS = {
+            'red': 0,
+            'green': 1,
+            'blue': 2,
+            'yellow': 0,
+        }
+"""
+Indexes for colors in .jpeg image
+"""
+
 IMAGE_DOWNLOAD_STEP_DIR = '1.image_download'
 """
 Name of directory where downloaded images are stored
