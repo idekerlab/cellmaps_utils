@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 with open(os.path.join('cellmaps_utils', '__init__.py')) as ver_file:
     for line in ver_file:
         if line.startswith('__version__'):
-            version=re.sub("'", "", line[line.index("'"):])
+            version = re.sub("'", "", line[line.index("'"):])
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -30,8 +30,8 @@ setup_requirements = [ ]
 test_requirements = [ ]
 
 setup(
-    author="Clara Hu",
-    author_email='mhu@health.ucsd.edu',
+    author="CM4AI",
+    author_email='cchuras@ucsd.edu',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
@@ -46,7 +46,7 @@ setup(
     install_requires=requirements,
     license="MIT license",
     long_description=readme + '\n\n' + history,
-    long_description_content_type = 'text/x-rst',
+    long_description_content_type='text/x-rst',
     include_package_data=True,
     keywords='cellmaps_utils',
     name='cellmaps_utils',

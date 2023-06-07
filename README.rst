@@ -1,6 +1,6 @@
-==============
-cellmaps_utils
-==============
+===========================
+Cell Maps for AI Utilities
+===========================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_utils.svg
@@ -13,16 +13,11 @@ cellmaps_utils
         :target: https://cellmaps-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-
-
-
-Utilities needed for Cell Maps for AI
+Contains utilities needed by various tools created for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 
 * Free software: MIT license
 * Documentation: https://cellmaps-utils.readthedocs.io.
-
-
 
 Dependencies
 ------------
@@ -97,19 +92,15 @@ Modify code in this repo as desired
 
 
 
-Needed files
-------------
-
-**TODO:** Add description of needed files
-
-
-
-
 Credits
 -------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
+Development is supported by `CM4AI <https://cm4ai.org>`__
+
+This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template
+
 
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
 .. _NDEx: http://www.ndexbio.org
+

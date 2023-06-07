@@ -155,8 +155,6 @@ class TestProvenanceUtil(unittest.TestCase):
             s_id = prov.register_software(temp_dir, name='name', description='must be 10 characters',
                                           version='0.1.0', file_format='.py',
                                           url='http://foo.com')
-            # this is never reached due to
-            # https://github.com/fairscape/fairscape-cli/issues/7
             self.assertTrue(len(s_id) > 0)
         finally:
             shutil.rmtree(temp_dir)
@@ -185,7 +183,6 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertTrue(len(d_id) > 0)
 
         except CellMapsProvenanceError as ce:
-            print(str(ce))
             self.assertEqual('', str(ce))
             self.assertTrue('Error adding dataset' in str(ce))
         finally:
@@ -213,10 +210,57 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertTrue(len(d_id) > 0)
 
         except CellMapsProvenanceError as ce:
-            print(str(ce))
             self.assertEqual('', str(ce))
             self.assertTrue('Error adding dataset' in str(ce))
         finally:
             shutil.rmtree(temp_dir)
+
+    def test_get_rocrate_as_dict(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='foo', guid='12345')
+            crate_dict = prov.get_rocrate_as_dict(temp_dir)
+            self.assertEqual({'@id', '@context', '@type',
+                              'name', 'isPartOf', '@graph'},
+                             set(crate_dict.keys()))
+            self.assertEqual('foo', crate_dict['name'])
+            self.assertEqual('12345', crate_dict['@id'])
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_get_id_of_rocrate(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='foo', guid='12345')
+            self.assertEqual('12345', prov.get_id_of_rocrate(temp_dir))
+
+            # verify passing dict works as well
+            crate_dict = prov.get_rocrate_as_dict(temp_dir)
+            self.assertEqual('12345', prov.get_id_of_rocrate(crate_dict))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_get_name_project_org_of_rocrate(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='foo', guid='12345',
+                                  project_name='proj', organization_name='org')
+            self.assertEqual(('foo', 'proj', 'org'),
+                             prov.get_name_project_org_of_rocrate(temp_dir))
+
+            # verify passing dict works as well
+            crate_dict = prov.get_rocrate_as_dict(temp_dir)
+            self.assertEqual(('foo', 'proj', 'org'),
+                             prov.get_name_project_org_of_rocrate(crate_dict))
+        finally:
+            shutil.rmtree(temp_dir)
+
+
 
 

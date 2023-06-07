@@ -1,5 +1,6 @@
 
 import os
+import sys
 import subprocess
 import logging
 import uuid
@@ -21,9 +22,19 @@ class ProvenanceUtil(object):
         Constructor
 
         :param fairscape_binary: `FAIRSCAPE <https://github.com/fairscape/fairscape-cli>`__ command line binary
+                                 If no path separators are included in this value
+                                 (for example no ``/``) this code assumes the full path to
+                                 the binary is the same directory where the python
+                                 binary executing this script resides. To bypass this
+                                 set the value to a full path with ex: ``/tmp/foo.py``
         :type fairscape_binary: str
         """
-        self._binary = fairscape_binary
+        self._python = sys.executable
+        if os.sep not in fairscape_binary:
+            self._binary = os.path.join(os.path.dirname(self._python),
+                                        fairscape_binary)
+        else:
+            self._binary = fairscape_binary
 
     def _run_cmd(self, cmd, cwd=None, timeout=360):
         """
@@ -126,7 +137,11 @@ class ProvenanceUtil(object):
         """
         Gets id of rocrate
 
-        :param rocrate:
+        :param rocrate: rocrate :py:class:`dict` or directory containing
+                        `ro-crate-metadata.json` file or
+                        path to file assumed to be ro-crate meta data
+                        file
+        :type rocrate: str or dict
         :return:
         """
         if isinstance(rocrate, dict):
@@ -139,7 +154,10 @@ class ProvenanceUtil(object):
         """
         Gets name, project, and organization name of rocrate
 
-        :param rocrate:
+        :param rocrate: rocrate :py:class:`dict` or directory containing
+                        `ro-crate-metadata.json` file or
+                        path to file assumed to be ro-crate meta data
+                        file
         :type rocrate: str or dict
         :return: (name, project, organization-name)
         :rtype: tuple
@@ -175,7 +193,7 @@ class ProvenanceUtil(object):
         :param project_name:
         :return:
         """
-        cmd = [self._binary, 'rocrate', 'init',
+        cmd = [self._python, self._binary, 'rocrate', 'init',
                '--name', name,
                '--organization-name', organization_name,
                '--project-name', project_name]
@@ -229,7 +247,8 @@ class ProvenanceUtil(object):
         :type generated: list
         :return:
         """
-        cmd = [self._binary, 'rocrate', 'register', 'computation',
+        cmd = [self._python, self._binary, 'rocrate', 'register',
+               'computation',
                '--name', name,
                '--run-by', run_by,
                '--date-created', date_created,
@@ -299,7 +318,8 @@ class ProvenanceUtil(object):
         :return: guid of software from `FAIRSCAPE <https://fairscape.github.io>`__
         :rtype: str
         """
-        cmd = [self._binary, 'rocrate', 'register', 'software',
+        cmd = [self._python, self._binary, 'rocrate', 'register',
+               'software',
                '--name', name,
                '--description', description,
                '--author', author,
@@ -372,7 +392,7 @@ class ProvenanceUtil(object):
         if skip_copy is not None and skip_copy is False:
             operation_name = 'add'
 
-        cmd = [self._binary, 'rocrate', operation_name,
+        cmd = [self._python, self._binary, 'rocrate', operation_name,
                'dataset',
                '--name', data_dict['name'],
                '--version', data_dict['version'],

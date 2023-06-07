@@ -65,7 +65,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'cellmaps_utils'
 copyright = u"2023, The Regents of the University of California"
-author = u"Clara Hu"
+author = u"CM4AI"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -160,7 +160,7 @@ latex_elements = {
 latex_documents = [
     (master_doc, 'cellmaps_utils.tex',
      u'cellmaps_utils Documentation',
-     u'Clara Hu', 'manual'),
+     u'CM4AI', 'manual'),
 ]
 
 
