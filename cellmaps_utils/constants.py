@@ -99,11 +99,18 @@ IMAGE_GENE_NODE_FILENAME_COL = 'filename'
 File name column
 """
 
+IMAGE_GENE_NODE_IMAGEURL_COL = 'imageurl'
+"""
+Image URL column
+"""
+
+
 IMAGE_GENE_NODE_COLS = [IMAGE_GENE_NODE_NAME_COL,
                         IMAGE_GENE_NODE_REPRESENTS_COL,
                         IMAGE_GENE_NODE_AMBIGUOUS_COL,
                         IMAGE_GENE_NODE_ANTIBODY_COL,
-                        IMAGE_GENE_NODE_FILENAME_COL]
+                        IMAGE_GENE_NODE_FILENAME_COL,
+                        IMAGE_GENE_NODE_IMAGEURL_COL]
 """
 Columns in :py:const:`IMAGE_GENE_NODE_ATTR_FILE` file
 """
