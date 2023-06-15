@@ -4,6 +4,6 @@
 
 __author__ = 'Ideker Lab CM4AI team'
 __email__ = 'tools@cm4ai.org'
-__version__ = '0.1.0a12'
+__version__ = '0.1.0a13'
 __repo_url__ = 'https://github.com/idekerlab/cellmaps_utils'
 __description__ = 'Contains utilities needed by CM4AI tools'
