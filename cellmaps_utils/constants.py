@@ -167,6 +167,11 @@ HIERARCHY_NETWORK_PREFIX = 'hierarchy'
 CX format hierarchy filename
 """
 
+HIERARCHY_NODES_PREFIX = 'hierarchy_node_attributes.tsv'
+"""
+Hierarchy node attributes file
+"""
+
 CX_SUFFIX = '.cx'
 """
 Suffix for files in `CX <https://cytoscape.org/cx/specification/2022/01/11/cytoscape-exchange-format-specification-(version-1).html>`__ format
