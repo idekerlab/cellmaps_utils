@@ -288,8 +288,10 @@ class ProvenanceUtil(object):
                                                     timeout=60)
         logger.debug('add dataset exit code: ' + str(exit_code))
         if exit_code != 0:
-            raise CellMapsProvenanceError('Error adding dataset: ' +
-                                          str(out_str) + ' : ' + str(err_str))
+            raise CellMapsProvenanceError('Error adding dataset:\n' +
+                                          str(cmd) + '\nStandard out:\n' +
+                                          str(out_str) + '\n Standard err:\n' +
+                                          str(err_str))
 
         logger.debug('add data set out_str: ' + str(out_str))
         logger.debug('add data set err_str: ' + str(err_str))

@@ -136,7 +136,7 @@ class TestProvenanceUtil(unittest.TestCase):
                 generated.append('ark:/g' + str(x))
 
             c_id = prov.register_computation(temp_dir, run_by='runby',
-                                             name='name', description='desc',
+                                             name='name', description='desc must be 10 chars',
                                              command='cmd',
                                              used_dataset=used_dataset,
                                              used_software=used_software,

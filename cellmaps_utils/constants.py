@@ -241,12 +241,12 @@ PPI_EMBEDDING_STEP_DIR = '2.ppi_embedding'
 Name of directory where PPI embeddings are stored
 """
 
-IMAGE_EMBEDDING_STEP_DIR = '2.image_embedding'
+IMAGE_EMBEDDING_STEP_DIR = '2.image_embedding_fold'
 """
 Name of directory where image embeddings are stored
 """
 
-COEMBEDDING_STEP_DIR = '3.coembedding'
+COEMBEDDING_STEP_DIR = '3.coembedding_fold'
 """
 Name of directory where co-embeddings are stored
 """
