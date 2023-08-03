@@ -180,6 +180,7 @@ class ProvenanceUtil(object):
 
     def register_rocrate(self, rocrate_path, name='',
                          organization_name='', project_name='',
+                         description='', keywords=[''],
                          guid=None):
         """
         Creates/registers rocreate in directory specified by **rocrate_path**
@@ -196,7 +197,11 @@ class ProvenanceUtil(object):
         cmd = [self._python, self._binary, 'rocrate', 'init',
                '--name', name,
                '--organization-name', organization_name,
-               '--project-name', project_name]
+               '--project-name', project_name,
+               '--description', description]
+
+        for k in keywords:
+            cmd.extend(['--keywords', k])
 
         if guid is None:
             guid = str(uuid.uuid4())
@@ -218,6 +223,7 @@ class ProvenanceUtil(object):
                              date_created=date.today().strftime('%m-%d-%Y'),
                              description='Must be at least 10 characters', used_software=[],
                              used_dataset=[], generated=[],
+                             keywords=[''],
                              guid=None):
 
         """
@@ -254,6 +260,10 @@ class ProvenanceUtil(object):
                '--date-created', date_created,
                '--command', command,
                '--description', description]
+
+        for k in keywords:
+            cmd.extend(['--keywords', k])
+
         if guid is None:
             guid = str(uuid.uuid4())
 
@@ -289,6 +299,7 @@ class ProvenanceUtil(object):
                           description='Must be at least 10 characters',
                           author='', version='', file_format='', url='',
                           date_modified='01-01-1969',
+                          keywords=[''],
                           guid=None):
         """
         Registers software by adding information to
@@ -327,6 +338,10 @@ class ProvenanceUtil(object):
                '--file-format', file_format,
                '--url', url,
                '--date-modified', date_modified]
+
+        for k in keywords:
+            cmd.extend(['--keywords', k])
+
         if guid is None:
             guid = str(uuid.uuid4())
 
@@ -348,6 +363,7 @@ class ProvenanceUtil(object):
 
     def register_dataset(self, rocrate_path, data_dict=None,
                          source_file=None, skip_copy=True,
+                         keywords=[''],
                          guid=None):
         """
         Adds a dataset to existing rocrate specified by **rocrate_path**
@@ -400,6 +416,9 @@ class ProvenanceUtil(object):
                '--description', data_dict['description'],
                '--date-published', data_dict['date-published'],
                '--author', data_dict['author']]
+
+        for k in keywords:
+            cmd.extend(['--keywords', k])
 
         if guid is None:
             guid = str(uuid.uuid4())
