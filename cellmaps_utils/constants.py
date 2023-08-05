@@ -167,7 +167,7 @@ HIERARCHY_NETWORK_PREFIX = 'hierarchy'
 CX format hierarchy filename
 """
 
-HIERARCHY_NODES_PREFIX = 'hierarchy_node_attributes.tsv'
+HIERARCHY_NODES_FILE = 'hierarchy_node_attributes.tsv'
 """
 Hierarchy node attributes file
 """
@@ -254,6 +254,11 @@ Name of directory where co-embeddings are stored
 HIERARCHY_STEP_DIR = '4.hierarchy'
 """
 Name of directory where hierarchies are stored
+"""
+
+HIERARCHYEVAL_STEP_DIR = '5.hierarchyeval'
+"""
+Name of directory where hierarchy evaluations are stored
 """
 
 
