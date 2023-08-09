@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class ProvenanceUtil(object):
     """
-    Wrapper around `FAIRSCAPE <https://fairscape.github.io>`__ calls
+    Wrapper around `FAIRSCAPE-cli <https://github.com/fairscape/fairscape-cli>`__ calls
     """
     def __init__(self, fairscape_binary='fairscape-cli'):
         """
@@ -23,8 +23,8 @@ class ProvenanceUtil(object):
 
         :param fairscape_binary: `FAIRSCAPE <https://github.com/fairscape/fairscape-cli>`__ command line binary
                                  If no path separators are included in this value
-                                 (for example no ``/``) this code assumes the full path to
-                                 the binary is the same directory where the python
+                                 (for example no ``/`` on Linux|mac) this code assumes the full
+                                 path to the binary is the same directory where the python
                                  binary executing this script resides. To bypass this
                                  set the value to a full path with ex: ``/tmp/foo.py``
         :type fairscape_binary: str
@@ -62,6 +62,27 @@ class ProvenanceUtil(object):
                                           ' stderr: ' + str(err))
 
         return p.returncode, out, err
+
+    def _get_keywords(self, keywords=None):
+        """
+        Adds keywords to command
+
+        :param keywords:
+        :type keywords: list or str
+        :return: keywords commandline flags
+        :rtype: list
+        """
+        if keywords is None:
+            return []
+        if isinstance(keywords, str):
+            return ['--keywords', keywords]
+        if isinstance(keywords, list):
+            retlist = []
+            for k in keywords:
+                retlist.extend(['--keywords', k])
+            return retlist
+        raise CellMapsProvenanceError('Keywords must be a list or a '
+                                      'str, but got: ' + str(type(keywords)))
 
     @staticmethod
     def example_dataset_provenance(requiredonly=True, with_ids=False):
@@ -180,7 +201,10 @@ class ProvenanceUtil(object):
 
     def register_rocrate(self, rocrate_path, name='',
                          organization_name='', project_name='',
-                         guid=None):
+                         description='Please enter a description',
+                         keywords=[''],
+                         guid=None,
+                         timeout=30):
         """
         Creates/registers rocreate in directory specified by **rocrate_path**
         Upon completion a ``ro-crate-metadata.json`` file will be created
@@ -188,37 +212,55 @@ class ProvenanceUtil(object):
 
         :param rocrate_path:
         :type rocrate_path: str
-        :param name:
-        :param organization_name:
-        :param project_name:
-        :return:
+        :param name: Name for ro-crate
+        :type name: str
+        :param organization_name: Name of organization
+        :type organization_name: str
+        :param project_name: Name of project
+        :type project_name: str
+        :param description: Description for ro-crate
+        :type description: str
+        :param keywords: keywords to associate with ro-crate
+        :type keywords: list
+        :param guid: ID for ro-crate
+        :type guid: str
+        :param timeout: Time in seconds to wait for registration of ro-crate to complete
+        :type timeout: float
         """
         cmd = [self._python, self._binary, 'rocrate', 'init',
                '--name', name,
                '--organization-name', organization_name,
-               '--project-name', project_name]
+               '--project-name', project_name,
+               '--description', description]
 
+        cmd.extend(self._get_keywords(keywords=keywords))
         if guid is None:
             guid = str(uuid.uuid4())
 
         cmd.append('--guid')
         cmd.append(guid)
-
-        exit_code, out_str, err_str = self._run_cmd(cmd, cwd=rocrate_path,
-                                                    timeout=30)
-        logger.debug('creation of crate stdout: ' + str(out_str))
-        logger.debug('creation of crate stdout: ' + str(err_str))
-        logger.debug('creation of crate exit code: ' + str(exit_code))
-        if exit_code != 0:
-            raise CellMapsProvenanceError('Error creating crate: ' +
-                                          str(out_str) + ' : ' + str(err_str))
+        try:
+            exit_code, out_str, err_str = self._run_cmd(cmd, cwd=rocrate_path,
+                                                        timeout=timeout)
+            logger.debug('creation of crate stdout: ' + str(out_str))
+            logger.debug('creation of crate stdout: ' + str(err_str))
+            logger.debug('creation of crate exit code: ' + str(exit_code))
+            if exit_code != 0:
+                raise CellMapsProvenanceError('Error creating crate: ' +
+                                              str(out_str) + ' : ' + str(err_str))
+        except CellMapsProvenanceError as ce:
+            raise ce
+        except Exception as e:
+            raise CellMapsProvenanceError('Caught Exception: ' + str(e))
 
     def register_computation(self, rocrate_path, name='',
                              run_by='', command='',
                              date_created=date.today().strftime('%m-%d-%Y'),
                              description='Must be at least 10 characters', used_software=[],
                              used_dataset=[], generated=[],
-                             guid=None):
+                             keywords=[''],
+                             guid=None,
+                             timeout=60):
 
         """
         Registers computation adding information to
@@ -245,7 +287,8 @@ class ProvenanceUtil(object):
         :param generated: list of `FAIRSCAPE <https://fairscape.github.io>`__ dataset ids for datasets
                           generated by this computation
         :type generated: list
-        :return:
+        :param timeout: Time in seconds to wait for registration of computation to complete
+        :type timeout: float
         """
         cmd = [self._python, self._binary, 'rocrate', 'register',
                'computation',
@@ -254,6 +297,9 @@ class ProvenanceUtil(object):
                '--date-created', date_created,
                '--command', command,
                '--description', description]
+
+        cmd.extend(self._get_keywords(keywords=keywords))
+
         if guid is None:
             guid = str(uuid.uuid4())
 
@@ -275,7 +321,7 @@ class ProvenanceUtil(object):
                 cmd.append(entry)
         cmd.append(rocrate_path)
         exit_code, out_str, err_str = self._run_cmd(cmd,
-                                                    timeout=60)
+                                                    timeout=timeout)
         logger.debug('add dataset exit code: ' + str(exit_code))
         if exit_code != 0:
             raise CellMapsProvenanceError('Error adding dataset:\n' +
@@ -291,7 +337,9 @@ class ProvenanceUtil(object):
                           description='Must be at least 10 characters',
                           author='', version='', file_format='', url='',
                           date_modified='01-01-1969',
-                          guid=None):
+                          keywords=[''],
+                          guid=None,
+                          timeout=30):
         """
         Registers software by adding information to
         ``ro-crate-metadata.json`` file stored in **rocrate_path**
@@ -316,6 +364,8 @@ class ProvenanceUtil(object):
         :type url: str
         :param rocrate_path: Path to directory with registered rocrate
         :type rocrate_path: str
+        :param timeout: Time in seconds to wait for registration of ro-crate to complete
+        :type timeout: float
         :raises CellMapsProvenanceError: If `FAIRSCAPE <https://fairscape.github.io>`__ call fails
         :return: guid of software from `FAIRSCAPE <https://fairscape.github.io>`__
         :rtype: str
@@ -329,6 +379,9 @@ class ProvenanceUtil(object):
                '--file-format', file_format,
                '--url', url,
                '--date-modified', date_modified]
+
+        cmd.extend(self._get_keywords(keywords=keywords))
+
         if guid is None:
             guid = str(uuid.uuid4())
 
@@ -338,7 +391,7 @@ class ProvenanceUtil(object):
         cmd.append('--filepath')
         cmd.append(url)
         cmd.append(rocrate_path)
-        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
+        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=timeout)
 
         logger.debug('add software exit code: ' + str(exit_code))
         if exit_code != 0:
@@ -350,7 +403,7 @@ class ProvenanceUtil(object):
 
     def register_dataset(self, rocrate_path, data_dict=None,
                          source_file=None, skip_copy=True,
-                         guid=None):
+                         guid=None, timeout=30):
         """
         Adds a dataset to existing rocrate specified by **rocrate_path**
         by adding information to ``ro-crate-metadata.json`` file
@@ -367,7 +420,8 @@ class ProvenanceUtil(object):
              'version': 'Version of dataset',
              'date-published': 'Date dataset was published MM-DD-YYYY',
              'description': 'Description of dataset',
-             'data-format': 'Format of data'}
+             'data-format': 'Format of data',
+             'keywords': ['keyword1','keyword2']}
 
         .. warning::
 
@@ -387,6 +441,8 @@ class ProvenanceUtil(object):
         :param skip_copy: If ``True`` skip the copy of source file into
                           **crate_path**. Use this when source file already
                           resides in **crate_path**
+        :param timeout: Time in seconds to wait for registration of dataset to complete
+        :type timeout: float
         :return: id of dataset from `FAIRSCAPE <https://fairscape.github.io>`__
         :rtype: str
         """
@@ -402,6 +458,11 @@ class ProvenanceUtil(object):
                '--description', data_dict['description'],
                '--date-published', data_dict['date-published'],
                '--author', data_dict['author']]
+
+        if 'keywords' not in data_dict:
+            cmd.extend(self._get_keywords(keywords=''))
+        else:
+            cmd.extend(self._get_keywords(keywords=data_dict['keywords']))
 
         if guid is None:
             guid = str(uuid.uuid4())
@@ -420,7 +481,7 @@ class ProvenanceUtil(object):
             cmd.append(source_file)
 
         cmd.append(rocrate_path)
-        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=30)
+        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=timeout)
         logger.debug(operation_name + ' dataset exit code: ' + str(exit_code))
         if exit_code != 0:
             raise CellMapsProvenanceError('Error adding dataset: ' +

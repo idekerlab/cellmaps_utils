@@ -40,6 +40,19 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
+    def test_get_keywords(self):
+        prov = ProvenanceUtil()
+        self.assertEqual(['--keywords', ''], prov._get_keywords(keywords=''))
+        self.assertEqual([], prov._get_keywords(keywords=[]))
+        self.assertEqual(['--keywords', 'a', '--keywords', 3],
+                         prov._get_keywords(keywords=['a', 3]))
+        try:
+            prov._get_keywords(keywords=1.0)
+            self.fail('Expected exception')
+        except CellMapsProvenanceError as ce:
+            self.assertTrue('Keywords must' in str(ce))
+
+
     def test_example_dataset_provenance(self):
 
         # default
@@ -90,7 +103,27 @@ class TestProvenanceUtil(unittest.TestCase):
             if orig_logname is not None:
                 os.environ['LOGNAME'] = orig_logname
 
-    def test_register_rocrate_actual_invocation(self):
+    def test_get_rocrate_as_dict_none_for_path(self):
+        prov = ProvenanceUtil()
+        try:
+            prov.get_rocrate_as_dict(None)
+        except CellMapsProvenanceError as ce:
+            self.assertEqual('rocrate_path is None', str(ce))
+
+    def test_get_rocrate_as_dict_invalid_rocrate_metadata(self):
+        prov = ProvenanceUtil()
+        temp_dir = tempfile.mkdtemp()
+        try:
+            rocrate = os.path.join(temp_dir, constants.RO_CRATE_METADATA_FILE)
+            with open(rocrate, 'w') as f:
+                f.write('invalidjsonasdfasdfasdfsa\n')
+            prov.get_rocrate_as_dict(rocrate_path=rocrate)
+        except CellMapsProvenanceError as ce:
+            self.assertTrue('Error parsing' in str(ce))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_rocrate(self):
         """
         Registers temp directory as a crate
         with all default values
@@ -106,7 +139,39 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_register_computation_actual_invocation(self):
+    def test_register_rocrate_no_keywords(self):
+        """
+        Registers temp directory as a crate
+        with all default values
+        :return:
+        """
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, keywords=None)
+            self.fail('Expected exception')
+        except CellMapsProvenanceError as ce:
+            self.assertTrue('Error creating crate' in str(ce))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_rocrate_invalid_path(self):
+        """
+        Registers temp directory as a crate
+        with all default values
+        :return:
+        """
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(os.path.join(temp_dir, 'doesnotexist'))
+            self.fail('Expected exception')
+        except CellMapsProvenanceError as ce:
+            self.assertTrue('No such' in str(ce))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_computation(self):
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
@@ -118,7 +183,7 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_register_computation_with_software_datasets_actual_invocation(self):
+    def test_register_computation_with_software_datasets(self):
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
@@ -143,19 +208,30 @@ class TestProvenanceUtil(unittest.TestCase):
             shutil.rmtree(temp_dir)
 
     def test_register_software(self):
-        # Todo: due to fairscape-cli bug this is failing
-        #       and the test expects the failure for now
-        #       once fairscape-cli fixes
-        #       https://github.com/fairscape/fairscape-cli/issues/7
-        #       remove the exception check
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
             prov.register_rocrate(temp_dir)
-            s_id = prov.register_software(temp_dir, name='name', description='must be 10 characters',
+            s_id = prov.register_software(temp_dir, name='name',
+                                          description='must be 10 characters',
                                           version='0.1.0', file_format='.py',
                                           url='http://foo.com')
             self.assertTrue(len(s_id) > 0)
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_software_invalid_rocrate(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(os.path.join(temp_dir, 'doesnotexist'))
+            prov.register_software(temp_dir, name='name',
+                                   description='must be 10 characters',
+                                   version='0.1.0', file_format='.py',
+                                   url='http://foo.com')
+            self.fail('Expected Exception')
+        except CellMapsProvenanceError as ce:
+            self.assertTrue('Caught Exception' in str(ce))
         finally:
             shutil.rmtree(temp_dir)
 
@@ -180,6 +256,36 @@ class TestProvenanceUtil(unittest.TestCase):
                                                     'date-published': 'Date dataset was published MM-DD-YYYY',
                                                     'description': 'Description of dataset',
                                                     'data-format': 'Format of data'})
+            self.assertTrue(len(d_id) > 0)
+
+        except CellMapsProvenanceError as ce:
+            self.assertEqual('', str(ce))
+            self.assertTrue('Error adding dataset' in str(ce))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_dataset_with_keywords(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            subdir = os.path.join(temp_dir, 'input')
+            os.makedirs(subdir, mode=0o755)
+            src_file = os.path.join(subdir, 'xx')
+            with open(src_file, 'w') as f:
+                f.write('hi')
+
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir)
+            d_id = prov.register_dataset(temp_dir,
+                                         source_file=src_file,
+                                         skip_copy=False,
+                                         data_dict={'name': 'Name of dataset',
+                                                    'author': 'Author of dataset',
+                                                    'version': 'Version of dataset',
+                                                    'date-published': 'Date dataset was published MM-DD-YYYY',
+                                                    'description': 'Description of dataset',
+                                                    'data-format': 'Format of data',
+                                                    'keywords': ['one', 'two x', 'three x']})
             self.assertTrue(len(d_id) > 0)
 
         except CellMapsProvenanceError as ce:
@@ -223,7 +329,7 @@ class TestProvenanceUtil(unittest.TestCase):
             prov.register_rocrate(temp_dir, name='foo', guid='12345')
             crate_dict = prov.get_rocrate_as_dict(temp_dir)
             self.assertEqual({'@id', '@context', '@type',
-                              'name', 'isPartOf', '@graph'},
+                              'name', 'isPartOf', '@graph', 'description', 'keywords'},
                              set(crate_dict.keys()))
             self.assertEqual('foo', crate_dict['name'])
             self.assertEqual('12345', crate_dict['@id'])
