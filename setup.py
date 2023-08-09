@@ -27,7 +27,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['fairscape-cli==0.1.5a4',
+requirements = ['fairscape-cli==0.1.7a2',
                 'scipy',
                 'scikit-learn',
                 'pandas',
