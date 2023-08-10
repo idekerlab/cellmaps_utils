@@ -62,7 +62,8 @@ class TestProvenanceUtil(unittest.TestCase):
                           'version': 'Version of dataset',
                           'date-published': 'Date dataset was published',
                           'description': 'Description of dataset',
-                          'data-format': 'Format of data'}, example)
+                          'data-format': 'Format of data',
+                          'keywords': ['keyword']}, example)
 
         # with ids
         example = ProvenanceUtil.example_dataset_provenance(with_ids=True)
@@ -71,14 +72,15 @@ class TestProvenanceUtil(unittest.TestCase):
         # with required only False
         example = ProvenanceUtil.example_dataset_provenance(requiredonly=False)
         expected_full = {'name': 'Name of dataset',
-                          'author': 'Author of dataset',
-                          'version': 'Version of dataset',
-                          'date-published': 'Date dataset was published',
-                          'description': 'Description of dataset',
-                          'data-format': 'Format of data',
-                          'url': 'URL of datset', 'used-by': '?',
-                          'derived-from': '?', 'associated-publication': '?',
-                          'additional-documentation': '?'}
+                         'author': 'Author of dataset',
+                         'version': 'Version of dataset',
+                         'date-published': 'Date dataset was published',
+                         'description': 'Description of dataset',
+                         'data-format': 'Format of data',
+                         'keywords': ['keyword'],
+                         'url': 'URL of datset', 'used-by': '?',
+                         'derived-from': '?', 'associated-publication': '?',
+                         'additional-documentation': '?'}
         self.assertEqual(expected_full, example)
 
         # with required only None

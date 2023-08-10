@@ -107,7 +107,8 @@ class ProvenanceUtil(object):
                       'version': 'Version of dataset',
                       'date-published': 'Date dataset was published',
                       'description': 'Description of dataset',
-                      'data-format': 'Format of data'}
+                      'data-format': 'Format of data',
+                      'keywords': ['keyword']}
         if requiredonly is None or requiredonly is False:
             field_dict.update({'url': 'URL of datset',
                                'used-by': '?',
