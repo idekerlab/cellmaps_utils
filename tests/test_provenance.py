@@ -52,7 +52,6 @@ class TestProvenanceUtil(unittest.TestCase):
         except CellMapsProvenanceError as ce:
             self.assertTrue('Keywords must' in str(ce))
 
-
     def test_example_dataset_provenance(self):
 
         # default
@@ -62,8 +61,7 @@ class TestProvenanceUtil(unittest.TestCase):
                           'version': 'Version of dataset',
                           'date-published': 'Date dataset was published',
                           'description': 'Description of dataset',
-                          'data-format': 'Format of data',
-                          'keywords': ['keyword']}, example)
+                          'data-format': 'Format of data'}, example)
 
         # with ids
         example = ProvenanceUtil.example_dataset_provenance(with_ids=True)
@@ -77,7 +75,6 @@ class TestProvenanceUtil(unittest.TestCase):
                          'date-published': 'Date dataset was published',
                          'description': 'Description of dataset',
                          'data-format': 'Format of data',
-                         'keywords': ['keyword'],
                          'url': 'URL of datset', 'used-by': '?',
                          'derived-from': '?', 'associated-publication': '?',
                          'additional-documentation': '?'}

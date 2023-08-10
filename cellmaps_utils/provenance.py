@@ -107,8 +107,7 @@ class ProvenanceUtil(object):
                       'version': 'Version of dataset',
                       'date-published': 'Date dataset was published',
                       'description': 'Description of dataset',
-                      'data-format': 'Format of data',
-                      'keywords': ['keyword']}
+                      'data-format': 'Format of data'}
         if requiredonly is None or requiredonly is False:
             field_dict.update({'url': 'URL of datset',
                                'used-by': '?',
@@ -184,12 +183,29 @@ class ProvenanceUtil(object):
         :return: (name, project, organization-name)
         :rtype: tuple
         """
+        name, proj_name, org_name, _, _ = self.get_name_project_org_keyword_description_of_rocrate(rocrate)
+        return name, proj_name, org_name
+
+    def get_name_project_org_keyword_description_of_rocrate(self, rocrate):
+        """
+        Gets name, project, organization, description, and keywords of rocrate
+
+        :param rocrate: rocrate :py:class:`dict` or directory containing
+                        `ro-crate-metadata.json` file or
+                        path to file assumed to be ro-crate meta data
+                        file
+        :type rocrate: str or dict
+        :return: (name, project, organization-name, description, keywords)
+        :rtype: tuple
+        """
         if isinstance(rocrate, dict):
             data = rocrate
         else:
             data = self.get_rocrate_as_dict(rocrate)
 
         name = data['name']
+        description = data['description']
+        keywords = data['keywords']
         org_name = None
         proj_name = None
         for entry in data['isPartOf']:
@@ -198,7 +214,7 @@ class ProvenanceUtil(object):
                     org_name = entry['name']
                 elif entry['@type'] == 'Project':
                     proj_name = entry['name']
-        return name, proj_name, org_name
+        return name, proj_name, org_name, description, keywords
 
     def register_rocrate(self, rocrate_path, name='',
                          organization_name='', project_name='',
