@@ -54,6 +54,11 @@ IMAGE_EMBEDDING_FILE = 'image_emd.tsv'
 Name of image embedding file
 """
 
+IMAGE_LABELS_PROBABILITY_FILE = 'labels_prob.tsv'
+"""
+Name of image labels probability file
+"""
+
 PPI_EMBEDDING_FILE = 'ppi_emd.tsv'
 """
 Name of Protein to Protein embedding file
