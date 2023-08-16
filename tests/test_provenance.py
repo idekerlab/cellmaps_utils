@@ -131,7 +131,8 @@ class TestProvenanceUtil(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir)
+            prov.register_rocrate(temp_dir, name='some 10 charactert name',
+                                  description=' some 10 character desc')
             crate_file = os.path.join(temp_dir, constants.RO_CRATE_METADATA_FILE)
             self.assertTrue(os.path.isfile(crate_file))
             self.assertTrue(os.path.getsize(crate_file) > 0)
@@ -174,9 +175,10 @@ class TestProvenanceUtil(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir)
+            prov.register_rocrate(temp_dir, name='some 10 charactert name',
+                                  description=' some 10 character desc')
             c_id = prov.register_computation(temp_dir, run_by='runby',
-                                             name='name', description='desc must be 10 chars',
+                                             name='name', description='desc needs to be 10 characters',
                                              command='cmd')
             self.assertTrue(len(c_id) > 0)
         finally:
@@ -186,7 +188,8 @@ class TestProvenanceUtil(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir)
+            prov.register_rocrate(temp_dir, name='some 10 charactert name',
+                                  description=' some 10 character desc')
 
             used_dataset = []
             used_software = []
@@ -213,6 +216,7 @@ class TestProvenanceUtil(unittest.TestCase):
             prov.register_rocrate(temp_dir)
             s_id = prov.register_software(temp_dir, name='name',
                                           description='must be 10 characters',
+
                                           version='0.1.0', file_format='.py',
                                           url='http://foo.com')
             self.assertTrue(len(s_id) > 0)
@@ -245,7 +249,7 @@ class TestProvenanceUtil(unittest.TestCase):
                 f.write('hi')
 
             prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir)
+            prov.register_rocrate(temp_dir, name='some 10 character name', description='10 character description')
             d_id = prov.register_dataset(temp_dir,
                                          source_file=src_file,
                                          skip_copy=False,
@@ -302,7 +306,8 @@ class TestProvenanceUtil(unittest.TestCase):
                 f.write('hi')
 
             prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir)
+            prov.register_rocrate(temp_dir, name='some 10 character name',
+                                  description='some 10 character desc')
             d_id = prov.register_dataset(temp_dir,
                                          source_file=src_file,
                                          skip_copy=True,
@@ -325,13 +330,17 @@ class TestProvenanceUtil(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir, name='foo', guid='12345')
+            prov.register_rocrate(temp_dir, name='foo', guid='12345',
+                                  description='some 10 character desc')
             crate_dict = prov.get_rocrate_as_dict(temp_dir)
             self.assertEqual({'@id', '@context', '@type',
                               'name', 'isPartOf', '@graph', 'description', 'keywords'},
+
                              set(crate_dict.keys()))
             self.assertEqual('foo', crate_dict['name'])
             self.assertEqual('12345', crate_dict['@id'])
+            self.assertEqual('some 10 character desc', crate_dict['description'])
+
         finally:
             shutil.rmtree(temp_dir)
 
@@ -340,7 +349,7 @@ class TestProvenanceUtil(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         try:
             prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir, name='foo', guid='12345')
+            prov.register_rocrate(temp_dir, name='foo', guid='12345', description='some 10 character desc')
             self.assertEqual('12345', prov.get_id_of_rocrate(temp_dir))
 
             # verify passing dict works as well
@@ -355,7 +364,8 @@ class TestProvenanceUtil(unittest.TestCase):
         try:
             prov = ProvenanceUtil()
             prov.register_rocrate(temp_dir, name='foo', guid='12345',
-                                  project_name='proj', organization_name='org')
+                                  project_name='proj', organization_name='org',
+                                  description='10 character desc sdfsdf')
             self.assertEqual(('foo', 'proj', 'org'),
                              prov.get_name_project_org_of_rocrate(temp_dir))
 

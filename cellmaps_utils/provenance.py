@@ -222,6 +222,7 @@ class ProvenanceUtil(object):
                          keywords=[''],
                          guid=None,
                          timeout=30):
+
         """
         Creates/registers rocreate in directory specified by **rocrate_path**
         Upon completion a ``ro-crate-metadata.json`` file will be created
@@ -357,6 +358,7 @@ class ProvenanceUtil(object):
                           keywords=[''],
                           guid=None,
                           timeout=30):
+
         """
         Registers software by adding information to
         ``ro-crate-metadata.json`` file stored in **rocrate_path**
@@ -421,6 +423,7 @@ class ProvenanceUtil(object):
     def register_dataset(self, rocrate_path, data_dict=None,
                          source_file=None, skip_copy=True,
                          guid=None, timeout=30):
+
         """
         Adds a dataset to existing rocrate specified by **rocrate_path**
         by adding information to ``ro-crate-metadata.json`` file
