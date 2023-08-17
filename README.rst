@@ -1,6 +1,6 @@
-===========================
-Cell Maps for AI Utilities
-===========================
+=============================
+Cell Maps Pipeline Utilities
+=============================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_utils.svg
@@ -13,7 +13,7 @@ Cell Maps for AI Utilities
         :target: https://cellmaps-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-Contains utilities needed by various tools created for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
+Contains utilities needed by various tools created for Cell Maps Pipeline
 
 
 * Free software: MIT license
