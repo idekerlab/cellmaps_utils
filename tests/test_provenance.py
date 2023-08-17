@@ -376,6 +376,137 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
+    def test_get_merged_rocrate_provenance_attrs_none_for_rocrate(self):
+        prov = ProvenanceUtil()
+        try:
+            prov.get_merged_rocrate_provenance_attrs()
+            self.fail('Expected Exception')
+        except CellMapsProvenanceError as ce:
+            self.assertEqual('rocrate is None', str(ce))
+
+    def test_get_merged_rocrate_provenance_attrs_none_for_rocrate_invalidtype(self):
+        prov = ProvenanceUtil()
+        try:
+            prov.get_merged_rocrate_provenance_attrs(rocrate=int(5))
+            self.fail('Expected Exception')
+        except CellMapsProvenanceError as ce:
+            self.assertTrue('rocrate must be type str, list or dict' in str(ce))
+
+    def test_get_merged_rocrate_provenance_attrs_none_for_rocrate_norocrates_in_list(self):
+        prov = ProvenanceUtil()
+        try:
+            prov.get_merged_rocrate_provenance_attrs(rocrate=[])
+            self.fail('Expected Exception')
+        except CellMapsProvenanceError as ce:
+            self.assertEqual('No rocrates in list', str(ce))
+
+    def test_get_merged_rocrate_provenance_attrs_single_crate_nooverrides(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(rocrate_path=temp_dir,
+                                  name='some name',
+                                  project_name='some project name',
+                                  description='some description name',
+                                  organization_name='some organization name',
+                                  keywords=['keyword1'])
+            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=temp_dir)
+            self.assertEqual('some name', prov_attrs.get_name())
+            self.assertEqual('some project name', prov_attrs.get_project_name())
+            self.assertEqual('some organization name', prov_attrs.get_organization_name())
+            self.assertEqual('keyword1', prov_attrs.get_description())
+            self.assertEqual(['keyword1'], prov_attrs.get_keywords())
+
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_get_merged_rocrate_provenance_attrs_single_crate_with_overrides(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(rocrate_path=temp_dir,
+                                  name='some name',
+                                  project_name='some project name',
+                                  description='some description name',
+                                  organization_name='some organization name',
+                                  keywords=['keyword1'])
+            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=temp_dir,
+                                                                  override_name='new name',
+                                                                  override_organization_name='new org',
+                                                                  override_project_name='new proj')
+            self.assertEqual('new name', prov_attrs.get_name())
+            self.assertEqual('new proj', prov_attrs.get_project_name())
+            self.assertEqual('new org', prov_attrs.get_organization_name())
+            self.assertEqual('keyword1', prov_attrs.get_description())
+            self.assertEqual(['keyword1'], prov_attrs.get_keywords())
+
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_get_merged_rocrate_provenance_attrs_single_crate_four_extrakeywords(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            prov.register_rocrate(rocrate_path=temp_dir,
+                                  name='some name',
+                                  project_name='some project name',
+                                  description='some description name',
+                                  organization_name='some organization name',
+                                  keywords=['keyword1', 'keyword2', 'keyword3', 'keyword4'])
+            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=temp_dir,
+                                                                  extra_keywords=['embedding'])
+            self.assertEqual('some name', prov_attrs.get_name())
+            self.assertEqual('some project name', prov_attrs.get_project_name())
+            self.assertEqual('some organization name', prov_attrs.get_organization_name())
+            self.assertEqual('keyword1 keyword2 keyword3 '
+                             'keyword4 embedding', prov_attrs.get_description())
+            self.assertEqual(['keyword1', 'keyword2',
+                              'keyword3', 'keyword4',
+                              'embedding'], prov_attrs.get_keywords())
+
+        finally:
+            shutil.rmtree(temp_dir)
+
+
+    def test_get_merged_rocrate_provenance_attrs_two_crates(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            prov = ProvenanceUtil()
+            crate_list = []
+            for name in ['one', 'two']:
+                crate = os.path.join(temp_dir, name)
+                crate_list.append(crate)
+                os.makedirs(crate, mode=0o755)
+                prov.register_rocrate(rocrate_path=crate,
+                                      name=name + ' name',
+                                      project_name=name + ' project name',
+                                      description=name + ' description name',
+                                      organization_name=name + ' organization name',
+                                      keywords=[name + '1',
+                                                name + '2',
+                                                name + '3',
+                                                name + '4'])
+            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=crate_list,
+                                                                  extra_keywords=['embedding'])
+            self.assertTrue('one name|two name' == prov_attrs.get_name())
+            self.assertTrue('one project name|two project name' == prov_attrs.get_project_name())
+            self.assertTrue('one organization name|two organization name' == prov_attrs.get_organization_name())
+            self.assertEqual('one1|two1 one2|two2 one3|two3 '
+                             'one4|two4 embedding', prov_attrs.get_description())
+
+            self.assertEqual(['one1|two1', 'one2|two2',
+                              'one3|two3', 'one4|two4'],
+                             prov_attrs.get_keywords()[:4])
+            self.assertTrue('embedding' in prov_attrs.get_keywords())
+            for n in range(1, 5):
+                self.assertTrue('one' + str(n) in prov_attrs.get_keywords())
+                self.assertTrue('two' + str(n) in prov_attrs.get_keywords())
+
+            self.assertEqual(13, len(prov_attrs.get_keywords()))
+
+        finally:
+            shutil.rmtree(temp_dir)
+
 
 
 

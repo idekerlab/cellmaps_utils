@@ -13,6 +13,87 @@ from cellmaps_utils.exceptions import CellMapsProvenanceError
 logger = logging.getLogger(__name__)
 
 
+class ROCrateProvenanceAttributes(object):
+    """
+    Wrapper object to hold subset of
+    `RO-Crate <https://www.researchobject.org/ro-crate/>`__ provenance attributes
+    """
+    def __init__(self, name='Please enter a name',
+                 organization_name='Please enter an organization',
+                 project_name='Please enter a project',
+                 description='Please enter a description',
+                 keywords=['']):
+        """
+        Constructor
+
+        :param name: name for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :type name: str
+        :param organization_name: what lab or group
+        :type organization_name: str
+        :param project_name: usually funding source
+        :type project_name: str
+        :param description: describes `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :type description: str
+        :param keywords: keywords to identify `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+                         usually set with these values
+                         in order:
+                         `project, data_release_name, cell_line,
+                         treatment, name_of_computation`
+
+        :type keywords: list
+        """
+        self._name = name
+        self._organization_name = organization_name
+        self._project_name = project_name
+        self._description = description
+        self._keywords = keywords
+
+    def get_name(self):
+        """
+        Gets name for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+
+        :return: name for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :rtype: str
+        """
+        return self._name
+
+    def get_organization_name(self):
+        """
+        Gets organization name for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+
+        :return: organization name
+        :rtype: str
+        """
+        return self._organization_name
+
+    def get_project_name(self):
+        """
+        Gets project name for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+
+        :return: project name
+        :rtype: str
+        """
+        return self._project_name
+
+    def get_description(self):
+        """
+        Gets description for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+
+        :return: description
+        :rtype: str
+        """
+        return self._description
+
+    def get_keywords(self):
+        """
+        Gets keywords for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+
+        :return: keywords
+        :rtype: list
+        """
+        return self._keywords
+
+
 class ProvenanceUtil(object):
     """
     Wrapper around `FAIRSCAPE-cli <https://github.com/fairscape/fairscape-cli>`__ calls
@@ -84,6 +165,20 @@ class ProvenanceUtil(object):
         raise CellMapsProvenanceError('Keywords must be a list or a '
                                       'str, but got: ' + str(type(keywords)))
 
+    def _generate_guid(self, data_type=None,
+                       rocrate_path=None):
+        """
+
+        :param data_type:
+        :return:
+        """
+        if data_type is not None:
+            data_type_val = data_type
+        else:
+            data_type_val = ''
+
+        return str(uuid.uuid4()) + ':' + str(data_type_val) + '::' + str(rocrate_path)
+
     @staticmethod
     def example_dataset_provenance(requiredonly=True, with_ids=False):
         """
@@ -131,7 +226,7 @@ class ProvenanceUtil(object):
 
     def get_rocrate_as_dict(self, rocrate_path):
         """
-        Loads rocrate as a dict
+        Loads `RO-Crate <https://www.researchobject.org/ro-crate/>`__ as a dict
 
         :param rocrate_path: Directory containing `ro-crate-metadata.json` file or
                              path to file assumed to be ro-crate meta data file
@@ -156,11 +251,11 @@ class ProvenanceUtil(object):
 
     def get_id_of_rocrate(self, rocrate):
         """
-        Gets id of rocrate
+        Gets id of `RO-Crate <https://www.researchobject.org/ro-crate/>`__
 
-        :param rocrate: rocrate :py:class:`dict` or directory containing
+        :param rocrate: `RO-Crate <https://www.researchobject.org/ro-crate/>`__ :py:class:`dict` or directory containing
                         `ro-crate-metadata.json` file or
-                        path to file assumed to be ro-crate meta data
+                        path to file assumed to be `RO-Crate <https://www.researchobject.org/ro-crate/>`__ meta data
                         file
         :type rocrate: str or dict
         :return:
@@ -173,30 +268,30 @@ class ProvenanceUtil(object):
 
     def get_name_project_org_of_rocrate(self, rocrate):
         """
-        Gets name, project, and organization name of rocrate
+        Gets name, project, and organization name of `RO-Crate <https://www.researchobject.org/ro-crate/>`__
 
-        :param rocrate: rocrate :py:class:`dict` or directory containing
+        :param rocrate: `RO-Crate <https://www.researchobject.org/ro-crate/>`__ :py:class:`dict` or directory containing
                         `ro-crate-metadata.json` file or
-                        path to file assumed to be ro-crate meta data
+                        path to file assumed to be `RO-Crate <https://www.researchobject.org/ro-crate/>`__ meta data
                         file
         :type rocrate: str or dict
         :return: (name, project, organization-name)
         :rtype: tuple
         """
-        name, proj_name, org_name, _, _ = self.get_name_project_org_keyword_description_of_rocrate(rocrate)
-        return name, proj_name, org_name
+        prov_attrs = self.get_rocrate_provenance_attributes(rocrate)
+        return prov_attrs.get_name(), prov_attrs.get_project_name(), prov_attrs.get_organization_name()
 
-    def get_name_project_org_keyword_description_of_rocrate(self, rocrate):
+    def get_rocrate_provenance_attributes(self, rocrate):
         """
-        Gets name, project, organization, description, and keywords of rocrate
+        Gets provenance attributes for an `RO-Crate <https://www.researchobject.org/ro-crate/>`__
 
-        :param rocrate: rocrate :py:class:`dict` or directory containing
-                        `ro-crate-metadata.json` file or
-                        path to file assumed to be ro-crate meta data
-                        file
+        :param rocrate: `RO-Crate <https://www.researchobject.org/ro-crate/>`__ :py:class:`dict` or directory containing
+                `ro-crate-metadata.json` file or
+                path to file assumed to be `RO-Crate <https://www.researchobject.org/ro-crate/>`__ meta data
+                file
         :type rocrate: str or dict
-        :return: (name, project, organization-name, description, keywords)
-        :rtype: tuple
+        :return:
+        :rtype: :py:class:`~cellmaps_utils.provenance.ROCrateProvenanceAttributes`
         """
         if isinstance(rocrate, dict):
             data = rocrate
@@ -214,7 +309,135 @@ class ProvenanceUtil(object):
                     org_name = entry['name']
                 elif entry['@type'] == 'Project':
                     proj_name = entry['name']
-        return name, proj_name, org_name, description, keywords
+
+        return ROCrateProvenanceAttributes(name=name, project_name=proj_name,
+                                           organization_name=org_name,
+                                           description=description,
+                                           keywords=keywords)
+
+    def get_merged_rocrate_provenance_attrs(self, rocrate=None,
+                                            override_name=None,
+                                            override_project_name=None,
+                                            override_organization_name=None,
+                                            extra_keywords=None,
+                                            merged_delimiter='|'):
+        """
+        Creates a merged provenance attributes object when given
+        one or more `RO-Crates <https://www.researchobject.org/ro-crate/>`__.
+        It does this by the following rules:
+
+
+        Values for *name*, *project_name*, and *organization_name*
+        are put into respective sets for uniqueness sorted alphabetically
+        and joined together using value of **merged_delimiter**
+
+        If **override_name, override_project,** or **override_organization**
+        is not ``None`` then those values will be used in leiu of the
+        merged data mentioned earlier.
+
+        For *keywords*, the first four elements are put into respective
+        sets for uniqueness and joined together using value of **merge_delimiter**
+        and put back into a list. Any extra entries in **extra_keywords** is appended
+        to this list.
+
+        The *description* is a merging of the keywords list with a space delimiter
+
+        :param rocrate: :py:class:`dict` or directory containing
+                        `ro-crate-metadata.json` file or
+                        path to file assumed to be `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+                        meta data
+                        file or a list of either of the previously
+                        mentioned items
+        :type rocrate: str or dict or list
+        :param override_name: If not ``None``, overrides name returned
+        :type override_name: str
+        :param override_project_name: If not ``None``, overrides project name returned
+        :type override_project_name: str
+        :param override_organization_name: If not ``None``, overrides organization-name
+        :type override_organization_name: str
+        :param extra_keywords: Any extra keywords to append
+        :type extra_keywords: list or str
+        :raises CellMapsProvenanceError: If **rocrate**, **extra_keywords**
+        :return: Merged rocrate provenance attributes
+        :rtype: :py:class:`~cellmaps_utils.provenance.ROCrateProvenanceAttributes`
+        """
+        name_set = set()
+        proj_set = set()
+        org_set = set()
+        keyword_set_dict = {}
+        new_keywords = []
+
+        if rocrate is None:
+            raise CellMapsProvenanceError('rocrate is None')
+
+        if isinstance(rocrate, str) or isinstance(rocrate, dict):
+            rocrate_list = [rocrate]
+        elif isinstance(rocrate, list):
+            if len(rocrate) == 0:
+                raise CellMapsProvenanceError('No rocrates in list')
+            rocrate_list = rocrate
+        else:
+            raise CellMapsProvenanceError('rocrate must be type str, list or dict, received: ' + str(type(rocrate)))
+
+        for entry in rocrate_list:
+            prov_attrs = self.get_rocrate_provenance_attributes(entry)
+
+            name_set.add(prov_attrs.get_name())
+            proj_set.add(prov_attrs.get_project_name())
+            org_set.add(prov_attrs.get_organization_name())
+            for index in range(len(prov_attrs.get_keywords())):
+                if index not in keyword_set_dict:
+                    keyword_set_dict[index] = set()
+                keyword_set_dict[index].add(prov_attrs.get_keywords()[index])
+        logger.debug('keyword_set_dict: ' + str(keyword_set_dict))
+
+        if override_name is None:
+            new_name = '|'.join(sorted(list(name_set)))
+        else:
+            new_name = override_name
+
+        if override_organization_name is None:
+            new_organization_name = '|'.join(sorted(list(org_set)))
+        else:
+            new_organization_name = override_organization_name
+
+        if override_project_name is None:
+            new_project_name = '|'.join(sorted(list(proj_set)))
+        else:
+            new_project_name = override_project_name
+
+        # just grab 1st four elements assuming they are
+        # project, data_release_name, cell line, treatment,
+        # name_of_computation
+        if len(keyword_set_dict.keys()) >= 4:
+            for index in range(4):
+                new_keywords.append('|'.join(sorted(list(keyword_set_dict[index]))))
+        else:
+            for index in range(len(keyword_set_dict.keys())):
+                new_keywords.append('|'.join(sorted(list(keyword_set_dict[index]))))
+
+        if extra_keywords is not None:
+            if isinstance(extra_keywords, str):
+                new_keywords.append(extra_keywords)
+            elif isinstance(extra_keywords, list):
+                new_keywords.extend(extra_keywords)
+            else:
+                raise CellMapsProvenanceError('extra_keywords must be of '
+                                              'type list or str. '
+                                              'Received: ' +
+                                              str(type(extra_keywords)))
+
+        new_description = ' '.join(new_keywords)
+
+        split_keywords = set()
+        for keyword in new_keywords:
+            if '|' in keyword:
+                split_keywords.update(keyword.split('|'))
+        new_keywords.extend(list(split_keywords))
+        return ROCrateProvenanceAttributes(name=new_name, project_name=new_project_name,
+                                           organization_name=new_organization_name,
+                                           description=new_description,
+                                           keywords=new_keywords)
 
     def register_rocrate(self, rocrate_path, name='',
                          organization_name='', project_name='',
@@ -224,25 +447,27 @@ class ProvenanceUtil(object):
                          timeout=30):
 
         """
-        Creates/registers rocreate in directory specified by **rocrate_path**
-        Upon completion a ``ro-crate-metadata.json`` file will be created
-        in the directory
+        Creates/registers `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        in directory specified by **rocrate_path**
+        Upon completion a ``ro-crate-metadata.json``
+        file will be created in the directory
 
         :param rocrate_path:
         :type rocrate_path: str
-        :param name: Name for ro-crate
+        :param name: Name for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
         :type name: str
         :param organization_name: Name of organization
         :type organization_name: str
         :param project_name: Name of project
         :type project_name: str
-        :param description: Description for ro-crate
+        :param description: Description
         :type description: str
-        :param keywords: keywords to associate with ro-crate
+        :param keywords: keywords
         :type keywords: list
-        :param guid: ID for ro-crate
+        :param guid: ID for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
         :type guid: str
-        :param timeout: Time in seconds to wait for registration of ro-crate to complete
+        :param timeout: Time in seconds to wait for registration of `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+                        to complete
         :type timeout: float
         """
         cmd = [self._python, self._binary, 'rocrate', 'init',
@@ -253,7 +478,8 @@ class ProvenanceUtil(object):
 
         cmd.extend(self._get_keywords(keywords=keywords))
         if guid is None:
-            guid = str(uuid.uuid4())
+            guid = self._generate_guid(data_type='rocrate',
+                                       rocrate_path=rocrate_path)
 
         cmd.append('--guid')
         cmd.append(guid)
@@ -285,7 +511,8 @@ class ProvenanceUtil(object):
         ``ro-crate-metadata.json`` file stored in **rocrate_path**
         directory.
 
-        :param rocrate_path: Path to existing rocrate directory
+        :param rocrate_path: Path to existing `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+                             directory
         :type rocrate_path: str
         :param name:
         :type name: str
@@ -319,7 +546,8 @@ class ProvenanceUtil(object):
         cmd.extend(self._get_keywords(keywords=keywords))
 
         if guid is None:
-            guid = str(uuid.uuid4())
+            guid = self._generate_guid(data_type='computation',
+                                       rocrate_path=rocrate_path)
 
         cmd.append('--guid')
         cmd.append(guid)
@@ -402,7 +630,8 @@ class ProvenanceUtil(object):
         cmd.extend(self._get_keywords(keywords=keywords))
 
         if guid is None:
-            guid = str(uuid.uuid4())
+            guid = self._generate_guid(data_type='software',
+                                       rocrate_path=rocrate_path)
 
         cmd.append('--guid')
         cmd.append(guid)
@@ -485,7 +714,8 @@ class ProvenanceUtil(object):
             cmd.extend(self._get_keywords(keywords=data_dict['keywords']))
 
         if guid is None:
-            guid = str(uuid.uuid4())
+            guid = self._generate_guid(data_type='dataset',
+                                       rocrate_path=rocrate_path)
 
         cmd.append('--guid')
         cmd.append(guid)
