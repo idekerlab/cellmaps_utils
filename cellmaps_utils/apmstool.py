@@ -3,6 +3,7 @@ import sys
 import shutil
 from datetime import date
 import logging
+import pandas as pd
 import cellmaps_utils
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
 from cellmaps_utils.exceptions import CellMapsError
@@ -66,28 +67,41 @@ class APMSDataLoader(BaseCommandLineTool):
                                                 keywords=keywords)
         gen_dsets = []
 
-        for input in self._inputs:
-            file_name = os.path.basename(input)
-            dest_path = os.path.join(self._outdir, file_name)
-            shutil.copy(input, dest_path)
-            file_desc = description + ' AP-MS file'
-            file_keywords = keywords.copy()
-            file_keywords.extend(['file'])
-            dset_id = self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=dest_path,
-                                                              skip_copy=True,
-                                                              data_dict={'name': file_name + ' AP-MS file',
-                                                                         'description': file_desc,
-                                                                         'keywords': file_keywords,
-                                                                         'data-format': 'tsv',
-                                                                         'author': self._author,
-                                                                         'version': self._release,
-                                                                         'date-published': date.today().strftime('%m-%d-%Y')})
-            gen_dsets.append(dset_id)
+        file_path = self._merge_and_save_apms_data()
+        file_desc = description + ' AP-MS file'
+        file_keywords = keywords.copy()
+        file_keywords.extend(['file'])
+        dset_id = self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=file_path,
+                                                          skip_copy=True,
+                                                          data_dict={'name': ' AP-MS file',
+                                                                     'description': file_desc,
+                                                                     'keywords': file_keywords,
+                                                                     'data-format': 'tsv',
+                                                                     'author': self._author,
+                                                                     'version': self._release,
+                                                                     'date-published': date.today().strftime('%m-%d-%Y')})
+        gen_dsets.append(dset_id)
         self._register_software(keywords=keywords, description=description)
         self._register_computation(generated_dataset_ids=gen_dsets,
                                    description=description,
                                    keywords=keywords)
         return 0
+
+    def _merge_and_save_apms_data(self):
+        """
+
+        :return:
+        """
+        df_list = []
+        for input in self._inputs:
+            df_list.append(pd.read_csv(input, sep='\t'))
+
+        df = pd.concat(df_list)
+
+        apms_path = os.path.join(self._outdir, 'apms.tsv')
+        df.to_csv(apms_path, sep='\t', index=False)
+        return apms_path
+
 
     def _register_computation(self, generated_dataset_ids=[],
                               description='',
