@@ -1,6 +1,6 @@
-===========================
-Cell Maps for AI Utilities
-===========================
+=============================
+Cell Maps Pipeline Utilities
+=============================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_utils.svg

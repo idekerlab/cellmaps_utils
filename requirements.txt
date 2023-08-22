@@ -1,4 +1,4 @@
-fairscape-cli==0.1.5a2
+fairscape-cli==0.1.7a3
 scipy
 scikit-learn
 pandas
