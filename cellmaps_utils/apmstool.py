@@ -152,13 +152,12 @@ class APMSDataLoader(BaseCommandLineTool):
 
         Version {version}
 
-        {cmd} Loads and converts AP-MS data that is stored in an RO-Crate
+        {cmd} Stores AP-MS data into a RO-Crate
         """.format(version=cellmaps_utils.__version__,
                    cmd=APMSDataLoader.COMMAND)
 
         parser = subparsers.add_parser(APMSDataLoader.COMMAND,
-                                       help='Loads and converts AP-MS data '
-                                            'that is stored in an RO-Crate',
+                                       help='Stores AP-MS data into a RO-Crate',
                                        description=desc,
                                        formatter_class=constants.ArgParseFormatter)
         parser.add_argument('outdir',
