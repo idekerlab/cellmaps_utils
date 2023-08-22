@@ -13,7 +13,7 @@ Cell Maps for AI Utilities
         :target: https://cellmaps-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-Contains utilities needed by various tools created for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
+Contains utilities needed by various tools in the cell maps toolkit. 
 
 
 * Free software: MIT license
@@ -94,8 +94,6 @@ Modify code in this repo as desired
 
 Credits
 -------
-
-Development is supported by `CM4AI <https://cm4ai.org>`__
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template
 
