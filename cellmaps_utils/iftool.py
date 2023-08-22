@@ -1,8 +1,12 @@
 import os
-import sys
+import re
 import shutil
 from datetime import date
+import warnings
 import logging
+import requests
+from tqdm import tqdm
+from multiprocessing import Pool
 import pandas as pd
 import cellmaps_utils
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
@@ -13,15 +17,202 @@ from cellmaps_utils.provenance import ProvenanceUtil
 logger = logging.getLogger(__name__)
 
 
-class IFImageDataLoader(BaseCommandLineTool):
+def download_file(downloadtuple):
     """
-    Creates RO-Crate of IF Image data from
-    table file
+    Downloads file pointed to by 'download_url' to
+    'destfile'
+
+    .. note::
+
+        Default download function used by :py:class:`~MultiProcessImageDownloader`
+
+    :param downloadtuple: `(download link, dest file path)`
+    :type downloadtuple: tuple
+    :return: None upon success otherwise:
+             `(requests status code, text from request, downloadtuple)`
+    :rtype: tuple
     """
-    COMMAND = 'ifloader'
+    logger.debug('Downloading ' + downloadtuple[0] + ' to ' + downloadtuple[1])
+    try:
+        with requests.get(downloadtuple[0], stream=True) as r:
+            if r.status_code != 200:
+                return r.status_code, r.text, downloadtuple
+            with open(downloadtuple[1], 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:  # filter out keep-alive new chunks
+                        f.write(chunk)
+        return None
+    except requests.exceptions.HTTPError as e:
+        return -1, str(e), downloadtuple
+    except requests.exceptions.ConnectionError as e:
+        return -2, str(e), downloadtuple
+    except requests.exceptions.Timeout as e:
+        return -3, str(e), downloadtuple
+    except requests.exceptions.RequestException as e:
+        return -4, str(e), downloadtuple
+    except Exception as e:
+        return -5, str(e), downloadtuple
+
+
+class ImageDownloader(object):
+    """
+    Abstract class that defines interface for classes that download images
+
+    """
+    def __init__(self):
+        """
+
+        """
+        pass
+
+    def download_images(self, download_list=None):
+        """
+        Subclasses should implement
+
+        :param download_list: list of tuples where first element is
+                              full URL of image to download and 2nd
+                              element is destination path
+        :type download_list: list
+        :return:
+        """
+        raise CellMapsError('Subclasses should implement this')
+
+
+class FakeImageDownloader(ImageDownloader):
+    """
+    Creates fake download by downloading
+    the first image in each color from
+    `Human Protein Atlas <https://www.proteinatlas.org/>`__
+    and making renamed copies. The :py:func:`download_file` function
+    is used to download the first image of each color
+
+    """
+
+    def __init__(self):
+        """
+        Constructor
+
+        """
+        super().__init__()
+        warnings.warn('This downloader generates FAKE images\n'
+                      'You have been warned!!!\n'
+                      'Have a nice day')
+
+    def download_images(self, download_list=None):
+        """
+        Downloads 1st image from server and then
+        and makes renamed copies for subsequent images
+
+        :param download_list:
+        :type download_list: list of tuple
+        :return:
+        """
+        num_to_download = len(download_list)
+        logger.info(str(num_to_download) + ' images to download')
+        t = tqdm(total=num_to_download, desc='Download',
+                 unit='images')
+
+        src_image_dict = {}
+        # assume 1st four images are the colors for the first image
+        for entry in download_list[0:4]:
+            t.update()
+            if download_file(entry) is not None:
+                raise CellMapsError('Unable to download ' +
+                                                   str(entry))
+            fname = os.path.basename(entry[1])
+            color = re.sub('\..*$', '', re.sub('^.*_', '', fname))
+            src_image_dict[color] = entry[1]
+
+        for entry in download_list[5:]:
+            t.update()
+            fname = os.path.basename(entry[1])
+            color = re.sub('\..*$', '', re.sub('^.*_', '', fname))
+            shutil.copy(src_image_dict[color], entry[1])
+        return []
+
+
+class MultiProcessImageDownloader(ImageDownloader):
+    """
+    Uses multiprocess package to download images in parallel
+
+    """
+
+    def __init__(self, poolsize=4, skip_existing=False,
+                 override_dfunc=None):
+        """
+        Constructor
+
+        .. warning::
+
+            Exceeding **poolsize** of ``4`` causes errors from Human Protein Atlas site
+
+        :param poolsize: Number of concurrent downloaders to use.
+        :type poolsize: int
+        :param skip_existing: If ``True`` skip download if image file exists and has size
+                              greater then ``0``
+        :type skip_existing: bool
+        :param override_dfunc: Function that takes a tuple `(image URL, download str path)`
+                               and downloads the image. If ``None`` :py:func:`download_file`
+                               function is used
+        :type override_dfunc: :py:class:`function`
+        """
+        super().__init__()
+        self._poolsize = poolsize
+        if override_dfunc is not None:
+            self._dfunc = override_dfunc
+        else:
+            self._dfunc = download_file
+            if skip_existing is True:
+                self._dfunc = download_file_skip_existing
+
+    def download_images(self, download_list=None):
+        """
+        Downloads images returning a list of failed downloads
+
+        .. code-block::
+
+            from cellmaps_imagedownloader.runner import MultiProcessImageDownloader
+
+            dloader = MultiProcessImageDownloader(poolsize=2)
+
+            d_list = [('https://images.proteinatlas.org/992/1_A1_1_red.jpg',
+                       '/tmp/1_A1_1_red.jpg')]
+            failed = dloader.download_images(download_list=d_list)
+
+        :param download_list: Each tuple of format `(image URL, dest file path)`
+        :type download_list: list of tuple
+        :return: Failed downloads, format of tuple
+                 (`http status code`, `text of error`, (`link`, `destfile`))
+        :rtype: list of tuple
+        """
+        failed_downloads = []
+        logger.debug('Poolsize for image downloader set to: ' +
+                     str(self._poolsize))
+        with Pool(processes=self._poolsize) as pool:
+            num_to_download = len(download_list)
+            logger.info(str(num_to_download) + ' images to download')
+            t = tqdm(total=num_to_download, desc='Download',
+                     unit='images')
+            for i in pool.imap_unordered(self._dfunc,
+                                         download_list):
+                t.update()
+                if i is not None:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug('Failed download: ' + str(i))
+                    failed_downloads.append(i)
+        return failed_downloads
+
+
+class IFImageDataConverter(BaseCommandLineTool):
+    """
+    Converts IF Image data into format consumable
+    by Cell Maps Pipeline
+    """
+    COMMAND = 'ifconverter'
 
     def __init__(self, theargs,
-                 provenance_utils=ProvenanceUtil()):
+                 provenance_utils=ProvenanceUtil(),
+                 imagedownloader=None):
         """
         Constructor
 
@@ -31,7 +222,7 @@ class IFImageDataLoader(BaseCommandLineTool):
         """
         super().__init__()
         self._outdir = os.path.abspath(theargs.outdir)
-        self._inputs = theargs.inputs
+        self._input = theargs.input
         self._name = theargs.name
         self._organization_name = theargs.organization_name
         self._project_name = theargs.project_name
@@ -39,8 +230,14 @@ class IFImageDataLoader(BaseCommandLineTool):
         self._cell_line = theargs.cell_line
         self._treatment = theargs.treatment
         self._author = theargs.author
+        self._slice = theargs.slice
         self._provenance_utils = provenance_utils
+        if imagedownloader is not None:
+            self._imagedownloader = imagedownloader
+        else:
+            self._imagedownloader = MultiProcessImageDownloader()
         self._softwareid = None
+        self._image_dataset_ids = None
         self._input_data_dict = theargs.__dict__
 
     def run(self):
@@ -48,11 +245,7 @@ class IFImageDataLoader(BaseCommandLineTool):
 
         :return:
         """
-        if os.path.exists(self._outdir):
-            raise CellMapsError(self._outdir + ' already exists')
-
-        logger.debug('Creating directory ' + str(self._outdir))
-        os.makedirs(self._outdir, mode=0o755)
+        self._create_output_directory()
 
         keywords = [self._project_name, self._release,
                     self._cell_line, self._treatment, 'IF microscopy', 'images']
@@ -67,14 +260,26 @@ class IFImageDataLoader(BaseCommandLineTool):
                                                 keywords=keywords)
         gen_dsets = []
 
-        file_path = self._filter_and_update_apms_data()
+        filtered_df = self._filter_apms_data()
 
-        file_desc = description + ' XXXX file'
+        # download the images
+        self._download_data(filtered_df['Baselink'].values.tolist())
+
+        # remove Baselink column
+        filtered_df.drop('Baselink', axis=1, inplace=True)
+
+        file_path = os.path.join(self._outdir, self._cell_line +
+                                 '_' + self._treatment +
+                                 '_antibody_gene_table.tsv')
+
+        filtered_df.to_csv(file_path, sep='\t')
+
+        file_desc = description + ' file'
         file_keywords = keywords.copy()
         file_keywords.extend(['file'])
         dset_id = self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=file_path,
                                                           skip_copy=True,
-                                                          data_dict={'name': 'XXXX file',
+                                                          data_dict={'name': 'IF Image Gene file',
                                                                      'description': file_desc,
                                                                      'keywords': file_keywords,
                                                                      'data-format': 'tsv',
@@ -82,25 +287,158 @@ class IFImageDataLoader(BaseCommandLineTool):
                                                                      'version': self._release,
                                                                      'date-published': date.today().strftime('%m-%d-%Y')})
         gen_dsets.append(dset_id)
+        gen_dsets.extend(self._register_downloaded_images())
         self._register_software(keywords=keywords, description=description)
         self._register_computation(generated_dataset_ids=gen_dsets,
                                    description=description,
                                    keywords=keywords)
         return 0
 
-    def _filter_and_update_apms_data(self):
+    def _create_output_directory(self):
+        """
+        Creates output directory if it does not already exist
+
+        :raises CellmapsDownloaderError: If output directory is None or if directory already exists
+        """
+        if os.path.isdir(self._outdir):
+            raise CellMapsError(self._outdir + ' already exists')
+
+        os.makedirs(self._outdir, mode=0o755)
+        for cur_color in constants.COLORS:
+            cdir = os.path.join(self._outdir, cur_color)
+            if not os.path.isdir(cdir):
+                logger.debug('Creating directory: ' + cdir)
+                os.makedirs(cdir,
+                            mode=0o755)
+
+    def _get_color_download_map(self):
+        """
+        Creates a dict where key is color name and value is directory
+        path for files for that color
+
+        ``{'red': '/tmp/foo/red'}``
+
+        :return: map of colors to directory paths
+        :rtype: dict
+        """
+        color_d_map = {}
+        for c in constants.COLORS:
+            color_d_map[c] = os.path.join(self._outdir, c)
+        return color_d_map
+
+    def _get_download_tuples(self, baselinks=None):
+        """
+        Gets download list from **imageurlgen** object set via constructor
+
+        :return: list of (image download URL prefix,
+                          file path where image should be written)
+        :rtype: list
+        """
+        dtuples = []
+        color_map = self._get_color_download_map()
+        for link in baselinks:
+            for c in constants.COLORS:
+                link_w_filename = link + c + '.jpg'
+                dtuples.append((link_w_filename,
+                                     os.path.join(color_map[c],
+                                                  os.path.basename(link_w_filename))))
+        return dtuples
+
+    def _download_data(self, baselinks=None,
+                       max_retry=5):
         """
 
+        :param baselinks:
+        :type baselinks: list
         :return:
         """
-        df = pd.read_csv(self._input, sep='\t')
+        dtuples = self._get_download_tuples(baselinks=baselinks)
+
+        failed_downloads = self._imagedownloader.download_images(dtuples)
+        retry_count = 0
+        while len(failed_downloads) > 0 and retry_count < max_retry:
+            retry_count += 1
+            logger.error(str(len(failed_downloads)) +
+                         ' images failed to download. Retrying #' + str(retry_count))
+
+            # try one more time with files that failed
+            failed_downloads = self._retry_failed_images(failed_downloads=failed_downloads)
+
+        if len(failed_downloads) > 0 and (self._skip_failed is None or self._skip_failed is False):
+            raise CellMapsError('Failed to download: ' +
+                                str(len(failed_downloads)) + ' images')
+        return 0, failed_downloads
+
+    def _retry_failed_images(self, failed_downloads=None):
+        """
+
+        :param failed_downloads:
+        :return:
+        """
+        downloads_to_retry = []
+        error_code_map = {}
+        for entry in failed_downloads:
+            if entry[0] not in error_code_map:
+                error_code_map[entry[0]] = 0
+            error_code_map[entry[0]] += 1
+            downloads_to_retry.append(entry[2])
+        logger.debug('Failed download counts by http error code: ' + str(error_code_map))
+        return self._imagedownloader.download_images(downloads_to_retry)
+
+    def _filter_apms_data(self):
+        """
+        Loads input, set via constructor, as :py:class:`pandas.DataFrame`
+        and filters that :py:class:`pandas.DataFrame` to only
+        keep rows matching the slice and treatment passed in via
+        the constructor
+
+        :return: Filtered rows
+        :rtype: :py:class:`pandas.DataFrame`
+        """
+        df = pd.read_csv(self._input, sep=',')
+
+        # keep only slice specified
+        if self._slice is not None:
+            logger.info('Keeping only slice: ' + str(self._slice))
+            df = df[df['Slice'] == self._slice]
 
         # keep only treatment specified
+        df = df[df['Treatment'].str.contains(self._treatment, case=False)]
 
         # remove baselink, slice
 
         # df.to_csv(apms_path, sep='\t', index=False)
-        return apms_path
+        return df
+
+    def _register_downloaded_images(self):
+        """
+        Registers all the downloaded images
+        :return:
+        """
+        data_dict = {'name': cellmaps_utils.__name__ + ' downloaded image',
+                     'description': self._provenance['description'] + ' IF image file',
+                     'data-format': self._imgsuffix,
+                     'author': self._author,
+                     'version': self._version,
+                     'date-published': date.today().strftime('%m-%d-%Y')}
+
+        dset_ids = []
+
+        for c in constants.COLORS:
+            for entry in tqdm(os.listdir(os.path.join(self._outdir, c)), desc='FAIRSCAPE ' + c + ' images registration'):
+                if not entry.endswith(self._imgsuffix):
+                    continue
+                fullpath = os.path.join(self._outdir, c, entry)
+                data_dict['name'] = entry + ' ' + c +\
+                                    ' channel image'
+                if len(data_dict['name']) >= 64:
+                    data_dict['name'] = data_dict['name'][:63]
+
+                data_dict['keywords'] = [c, 'IF', 'image']
+                dset_ids.append(self._add_dataset_to_crate(data_dict=data_dict,
+                                                           source_file=fullpath,
+                                                           skip_copy=True))
+        return dset_ids
 
     def _register_computation(self, generated_dataset_ids=[],
                               description='',
@@ -151,16 +489,16 @@ class IFImageDataLoader(BaseCommandLineTool):
 
         Version {version}
 
-        {cmd} Stores IF Image data into a RO-Crate
+        {cmd} Loads IF Image data into a RO-Crate
         """.format(version=cellmaps_utils.__version__,
-                   cmd=IFImageDataLoader.COMMAND)
+                   cmd=IFImageDataConverter.COMMAND)
 
-        parser = subparsers.add_parser(IFImageDataLoader.COMMAND,
-                                       help='Stores IF Image data into a RO-Crate',
+        parser = subparsers.add_parser(IFImageDataConverter.COMMAND,
+                                       help='Loads IF Image data into a RO-Crate',
                                        description=desc,
                                        formatter_class=constants.ArgParseFormatter)
         parser.add_argument('outdir',
-                            help='Directory to create as RO-Crate and to '
+                            help='Directory where RO-Crate will be created '
                                  'store results in')
         parser.add_argument('--input', required=True,
                             help='Table file with the following '
@@ -177,10 +515,12 @@ class IFImageDataLoader(BaseCommandLineTool):
                                  'FAIRSCAPE. Usually set to funding source')
         parser.add_argument('--release', required=True,
                             help='Version of release. For example: 0.1 alpha')
-        parser.add_argument('--treatment', required=True,
-                            help='Treatment of sample. For example: untreated,'
-                                 'paclitaxel, vorinostat')
-        parser.add_argument('--cell_line', required=True,
+        parser.add_argument('--treatment', default='untreated',
+                            choices=['paclitaxel', 'vorinostat', 'untreated'],
+                            help='Treatment of sample.')
+        parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
+        parser.add_argument('--slice', default='z01',
+                            help='Slice to keep')
         return parser
 

@@ -14,7 +14,7 @@ from cellmaps_utils import constants
 from cellmaps_utils.exceptions import CellMapsError
 from cellmaps_utils.basecmdtool import HelloWorldCommand
 from cellmaps_utils.apmstool import APMSDataLoader
-from cellmaps_utils.iftool import IFImageDataLoader
+from cellmaps_utils.iftool import IFImageDataConverter
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ def _parse_arguments(desc, args):
 
     HelloWorldCommand.add_subparser(subparsers)
     APMSDataLoader.add_subparser(subparsers)
+    IFImageDataConverter.add_subparser(subparsers)
 
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
@@ -93,8 +94,8 @@ Version {version}
             cmd = HelloWorldCommand(theargs)
         elif theargs.command == APMSDataLoader.COMMAND:
             cmd = APMSDataLoader(theargs)
-        elif theargs.command == IFImageDataLoader.COMMAND:
-            cmd = IFImageDataLoader(theargs)
+        elif theargs.command == IFImageDataConverter.COMMAND:
+            cmd = IFImageDataConverter(theargs)
         else:
             raise CellMapsError('Invalid command: ' + str(theargs.command))
         return cmd.run()

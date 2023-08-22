@@ -33,7 +33,8 @@ requirements = ['fairscape-cli==0.1.7a3',
                 'scikit-learn',
                 'pandas',
                 'numpy',
-                'dill']
+                'dill',
+                'tqdm']
 
 setup_requirements = [ ]
 
