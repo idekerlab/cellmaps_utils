@@ -14,6 +14,7 @@ from cellmaps_utils import constants
 from cellmaps_utils.exceptions import CellMapsError
 from cellmaps_utils.basecmdtool import HelloWorldCommand
 from cellmaps_utils.apmstool import APMSDataLoader
+from cellmaps_utils.iftool import IFImageDataLoader
 
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,8 @@ Version {version}
             cmd = HelloWorldCommand(theargs)
         elif theargs.command == APMSDataLoader.COMMAND:
             cmd = APMSDataLoader(theargs)
+        elif theargs.command == IFImageDataLoader.COMMAND:
+            cmd = IFImageDataLoader(theargs)
         else:
             raise CellMapsError('Invalid command: ' + str(theargs.command))
         return cmd.run()
