@@ -39,6 +39,7 @@ class APMSDataLoader(BaseCommandLineTool):
         self._cell_line = theargs.cell_line
         self._treatment = theargs.treatment
         self._author = theargs.author
+        self._gene_set = theargs.gene_set
         self._provenance_utils = provenance_utils
         self._softwareid = None
         self._input_data_dict = theargs.__dict__
@@ -48,6 +49,7 @@ class APMSDataLoader(BaseCommandLineTool):
 
         :return:
         """
+        self._generate_rocrate_dir_path()
         if os.path.exists(self._outdir):
             raise CellMapsError(self._outdir + ' already exists')
 
@@ -56,6 +58,9 @@ class APMSDataLoader(BaseCommandLineTool):
 
         keywords = [self._project_name, self._release,
                     self._cell_line, self._treatment, 'AP-MS edgelist']
+
+        if self._gene_set is not None:
+            keywords.append(self._gene_set)
 
         description = ' '.join(keywords)
 
@@ -87,6 +92,21 @@ class APMSDataLoader(BaseCommandLineTool):
                                    keywords=keywords)
         return 0
 
+    def _generate_rocrate_dir_path(self):
+        """
+
+        :return:
+        """
+        dir_name = self._project_name.lower() + '_'
+        if self._gene_set is not None:
+            dir_name += self._gene_set.lower() + '_'
+        dir_name += self._cell_line.lower() + '_'
+        dir_name += self._treatment.lower() + '_apms_'
+        dir_name += self._release.lower()
+
+        dir_name = dir_name.replace(' ', '_')
+        self._outdir = os.path.join(self._outdir, dir_name)
+
     def _merge_and_save_apms_data(self):
         """
 
@@ -101,7 +121,6 @@ class APMSDataLoader(BaseCommandLineTool):
         apms_path = os.path.join(self._outdir, 'apms.tsv')
         df.to_csv(apms_path, sep='\t', index=False)
         return apms_path
-
 
     def _register_computation(self, generated_dataset_ids=[],
                               description='',
@@ -161,8 +180,7 @@ class APMSDataLoader(BaseCommandLineTool):
                                        description=desc,
                                        formatter_class=constants.ArgParseFormatter)
         parser.add_argument('outdir',
-                            help='Directory to create as RO-Crate and to '
-                                 'store results in')
+                            help='Directory where RO-Crate will be created')
         parser.add_argument('--inputs', required=True, nargs="+",
                             help='One or more table files with the following '
                                  'fields: [Bait, Prey] and for filtering also '
@@ -180,9 +198,12 @@ class APMSDataLoader(BaseCommandLineTool):
         parser.add_argument('--release', required=True,
                             help='Version of release. For example: 0.1 alpha')
         parser.add_argument('--treatment', required=True,
+                            choices=['paclitaxel', 'vorinostat', 'untreated'],
                             help='Treatment of sample. For example: untreated,'
                                  'paclitaxel, vorinostat')
         parser.add_argument('--cell_line', required=True,
                             help='Name of cell line. For example MDA-MB-468')
+        parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
+                            help='Gene set for dataset')
         return parser
 
