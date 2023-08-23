@@ -230,6 +230,16 @@ COLOR_INDEXS = {
 Indexes for colors in .jpeg image
 """
 
+COLOR_LABELS_MAP = {
+    GREEN: 'protein of interest',
+    RED: 'microtubules',
+    BLUE: 'nucleus',
+    YELLOW: 'endoplasmic reticulum',
+}
+"""
+Map of what each color refers to
+"""
+
 IMAGE_DOWNLOAD_STEP_DIR = '1.image_download'
 """
 Name of directory where downloaded images are stored

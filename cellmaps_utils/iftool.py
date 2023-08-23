@@ -211,6 +211,7 @@ class IFImageDataConverter(BaseCommandLineTool):
     COMMAND = 'ifconverter'
 
     def __init__(self, theargs,
+                 imgsuffix='.jpg',
                  provenance_utils=ProvenanceUtil(),
                  imagedownloader=None):
         """
@@ -231,6 +232,8 @@ class IFImageDataConverter(BaseCommandLineTool):
         self._treatment = theargs.treatment
         self._author = theargs.author
         self._slice = theargs.slice
+        self._gene_set = theargs.gene_set
+        self._imgsuffix = imgsuffix
         self._provenance_utils = provenance_utils
         if imagedownloader is not None:
             self._imagedownloader = imagedownloader
@@ -238,6 +241,7 @@ class IFImageDataConverter(BaseCommandLineTool):
             self._imagedownloader = MultiProcessImageDownloader()
         self._softwareid = None
         self._image_dataset_ids = None
+
         self._input_data_dict = theargs.__dict__
 
     def run(self):
@@ -245,10 +249,14 @@ class IFImageDataConverter(BaseCommandLineTool):
 
         :return:
         """
+        self._generate_rocrate_dir_path()
         self._create_output_directory()
 
         keywords = [self._project_name, self._release,
                     self._cell_line, self._treatment, 'IF microscopy', 'images']
+
+        if self._gene_set is not None:
+            keywords.append(self._gene_set)
 
         description = ' '.join(keywords)
 
@@ -272,7 +280,7 @@ class IFImageDataConverter(BaseCommandLineTool):
                                  '_' + self._treatment +
                                  '_antibody_gene_table.tsv')
 
-        filtered_df.to_csv(file_path, sep='\t')
+        filtered_df.to_csv(file_path, sep='\t', index=False)
 
         file_desc = description + ' file'
         file_keywords = keywords.copy()
@@ -287,12 +295,28 @@ class IFImageDataConverter(BaseCommandLineTool):
                                                                      'version': self._release,
                                                                      'date-published': date.today().strftime('%m-%d-%Y')})
         gen_dsets.append(dset_id)
-        gen_dsets.extend(self._register_downloaded_images())
+        gen_dsets.extend(self._register_downloaded_images(description=description,
+                                                          keywords=keywords))
         self._register_software(keywords=keywords, description=description)
         self._register_computation(generated_dataset_ids=gen_dsets,
                                    description=description,
                                    keywords=keywords)
         return 0
+
+    def _generate_rocrate_dir_path(self):
+        """
+
+        :return:
+        """
+        dir_name = self._project_name.lower() + '_'
+        if self._gene_set is not None:
+            dir_name += self._gene_set.lower() + '_'
+        dir_name += self._cell_line.lower() + '_'
+        dir_name += self._treatment.lower() + '_ifimage_'
+        dir_name += self._release.lower()
+
+        dir_name = dir_name.replace(' ', '_')
+        self._outdir = os.path.join(self._outdir, dir_name)
 
     def _create_output_directory(self):
         """
@@ -410,16 +434,18 @@ class IFImageDataConverter(BaseCommandLineTool):
         # df.to_csv(apms_path, sep='\t', index=False)
         return df
 
-    def _register_downloaded_images(self):
+    def _register_downloaded_images(self,
+                                    description='',
+                                    keywords=[]):
         """
         Registers all the downloaded images
         :return:
         """
         data_dict = {'name': cellmaps_utils.__name__ + ' downloaded image',
-                     'description': self._provenance['description'] + ' IF image file',
-                     'data-format': self._imgsuffix,
+                     'description': description + ' IF image file',
+                     'data-format': self._imgsuffix[1:],
                      'author': self._author,
-                     'version': self._version,
+                     'version': self._release,
                      'date-published': date.today().strftime('%m-%d-%Y')}
 
         dset_ids = []
@@ -433,11 +459,14 @@ class IFImageDataConverter(BaseCommandLineTool):
                                     ' channel image'
                 if len(data_dict['name']) >= 64:
                     data_dict['name'] = data_dict['name'][:63]
+                data_dict['keywords'] = keywords.copy()
+                data_dict['keywords'].extend([c, 'IF', 'image', constants.COLOR_LABELS_MAP[c]])
+                dset_ids.append(self._provenance_utils.register_dataset(self._outdir,
+                                                                        source_file=fullpath,
+                                                                        data_dict=data_dict,
+                                                                        skip_copy=True))
+                del data_dict['keywords']
 
-                data_dict['keywords'] = [c, 'IF', 'image']
-                dset_ids.append(self._add_dataset_to_crate(data_dict=data_dict,
-                                                           source_file=fullpath,
-                                                           skip_copy=True))
         return dset_ids
 
     def _register_computation(self, generated_dataset_ids=[],
@@ -520,6 +549,8 @@ class IFImageDataConverter(BaseCommandLineTool):
                             help='Treatment of sample.')
         parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
+        parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
+                            help='Gene set for dataset')
         parser.add_argument('--slice', default='z01',
                             help='Slice to keep')
         return parser

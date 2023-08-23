@@ -18,7 +18,7 @@ class APMSDataLoader(BaseCommandLineTool):
     Creates RO-Crate of AP-MS data from
     raw AP-MS tables
     """
-    COMMAND = 'apmsloader'
+    COMMAND = 'apmsconverter'
 
     def __init__(self, theargs,
                  provenance_utils=ProvenanceUtil()):
@@ -197,11 +197,10 @@ class APMSDataLoader(BaseCommandLineTool):
                                  'FAIRSCAPE. Usually set to funding source')
         parser.add_argument('--release', required=True,
                             help='Version of release. For example: 0.1 alpha')
-        parser.add_argument('--treatment', required=True,
+        parser.add_argument('--treatment', default='untreated',
                             choices=['paclitaxel', 'vorinostat', 'untreated'],
-                            help='Treatment of sample. For example: untreated,'
-                                 'paclitaxel, vorinostat')
-        parser.add_argument('--cell_line', required=True,
+                            help='Treatment of sample.')
+        parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
                             help='Gene set for dataset')
