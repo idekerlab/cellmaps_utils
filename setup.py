@@ -63,6 +63,7 @@ setup(
     name='cellmaps_utils',
     packages=find_packages(include=['cellmaps_utils']),
     package_dir={'cellmaps_utils': 'cellmaps_utils'},
+    package_data={'cellmaps_utils': ['apms_readme.txt']},
     scripts=['cellmaps_utils/cellmaps_utilscmd.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
