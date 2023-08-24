@@ -90,7 +90,16 @@ class APMSDataLoader(BaseCommandLineTool):
         self._register_computation(generated_dataset_ids=gen_dsets,
                                    description=description,
                                    keywords=keywords)
+        self._copy_over_apms_readme()
         return 0
+
+    def _copy_over_apms_readme(self):
+        """
+        Copies over apms_readme.txt
+
+        """
+        apms_readme = os.path.join(os.path.dirname(__file__), 'apms_readme.txt')
+        shutil.copy(apms_readme, os.path.join(self._outdir, 'readme.txt'))
 
     def _generate_rocrate_dir_path(self):
         """
