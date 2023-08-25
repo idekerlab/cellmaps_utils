@@ -532,14 +532,14 @@ class IFImageDataConverter(BaseCommandLineTool):
         parser.add_argument('--input', required=True,
                             help='Table file with the following '
                                  'fields: [Antibody ID, ENSEMBL ID, Treatment, Well, Region, Slice, Baselink] ')
-        parser.add_argument('--author', required=True,
+        parser.add_argument('--author', default='Lundberg Lab',
                             help='Author that created this data')
-        parser.add_argument('--name', required=True,
+        parser.add_argument('--name', default='IF images',
                             help='Name of this run, needed for FAIRSCAPE')
-        parser.add_argument('--organization_name', required=True,
+        parser.add_argument('--organization_name', default='Lundberg Lab',
                             help='Name of organization running this tool, needed '
                                  'for FAIRSCAPE. Usually set to lab')
-        parser.add_argument('--project_name', required=True,
+        parser.add_argument('--project_name', default='CM4AI',
                             help='Name of project running this tool, needed for '
                                  'FAIRSCAPE. Usually set to funding source')
         parser.add_argument('--release', required=True,
@@ -550,6 +550,7 @@ class IFImageDataConverter(BaseCommandLineTool):
         parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
+                            default='chromatin',
                             help='Gene set for dataset')
         parser.add_argument('--slice', default='z01',
                             help='Slice to keep')
