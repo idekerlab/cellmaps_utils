@@ -232,9 +232,9 @@ Indexes for colors in .jpeg image
 
 COLOR_LABELS_MAP = {
     GREEN: 'protein of interest',
-    RED: 'microtubules',
-    BLUE: 'nucleus',
-    YELLOW: 'endoplasmic reticulum',
+    RED: 'Microtubules (Tubulin antibody)',
+    BLUE: 'Nucleus (DAPI)',
+    YELLOW: 'ER (Calreticulin antibody)',
 }
 """
 Map of what each color refers to
