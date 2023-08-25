@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import uuid
 from datetime import date
 import warnings
 import logging
@@ -265,7 +266,8 @@ class IFImageDataConverter(BaseCommandLineTool):
                                                 organization_name=self._organization_name,
                                                 project_name=self._project_name,
                                                 description=description,
-                                                keywords=keywords)
+                                                keywords=keywords,
+                                                guid=self._get_fairscape_id())
         gen_dsets = []
 
         filtered_df = self._filter_apms_data()
@@ -275,6 +277,10 @@ class IFImageDataConverter(BaseCommandLineTool):
 
         # remove Baselink column
         filtered_df.drop('Baselink', axis=1, inplace=True)
+
+        # remove Slice column if set
+        if self._slice is not None:
+            filtered_df.drop('Slice', axis=1, inplace=True)
 
         file_path = os.path.join(self._outdir, self._cell_line +
                                  '_' + self._treatment +
@@ -293,7 +299,8 @@ class IFImageDataConverter(BaseCommandLineTool):
                                                                      'data-format': 'tsv',
                                                                      'author': self._author,
                                                                      'version': self._release,
-                                                                     'date-published': date.today().strftime('%m-%d-%Y')})
+                                                                     'date-published': date.today().strftime('%Y-%m-%d')},
+                                                          guid=self._get_fairscape_id())
         gen_dsets.append(dset_id)
         gen_dsets.extend(self._register_downloaded_images(description=description,
                                                           keywords=keywords))
@@ -302,6 +309,13 @@ class IFImageDataConverter(BaseCommandLineTool):
                                    description=description,
                                    keywords=keywords)
         return 0
+
+    def _get_fairscape_id(self):
+        """
+        Creates a unique id
+        :return:
+        """
+        return str(uuid.uuid4()) + ':' + os.path.basename(self._outdir)
 
     def _generate_rocrate_dir_path(self):
         """
@@ -388,7 +402,7 @@ class IFImageDataConverter(BaseCommandLineTool):
             # try one more time with files that failed
             failed_downloads = self._retry_failed_images(failed_downloads=failed_downloads)
 
-        if len(failed_downloads) > 0 and (self._skip_failed is None or self._skip_failed is False):
+        if len(failed_downloads) > 0:
             raise CellMapsError('Failed to download: ' +
                                 str(len(failed_downloads)) + ' images')
         return 0, failed_downloads
@@ -446,7 +460,7 @@ class IFImageDataConverter(BaseCommandLineTool):
                      'data-format': self._imgsuffix[1:],
                      'author': self._author,
                      'version': self._release,
-                     'date-published': date.today().strftime('%m-%d-%Y')}
+                     'date-published': date.today().strftime('%Y-%m-%d')}
 
         dset_ids = []
 
@@ -464,7 +478,9 @@ class IFImageDataConverter(BaseCommandLineTool):
                 dset_ids.append(self._provenance_utils.register_dataset(self._outdir,
                                                                         source_file=fullpath,
                                                                         data_dict=data_dict,
-                                                                        skip_copy=True))
+                                                                        skip_copy=True,
+                                                                        guid=self._get_fairscape_id()))
+
                 del data_dict['keywords']
 
         return dset_ids
@@ -487,7 +503,8 @@ class IFImageDataConverter(BaseCommandLineTool):
                                                     description=description,
                                                     keywords=comp_keywords,
                                                     used_software=[self._softwareid],
-                                                    generated=generated_dataset_ids)
+                                                    generated=generated_dataset_ids,
+                                                    guid=self._get_fairscape_id())
 
     def _register_software(self, description='',
                            keywords=[]):
@@ -507,7 +524,8 @@ class IFImageDataConverter(BaseCommandLineTool):
                                                                     version=cellmaps_utils.__version__,
                                                                     file_format='py',
                                                                     keywords=software_keywords,
-                                                                    url=cellmaps_utils.__repo_url__)
+                                                                    url=cellmaps_utils.__repo_url__,
+                                                                    guid=self._get_fairscape_id())
 
     def add_subparser(subparsers):
         """

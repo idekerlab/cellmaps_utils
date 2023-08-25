@@ -82,7 +82,7 @@ class TableFromROCrates(BaseCommandLineTool):
                        TableFromROCrates.DESCRIPTION_COL: prov_attrs.get_description(),
                        TableFromROCrates.KEYWORDS_COL: ','.join(prov_attrs.get_keywords()),
                        TableFromROCrates.DOWNLOAD_COL: 'NA',
-                       TableFromROCrates.GENERATED_COL: 'NA',
+                       TableFromROCrates.GENERATED_COL: '- ' + prov_attrs.get_organization_name() + ' -',
                        TableFromROCrates.RESPONSIBLE_COL: prov_attrs.get_organization_name()}
                 writer.writerow(row)
 
@@ -127,8 +127,9 @@ class TableFromROCrates(BaseCommandLineTool):
                             help='Directory metadata tables will be created')
         parser.add_argument('--rocrates', nargs='+',
                             help='Path to RO-Crates used for table generation. ')
-        parser.add_argument('--date', default=date.today().strftime('%m-%d-%Y'),
+        parser.add_argument('--date', default=date.today().strftime('%Y-%m-%d'),
                             help='Date to list in table for RO-Crates')
+        parser.add_argument('--downloadurlprefix', default='https://g-9b3b6e.9ad93.a567.data.globus.org/Data/cm4ai_0.1alpha/')
 
         return parser
 

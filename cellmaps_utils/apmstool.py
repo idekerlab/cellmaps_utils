@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 import shutil
 from datetime import date
 import logging
@@ -69,7 +70,8 @@ class APMSDataLoader(BaseCommandLineTool):
                                                 organization_name=self._organization_name,
                                                 project_name=self._project_name,
                                                 description=description,
-                                                keywords=keywords)
+                                                keywords=keywords,
+                                                guid=self._get_fairscape_id())
         gen_dsets = []
 
         file_path = self._merge_and_save_apms_data()
@@ -84,7 +86,8 @@ class APMSDataLoader(BaseCommandLineTool):
                                                                      'data-format': 'tsv',
                                                                      'author': self._author,
                                                                      'version': self._release,
-                                                                     'date-published': date.today().strftime('%m-%d-%Y')})
+                                                                     'date-published': date.today().strftime('%Y-%m-%d')},
+                                                          guid=self._get_fairscape_id())
         gen_dsets.append(dset_id)
         self._register_software(keywords=keywords, description=description)
         self._register_computation(generated_dataset_ids=gen_dsets,
@@ -92,6 +95,13 @@ class APMSDataLoader(BaseCommandLineTool):
                                    keywords=keywords)
         self._copy_over_apms_readme()
         return 0
+
+    def _get_fairscape_id(self):
+        """
+        Creates a unique id
+        :return:
+        """
+        return str(uuid.uuid4()) + ':' + os.path.basename(self._outdir)
 
     def _copy_over_apms_readme(self):
         """
@@ -149,7 +159,8 @@ class APMSDataLoader(BaseCommandLineTool):
                                                     description=description,
                                                     keywords=comp_keywords,
                                                     used_software=[self._softwareid],
-                                                    generated=generated_dataset_ids)
+                                                    generated=generated_dataset_ids,
+                                                    guid=self._get_fairscape_id())
 
     def _register_software(self, description='',
                            keywords=[]):
@@ -169,7 +180,8 @@ class APMSDataLoader(BaseCommandLineTool):
                                                                     version=cellmaps_utils.__version__,
                                                                     file_format='py',
                                                                     keywords=software_keywords,
-                                                                    url=cellmaps_utils.__repo_url__)
+                                                                    url=cellmaps_utils.__repo_url__,
+                                                                    guid=self._get_fairscape_id())
 
     def add_subparser(subparsers):
         """
@@ -194,14 +206,14 @@ class APMSDataLoader(BaseCommandLineTool):
                             help='One or more table files with the following '
                                  'fields: [Bait, Prey] and for filtering also '
                                  'containing [BFDR.x, logOddsScore')
-        parser.add_argument('--author', required=True,
+        parser.add_argument('--author', default='Krogan Lab',
                             help='Author that created this data')
-        parser.add_argument('--name', required=True,
+        parser.add_argument('--name', default='AP-MS',
                             help='Name of this run, needed for FAIRSCAPE')
-        parser.add_argument('--organization_name', required=True,
+        parser.add_argument('--organization_name', default='Krogan Lab',
                             help='Name of organization running this tool, needed '
                                  'for FAIRSCAPE. Usually set to lab')
-        parser.add_argument('--project_name', required=True,
+        parser.add_argument('--project_name', default='CM4AI',
                             help='Name of project running this tool, needed for '
                                  'FAIRSCAPE. Usually set to funding source')
         parser.add_argument('--release', required=True,
@@ -212,6 +224,7 @@ class APMSDataLoader(BaseCommandLineTool):
         parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
+                            default='chromatin',
                             help='Gene set for dataset')
         return parser
 
