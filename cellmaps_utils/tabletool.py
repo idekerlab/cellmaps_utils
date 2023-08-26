@@ -1,10 +1,11 @@
 import os
-import sys
+import tempfile
+import tarfile
 import shutil
+import json
 from datetime import date
 import logging
 import csv
-import pandas as pd
 import cellmaps_utils
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
 from cellmaps_utils.exceptions import CellMapsError
@@ -142,11 +143,29 @@ class TableFromROCrates(BaseCommandLineTool):
             return self._provenance_utils.get_rocrate_as_dict(rocrate_path=rocrate)
         if not os.path.isfile(rocrate):
             raise CellMapsError('Invalid rocrate: ' + str(rocrate))
-        if rocrate.endswith('.tar'):
-            raise CellMapsError('Parsing ' + str(rocrate) + ' not supported yet')
-        if rocrate.endswith('.tar.gz') or rocrate.endswith('.tgz'):
-            raise CellMapsError('Parsing ' + str(rocrate) + ' not supported yet')
+        if rocrate.endswith('.tar') or rocrate.endswith('.tar.gz') or rocrate.endswith('.tgz'):
+            return self._get_rocrate_as_dict_from_tarball(rocrate=rocrate)
         return self._provenance_utils.get_rocrate_as_dict(rocrate_path=rocrate)
+
+    def _get_rocrate_as_dict_from_tarball(self, rocrate=None):
+        """
+
+        :param rocrate:
+        :return:
+        """
+        with tarfile.open(rocrate) as tar:
+            for ti in tar:
+                split_path = ti.name.split('/')
+                if len(split_path) != 2:
+                    continue
+                if split_path[1] == 'ro-crate-metadata.json':
+                    temp_dir = tempfile.mkdtemp()
+                    try:
+                        tar.extract(ti.name, path=temp_dir)
+                        return self._provenance_utils.get_rocrate_as_dict(rocrate_path=os.path.join(temp_dir,
+                                                                                             ti.name))
+                    finally:
+                        shutil.rmtree(temp_dir)
 
     def add_subparser(subparsers):
         """
