@@ -128,7 +128,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                                          'author': self._author,
                                                                          'version': self._release,
                                                                          'date-published': date.today().strftime(
-                                                                             '%m-%d-%Y')})
+                                                                             '%Y-%m-%d')})
             dset_ids.append(dset_id)
 
         return dset_ids
@@ -164,7 +164,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                                          'author': self._author,
                                                                          'version': self._release,
                                                                          'date-published': date.today().strftime(
-                                                                             '%m-%d-%Y')})
+                                                                             '%Y-%m-%d')})
             dset_ids.append(dset_id)
 
         return dset_ids
@@ -300,11 +300,11 @@ class CRISPRDataLoader(BaseCommandLineTool):
                             help='If set, --guiderna and --expression files will not be copied, '
                                  'but instead 0 byte files will be placed in the RO-Crate as placeholders. '
                                  'It is up to the caller to manually move the files over before distribution')
-        parser.add_argument('--author', required=True,
+        parser.add_argument('--author', default='Mali Lab',
                             help='Author that created this data')
-        parser.add_argument('--name', required=True,
+        parser.add_argument('--name', default='CRISPR',
                             help='Name of this run, needed for FAIRSCAPE')
-        parser.add_argument('--organization_name', required=True,
+        parser.add_argument('--organization_name', default='Mali Lab',
                             help='Name of organization running this tool, needed '
                                  'for FAIRSCAPE. Usually set to lab')
         parser.add_argument('--project_name', required=True,
@@ -320,6 +320,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
         parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
+                            default='chromatin',
                             help='Gene set for dataset')
         return parser
 
