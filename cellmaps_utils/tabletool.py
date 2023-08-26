@@ -53,6 +53,7 @@ class TableFromROCrates(BaseCommandLineTool):
         self._rocrates = theargs.rocrates
         self._date = theargs.date
         self._provenance_utils = provenance_utils
+        self._downloadurlprefix = theargs.downloadurlprefix
         self._input_data_dict = theargs.__dict__
 
     def run(self):
@@ -73,20 +74,61 @@ class TableFromROCrates(BaseCommandLineTool):
             writer.writeheader()
             for rocrate in self._rocrates:
                 rocrate_dict = self._get_rocrate_as_dict(rocrate)
-                print(rocrate_dict['keywords'])
+                urlfile = os.path.basename(rocrate)
+                if not rocrate.endswith('.tar.gz'):
+                    urlfile += '.tar.gz'
+
                 prov_attrs = self._provenance_utils.get_rocrate_provenance_attributes(rocrate=rocrate_dict)
-                print(rocrate + ': ' + 'Keywords: ' + str(prov_attrs.get_keywords()))
+
+                gen_col_value = self._get_software_url(rocrate=rocrate_dict)
+                if gen_col_value == 'cellmaps_utils':
+                    gen_col_value = '- ' + prov_attrs.get_organization_name() + ' -'
+
+                logger.debug(rocrate + ': ' + 'Keywords: ' + str(prov_attrs.get_keywords()))
                 row = {TableFromROCrates.ID_COL: self._provenance_utils.get_id_of_rocrate(rocrate=rocrate_dict),
                        TableFromROCrates.DATE_COL: self._date,
                        TableFromROCrates.COMPUTATION_COL: prov_attrs.get_name(),
                        TableFromROCrates.DESCRIPTION_COL: prov_attrs.get_description(),
                        TableFromROCrates.KEYWORDS_COL: ','.join(prov_attrs.get_keywords()),
-                       TableFromROCrates.DOWNLOAD_COL: 'NA',
-                       TableFromROCrates.GENERATED_COL: '- ' + prov_attrs.get_organization_name() + ' -',
+                       TableFromROCrates.DOWNLOAD_COL: self._get_rocrate_download_link(urlfile),
+                       TableFromROCrates.GENERATED_COL: gen_col_value,
                        TableFromROCrates.RESPONSIBLE_COL: prov_attrs.get_organization_name()}
                 writer.writerow(row)
 
         return 0
+
+    def _get_rocrate_download_link(self, urlfile):
+        """
+
+        :param urlfile:
+        :return:
+        """
+        return self._downloadurlprefix + urlfile
+
+    def _get_software_url(self, rocrate=None):
+        """
+
+        :param rocrate:
+        :return:
+        """
+        for entry in self._get_next_software_from_rocrate_dict(rocrate=rocrate):
+            if entry['name'] == 'cellmaps_utils':
+                return entry['name']
+            return '<a href="' + entry['url'] + '" target="_blank">' + entry['name'] + '</a>'
+
+    def _get_next_software_from_rocrate_dict(self, rocrate=None):
+        """
+
+        :param rocrate:
+        :return:
+        """
+        if not '@graph' in rocrate:
+            raise CellMapsError('No @graph, but found: ' + str(rocrate.keys()))
+        for graph_entry in rocrate['@graph']:
+            if 'metadataType' not in graph_entry:
+                continue
+            if 'EVI#Software' in graph_entry['metadataType']:
+                yield graph_entry
 
     def _get_rocrate_as_dict(self, rocrate=None):
         """
