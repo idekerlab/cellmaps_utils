@@ -80,6 +80,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                           description=description))
         gen_dsets.extend(self._link_and_register_expression(keywords=keywords,
                                                             description=description))
+        gen_dsets.append(self._copy_over_feature_and_register(keywords=keywords,
+                                                              description=description))
         self._register_software(keywords=keywords, description=description)
         self._register_computation(generated_dataset_ids=gen_dsets,
                                    description=description,
@@ -226,6 +228,31 @@ class CRISPRDataLoader(BaseCommandLineTool):
                     line_to_write = self._replace_readme_tokens(line,
                                                                 tokenmap=tokenmap)
                     fout.write(line_to_write)
+
+    def _copy_over_feature_and_register(self,description='',
+                                      keywords=[]):
+        """
+        Copies over --feature file
+        :return:
+        """
+        feature_file = os.path.join(self._outdir, self._cell_line + '_' +
+                                    self._treatment + '_feature_reference.csv')
+        shutil.copy(self._feature, feature_file)
+
+        file_desc = description + ' file'
+        file_keywords = keywords.copy()
+        file_keywords.extend(['file'])
+        return self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=feature_file,
+                                                       skip_copy=True,
+                                                       data_dict={'name': 'CRISPRi guide RNA dictionary',
+                                                                  'description': file_desc,
+                                                                  'keywords': file_keywords,
+                                                                  'data-format': 'csv',
+                                                                  'author': self._author,
+                                                                  'version': self._release,
+                                                                  'date-published': date.today().strftime(
+                                                                  '%Y-%m-%d')},
+                                                       guid=self._get_fairscape_id())
 
     def _replace_readme_tokens(self, line, tokenmap=None):
         """
