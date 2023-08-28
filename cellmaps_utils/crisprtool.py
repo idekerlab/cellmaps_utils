@@ -1,9 +1,8 @@
 import os
-import sys
 import shutil
+import uuid
 from datetime import date
 import logging
-import pandas as pd
 import cellmaps_utils
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
 from cellmaps_utils.exceptions import CellMapsError
@@ -73,12 +72,13 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                 organization_name=self._organization_name,
                                                 project_name=self._project_name,
                                                 description=description,
-                                                keywords=keywords)
+                                                keywords=keywords,
+                                                guid=self._get_fairscape_id())
         gen_dsets = []
 
-        gen_dsets.extend(self._copy_and_register_guiderna(keywords=keywords,
+        gen_dsets.extend(self._link_and_register_guiderna(keywords=keywords,
                                                           description=description))
-        gen_dsets.extend(self._copy_and_register_expression(keywords=keywords,
+        gen_dsets.extend(self._link_and_register_expression(keywords=keywords,
                                                             description=description))
         self._register_software(keywords=keywords, description=description)
         self._register_computation(generated_dataset_ids=gen_dsets,
@@ -87,17 +87,24 @@ class CRISPRDataLoader(BaseCommandLineTool):
         self._copy_over_crispr_readme()
         return 0
 
+    def _get_fairscape_id(self):
+        """
+        Creates a unique id
+        :return:
+        """
+        return str(uuid.uuid4()) + ':' + os.path.basename(self._outdir)
+
     def _get_dataset_description(self):
         """
 
         :return:
         """
-        if self._dataset == '1channel':
+        if self._dataset.lower() == '1channel':
             return 'FASTQs file were obtain by concatenating 3 NGS run over 7 sequencing lanes'
-        elif self._dataset == 'Subset':
+        elif self._dataset.lower() == 'subset':
             return 'Subset run'
 
-    def _copy_and_register_guiderna(self, description='',
+    def _link_and_register_guiderna(self, description='',
                                     keywords=[]):
         """
 
@@ -115,7 +122,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
             if self._skipcopy is True:
                 open(dest_file, 'a').close()
             else:
-                shutil.copy(guiderna, dest_file)
+                self._link_or_copy(guiderna, dest_file)
             file_desc = description + ' file'
             file_keywords = keywords.copy()
             file_keywords.extend(['file'])
@@ -128,12 +135,13 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                                          'author': self._author,
                                                                          'version': self._release,
                                                                          'date-published': date.today().strftime(
-                                                                             '%Y-%m-%d')})
+                                                                             '%Y-%m-%d')},
+                                                              guid=self._get_fairscape_id())
             dset_ids.append(dset_id)
 
         return dset_ids
 
-    def _copy_and_register_expression(self, description='',
+    def _link_and_register_expression(self, description='',
                                       keywords=[]):
         """
 
@@ -151,7 +159,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
             if self._skipcopy is True:
                 open(dest_file, 'a').close()
             else:
-                shutil.copy(expression, dest_file)
+                self._link_or_copy(expression, dest_file)
             file_desc = description + ' file'
             file_keywords = keywords.copy()
             file_keywords.extend(['file'])
@@ -164,10 +172,28 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                                          'author': self._author,
                                                                          'version': self._release,
                                                                          'date-published': date.today().strftime(
-                                                                             '%Y-%m-%d')})
+                                                                             '%Y-%m-%d')},
+                                                              guid=self._get_fairscape_id())
             dset_ids.append(dset_id)
 
         return dset_ids
+
+    def _link_or_copy(self, src, dest):
+        """
+        Attempts to hardlink src to dest and if
+        that fails perform a regular copy
+
+        :param src:
+        :param dest:
+        :return:
+        """
+        try:
+            os.link(src, dest)
+        except OSError as e:
+            logger.warning('Falling back to copy because unable to '
+                           'hardlink ' + src + ' to ' +
+                           dest + ' : ' + str(e))
+            shutil.copy(src, dest)
 
     def _create_token_replacement_map(self):
         """
@@ -222,6 +248,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
             dir_name += self._gene_set.lower() + '_'
         dir_name += self._cell_line.lower() + '_'
         dir_name += self._treatment.lower() + '_crispr_'
+        dir_name += self._dataset.lower() + '_'
         dir_name += self._release.lower()
 
         dir_name = dir_name.replace(' ', '_')
@@ -245,7 +272,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                     description=description,
                                                     keywords=comp_keywords,
                                                     used_software=[self._softwareid],
-                                                    generated=generated_dataset_ids)
+                                                    generated=generated_dataset_ids,
+                                                    guid=self._get_fairscape_id())
 
     def _register_software(self, description='',
                            keywords=[]):
@@ -265,7 +293,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                                     version=cellmaps_utils.__version__,
                                                                     file_format='py',
                                                                     keywords=software_keywords,
-                                                                    url=cellmaps_utils.__repo_url__)
+                                                                    url=cellmaps_utils.__repo_url__,
+                                                                    guid=self._get_fairscape_id())
 
     def add_subparser(subparsers):
         """
@@ -297,9 +326,9 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                  'expression data. It is assumed these files have _scRNAseq '
                                  'in name and after has S#_L###_R#_###.fastq.gz')
         parser.add_argument('--skipcopy', action='store_true',
-                            help='If set, --guiderna and --expression files will not be copied, '
+                            help='If set, --guiderna and --expression files will not be hardlinked, '
                                  'but instead 0 byte files will be placed in the RO-Crate as placeholders. '
-                                 'It is up to the caller to manually move the files over before distribution')
+                                 'It is up to the caller to manually move/copy the files over before distribution')
         parser.add_argument('--author', default='Mali Lab',
                             help='Author that created this data')
         parser.add_argument('--name', default='CRISPR',
@@ -307,7 +336,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
         parser.add_argument('--organization_name', default='Mali Lab',
                             help='Name of organization running this tool, needed '
                                  'for FAIRSCAPE. Usually set to lab')
-        parser.add_argument('--project_name', required=True,
+        parser.add_argument('--project_name', default='CM4AI',
                             help='Name of project running this tool, needed for '
                                  'FAIRSCAPE. Usually set to funding source')
         parser.add_argument('--release', required=True,
@@ -315,7 +344,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
         parser.add_argument('--treatment', default='untreated',
                             choices=['paclitaxel', 'vorinostat', 'untreated'],
                             help='Treatment of sample.')
-        parser.add_argument('--dataset', required=True, choices=['1channel', 'Subset'],
+        parser.add_argument('--dataset', required=True, choices=['1channel', 'subset'],
                             help='Collection set')
         parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
