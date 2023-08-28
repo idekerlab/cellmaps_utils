@@ -2,7 +2,6 @@ import os
 import tempfile
 import tarfile
 import shutil
-import math
 from datetime import date
 import logging
 import csv
@@ -108,7 +107,10 @@ class TableFromROCrates(BaseCommandLineTool):
         :return:
         """
         if os.path.isfile(rocrate_path):
-            return str(math.round(os.path.getsize(rocrate_path)/1048576.0))
+            return str(max(round(os.path.getsize(rocrate_path)/1048576.0), 1))
+        targz_appended = rocrate_path + '.tar.gz'
+        if os.path.isfile(targz_appended):
+            return self._get_rocrate_size(rocrate_path + '.tar.gz')
         return '?'
 
     def _get_rocrate_download_link(self, urlfile):
