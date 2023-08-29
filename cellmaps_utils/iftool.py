@@ -272,6 +272,10 @@ class IFImageDataConverter(BaseCommandLineTool):
 
         filtered_df = self._filter_apms_data()
 
+        # copy over readme
+        shutil.copy(os.path.join(os.path.dirname(__file__), 'ifimage_readme.txt'),
+                    os.path.join(self._outdir, 'readme.txt'))
+
         # download the images
         self._download_data(filtered_df['Baselink'].values.tolist())
 
