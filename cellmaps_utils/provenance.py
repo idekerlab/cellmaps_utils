@@ -177,7 +177,7 @@ class ProvenanceUtil(object):
         else:
             data_type_val = ''
 
-        return str(uuid.uuid4()) + ':' + str(data_type_val) + '::' + str(rocrate_path)
+        return str(uuid.uuid4()) + ':' + str(data_type_val) + '::' + os.path.basename(str(rocrate_path))
 
     @staticmethod
     def example_dataset_provenance(requiredonly=True, with_ids=False):
