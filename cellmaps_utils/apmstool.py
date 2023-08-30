@@ -133,7 +133,21 @@ class APMSDataLoader(BaseCommandLineTool):
         """
         df_list = []
         for input in self._inputs:
-            df_list.append(pd.read_csv(input, sep='\t'))
+            cur_df = pd.read_csv(input, sep='\t')
+            # Handles case where HDAC2 in initial cm4ai dataset
+            # had several columns lacking .x suffix
+            # we are fixing this by checking for those columns and if
+            # found just renaming them in place
+            for colname in ['PreyGene', 'NumReplicates', 'AvgP',
+                            'MaxP', 'TopoAvgP', 'TopoMaxP',
+                            'SaintScore', 'FoldChange', 'BFDR',
+                            'boosted_by']:
+                if colname in cur_df.columns:
+                    if colname + '.x' in cur_df.columns:
+                        cur_df.drop(columns=colname + '.x', inplace=True)
+                    cur_df.rename({colname: colname + '.x'}, axis=1, inplace=True)
+
+            df_list.append(cur_df)
 
         df = pd.concat(df_list)
 
