@@ -82,19 +82,26 @@ class TableFromROCrates(BaseCommandLineTool):
 
                 prov_attrs = self._provenance_utils.get_rocrate_provenance_attributes(rocrate=rocrate_dict)
 
-                gen_col_value = self._get_software_url(rocrate=rocrate_dict)
+                gen_col_value = self._get_software_url(rocrate_dict=rocrate_dict)
                 if gen_col_value == 'cellmaps_utils':
                     gen_col_value = '- ' + prov_attrs.get_organization_name() + ' -'
+
+                output_url = self._get_output_dataset_url(rocrate_dict=rocrate_dict)
+
+                comp_name = self._get_computation_name(rocrate_dict=rocrate_dict)
+                if comp_name is None:
+                    comp_name = prov_attrs.get_name()
 
                 logger.debug(rocrate + ': ' + 'Keywords: ' + str(prov_attrs.get_keywords()))
                 row = {TableFromROCrates.ID_COL: self._provenance_utils.get_id_of_rocrate(rocrate=rocrate_dict),
                        TableFromROCrates.DATE_COL: self._date,
-                       TableFromROCrates.COMPUTATION_COL: prov_attrs.get_name(),
+                       TableFromROCrates.COMPUTATION_COL: comp_name,
                        TableFromROCrates.DESCRIPTION_COL: prov_attrs.get_description(),
                        TableFromROCrates.KEYWORDS_COL: ','.join(prov_attrs.get_keywords()),
                        TableFromROCrates.DOWNLOAD_COL: self._get_rocrate_download_link(urlfile),
                        TableFromROCrates.DOWNLOAD_COL_SIZE: self._get_rocrate_size(rocrate),
                        TableFromROCrates.GENERATED_COL: gen_col_value,
+                       TableFromROCrates.OUTPUT_COL: output_url,
                        TableFromROCrates.RESPONSIBLE_COL: prov_attrs.get_organization_name()}
                 writer.writerow(row)
 
@@ -121,30 +128,96 @@ class TableFromROCrates(BaseCommandLineTool):
         """
         return self._downloadurlprefix + urlfile
 
-    def _get_software_url(self, rocrate=None):
+    def _get_software_url(self, rocrate_dict=None):
         """
 
-        :param rocrate:
+        :param rocrate_dict:
         :return:
         """
-        for entry in self._get_next_software_from_rocrate_dict(rocrate=rocrate):
+        for entry in self._get_next_software_from_rocrate_dict(rocrate_dict=rocrate_dict):
             if entry['name'] == 'cellmaps_utils':
                 return entry['name']
-            return '<a href="' + entry['url'] + '" target="_blank">' + entry['name'] + '</a>'
+            # this creates html <a href fragment
+            # return '<a href="' + entry['url'] + '" target="_blank">' + entry['name'] + '</a>'
+            return entry['url']
 
-    def _get_next_software_from_rocrate_dict(self, rocrate=None):
+    def _get_next_software_from_rocrate_dict(self, rocrate_dict=None):
         """
+        Generator that gets next software from **rocrate** dict passed
+        in
 
-        :param rocrate:
-        :return:
+        :param rocrate_dict:
+        :type rocrate_dict: dict
+        :return: next software section of RO-CRATE dict
+        :type: dict
         """
-        if not '@graph' in rocrate:
-            raise CellMapsError('No @graph, but found: ' + str(rocrate.keys()))
-        for graph_entry in rocrate['@graph']:
+        if not '@graph' in rocrate_dict:
+            raise CellMapsError('No @graph, but found: ' + str(rocrate_dict.keys()))
+        for graph_entry in rocrate_dict['@graph']:
             if 'metadataType' not in graph_entry:
                 continue
             if 'EVI#Software' in graph_entry['metadataType']:
                 yield graph_entry
+
+    def _get_next_computation_from_rocrate_dict(self, rocrate_dict=None):
+        """
+        Generator that gets next software from **rocrate** dict passed
+        in
+
+        :param rocrate_dict:
+        :type rocrate_dict: dict
+        :return: next software section of RO-CRATE dict
+        :type: dict
+        """
+        # Todo refactor this and _get_next_software_from_rocrate_dict because
+        #      they basically do the same thing
+        if not '@graph' in rocrate_dict:
+            raise CellMapsError('No @graph, but found: ' + str(rocrate_dict.keys()))
+        for graph_entry in rocrate_dict['@graph']:
+            if 'metadataType' not in graph_entry:
+                continue
+            if 'EVI#Computation' in graph_entry['metadataType']:
+                yield graph_entry
+
+    def _get_computation_name(self, rocrate_dict=None):
+        """
+
+        :param rocrate_dict:
+        :return:
+        """
+        for entry in self._get_next_computation_from_rocrate_dict(rocrate_dict=rocrate_dict):
+            if ' computation' in entry['name']:
+                return None
+            return entry['name']
+
+    def _get_next_output_dataset_url(self, rocrate_dict=None,
+                                     name='Output Dataset'):
+        """
+        Generator that gets url from next Dataset
+        whose name is **name**
+
+        :param rocrate:
+        :return:
+        """
+        if not '@graph' in rocrate_dict:
+            raise CellMapsError('No @graph, but found: ' + str(rocrate_dict.keys()))
+        for graph_entry in rocrate_dict['@graph']:
+            if 'name' not in graph_entry:
+                continue
+            if graph_entry['name'] == name:
+                if 'url' in graph_entry:
+                    yield graph_entry['url']
+
+    def _get_output_dataset_url(self, rocrate_dict=None):
+        """
+
+        :param rocrate_dict:
+        :return:
+        """
+        for entry in self._get_next_output_dataset_url(rocrate_dict=rocrate_dict):
+            if entry is None:
+                return ''
+            return entry
 
     def _get_rocrate_as_dict(self, rocrate=None):
         """

@@ -98,7 +98,8 @@ class ProvenanceUtil(object):
     """
     Wrapper around `FAIRSCAPE-cli <https://github.com/fairscape/fairscape-cli>`__ calls
     """
-    def __init__(self, fairscape_binary='fairscape-cli'):
+    def __init__(self, fairscape_binary='fairscape-cli',
+                 default_date_format_str='%Y-%m-%d'):
         """
         Constructor
 
@@ -116,6 +117,8 @@ class ProvenanceUtil(object):
                                         fairscape_binary)
         else:
             self._binary = fairscape_binary
+
+        self._default_date_fmt_str = default_date_format_str
 
     def _run_cmd(self, cmd, cwd=None, timeout=360):
         """
@@ -210,6 +213,15 @@ class ProvenanceUtil(object):
                                'associated-publication': '?',
                                'additional-documentation': '?'})
         return field_dict
+
+    def get_default_date_format_str(self):
+        """
+        Gets default date format string set via constructor
+
+        :return: default date format string usually something like %Y-%m-%d
+        :rtype: str
+        """
+        return self._default_date_fmt_str
 
     def get_login(self):
         """
@@ -421,6 +433,10 @@ class ProvenanceUtil(object):
             for index in range(len(keyword_set_dict.keys())):
                 new_keywords.append('|'.join(sorted(list(keyword_set_dict[index]))))
 
+        # add names to keywords
+        if name_set is not None and len(name_set) > 0:
+            new_keywords.extend(list(name_set))
+
         if extra_keywords is not None:
             if isinstance(extra_keywords, str):
                 new_keywords.append(extra_keywords)
@@ -504,7 +520,7 @@ class ProvenanceUtil(object):
 
     def register_computation(self, rocrate_path, name='',
                              run_by='', command='',
-                             date_created=date.today().strftime('%m-%d-%Y'),
+                             date_created=None,
                              description='Must be at least 10 characters', used_software=[],
                              used_dataset=[], generated=[],
                              keywords=[''],
@@ -540,6 +556,8 @@ class ProvenanceUtil(object):
         :param timeout: Time in seconds to wait for registration of computation to complete
         :type timeout: float
         """
+        if date_created is None:
+            date_created = date.today().strftime(self._default_date_fmt_str)
         cmd = [self._python, self._binary, 'rocrate', 'register',
                'computation',
                '--name', name,
@@ -587,7 +605,7 @@ class ProvenanceUtil(object):
     def register_software(self, rocrate_path, name='unknown',
                           description='Must be at least 10 characters',
                           author='', version='', file_format='', url='',
-                          date_modified='01-01-1969',
+                          date_modified=None,
                           keywords=[''],
                           guid=None,
                           timeout=30):
@@ -622,6 +640,8 @@ class ProvenanceUtil(object):
         :return: guid of software from `FAIRSCAPE <https://fairscape.github.io>`__
         :rtype: str
         """
+        if date_modified is None:
+            date_modified = date.today().strftime(self._default_date_fmt_str)
         cmd = [self._python, self._binary, 'rocrate', 'register',
                'software',
                '--name', name,
