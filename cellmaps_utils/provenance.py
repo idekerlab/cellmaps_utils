@@ -320,6 +320,7 @@ class ProvenanceUtil(object):
                                             override_project_name=None,
                                             override_organization_name=None,
                                             extra_keywords=None,
+                                            keywords_to_preserve=6,
                                             merged_delimiter='|'):
         """
         Creates a merged provenance attributes object when given
@@ -335,7 +336,7 @@ class ProvenanceUtil(object):
         is not ``None`` then those values will be used in leiu of the
         merged data mentioned earlier.
 
-        For *keywords*, the first four elements are put into respective
+        For *keywords*, the first **keywords_to_preserve** elements are put into respective
         sets for uniqueness and joined together using value of **merge_delimiter**
         and put back into a list. Any extra entries in **extra_keywords** is appended
         to this list.
@@ -357,6 +358,9 @@ class ProvenanceUtil(object):
         :type override_organization_name: str
         :param extra_keywords: Any extra keywords to append
         :type extra_keywords: list or str
+        :param keywords_to_preserve: Denotes number of keywords to preserve. A value of 5
+                                     means keep the 1st 5. ``None`` means preserve all keywords
+        :type keywords_to_preserve: int
         :raises CellMapsProvenanceError: If **rocrate**, **extra_keywords**
         :return: Merged rocrate provenance attributes
         :rtype: :py:class:`~cellmaps_utils.provenance.ROCrateProvenanceAttributes`
@@ -406,11 +410,12 @@ class ProvenanceUtil(object):
         else:
             new_project_name = override_project_name
 
-        # just grab 1st four elements assuming they are
+        # just grab 1st **keywords_to_preserve** elements assuming they are
         # project, data_release_name, cell line, treatment,
         # name_of_computation
-        if len(keyword_set_dict.keys()) >= 4:
-            for index in range(4):
+        if keywords_to_preserve is not None and\
+             len(keyword_set_dict.keys()) >= keywords_to_preserve:
+            for index in range(keywords_to_preserve):
                 new_keywords.append('|'.join(sorted(list(keyword_set_dict[index]))))
         else:
             for index in range(len(keyword_set_dict.keys())):

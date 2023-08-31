@@ -293,7 +293,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
         comp_keywords.extend(['computation'])
         description = description + ' run of ' + cellmaps_utils.__name__
         self._provenance_utils.register_computation(self._outdir,
-                                                    name=cellmaps_utils.__name__ + ' computation',
+                                                    name='CRISPR',
                                                     run_by=str(self._provenance_utils.get_login()),
                                                     command=str(self._input_data_dict),
                                                     description=description,
