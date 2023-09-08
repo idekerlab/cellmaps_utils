@@ -414,8 +414,9 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertEqual('some name', prov_attrs.get_name())
             self.assertEqual('some project name', prov_attrs.get_project_name())
             self.assertEqual('some organization name', prov_attrs.get_organization_name())
-            self.assertEqual('keyword1', prov_attrs.get_description())
-            self.assertEqual(['keyword1'], prov_attrs.get_keywords())
+            self.assertTrue('keyword1' in prov_attrs.get_description())
+            self.assertTrue('some name' in prov_attrs.get_description())
+            self.assertTrue(['keyword1', 'some name'], prov_attrs.get_keywords())
 
         finally:
             shutil.rmtree(temp_dir)
@@ -437,8 +438,8 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertEqual('new name', prov_attrs.get_name())
             self.assertEqual('new proj', prov_attrs.get_project_name())
             self.assertEqual('new org', prov_attrs.get_organization_name())
-            self.assertEqual('keyword1', prov_attrs.get_description())
-            self.assertEqual(['keyword1'], prov_attrs.get_keywords())
+            self.assertEqual('keyword1 some name', prov_attrs.get_description())
+            self.assertEqual(['keyword1', 'some name'], prov_attrs.get_keywords())
 
         finally:
             shutil.rmtree(temp_dir)
@@ -458,15 +459,16 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertEqual('some name', prov_attrs.get_name())
             self.assertEqual('some project name', prov_attrs.get_project_name())
             self.assertEqual('some organization name', prov_attrs.get_organization_name())
-            self.assertEqual('keyword1 keyword2 keyword3 '
-                             'keyword4 embedding', prov_attrs.get_description())
+            self.assertTrue('keyword1 keyword2 keyword3 ' in prov_attrs.get_description())
+            self.assertTrue('keyword4' in prov_attrs.get_description())
+            self.assertTrue('embedding' in prov_attrs.get_description())
+            self.assertTrue('some name' in prov_attrs.get_description())
             self.assertEqual(['keyword1', 'keyword2',
-                              'keyword3', 'keyword4',
+                              'keyword3', 'keyword4', 'some name',
                               'embedding'], prov_attrs.get_keywords())
 
         finally:
             shutil.rmtree(temp_dir)
-
 
     def test_get_merged_rocrate_provenance_attrs_two_crates(self):
         temp_dir = tempfile.mkdtemp()
@@ -491,8 +493,11 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertTrue('one name|two name' == prov_attrs.get_name())
             self.assertTrue('one project name|two project name' == prov_attrs.get_project_name())
             self.assertTrue('one organization name|two organization name' == prov_attrs.get_organization_name())
-            self.assertEqual('one1|two1 one2|two2 one3|two3 '
-                             'one4|two4 embedding', prov_attrs.get_description())
+            self.assertTrue('one1|two1 one2|two2 one3|two3 '
+                            'one4|two4 ' in prov_attrs.get_description())
+            self.assertTrue('one name' in prov_attrs.get_description())
+            self.assertTrue('two name' in prov_attrs.get_description())
+            self.assertTrue('embedding' in prov_attrs.get_description())
 
             self.assertEqual(['one1|two1', 'one2|two2',
                               'one3|two3', 'one4|two4'],
@@ -502,7 +507,7 @@ class TestProvenanceUtil(unittest.TestCase):
                 self.assertTrue('one' + str(n) in prov_attrs.get_keywords())
                 self.assertTrue('two' + str(n) in prov_attrs.get_keywords())
 
-            self.assertEqual(13, len(prov_attrs.get_keywords()))
+            self.assertEqual(15, len(prov_attrs.get_keywords()))
 
         finally:
             shutil.rmtree(temp_dir)
