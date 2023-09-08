@@ -408,17 +408,17 @@ class ProvenanceUtil(object):
         logger.debug('keyword_set_dict: ' + str(keyword_set_dict))
 
         if override_name is None:
-            new_name = '|'.join(sorted(list(name_set)))
+            new_name = merged_delimiter.join(sorted(list(name_set)))
         else:
             new_name = override_name
 
         if override_organization_name is None:
-            new_organization_name = '|'.join(sorted(list(org_set)))
+            new_organization_name = merged_delimiter.join(sorted(list(org_set)))
         else:
             new_organization_name = override_organization_name
 
         if override_project_name is None:
-            new_project_name = '|'.join(sorted(list(proj_set)))
+            new_project_name = merged_delimiter.join(sorted(list(proj_set)))
         else:
             new_project_name = override_project_name
 
@@ -428,10 +428,10 @@ class ProvenanceUtil(object):
         if keywords_to_preserve is not None and\
              len(keyword_set_dict.keys()) >= keywords_to_preserve:
             for index in range(keywords_to_preserve):
-                new_keywords.append('|'.join(sorted(list(keyword_set_dict[index]))))
+                new_keywords.append(merged_delimiter.join(sorted(list(keyword_set_dict[index]))))
         else:
             for index in range(len(keyword_set_dict.keys())):
-                new_keywords.append('|'.join(sorted(list(keyword_set_dict[index]))))
+                new_keywords.append(merged_delimiter.join(sorted(list(keyword_set_dict[index]))))
 
         # add names to keywords
         if name_set is not None and len(name_set) > 0:
@@ -452,8 +452,8 @@ class ProvenanceUtil(object):
 
         split_keywords = set()
         for keyword in new_keywords:
-            if '|' in keyword:
-                split_keywords.update(keyword.split('|'))
+            if merged_delimiter in keyword:
+                split_keywords.update(keyword.split(merged_delimiter))
         new_keywords.extend(list(split_keywords))
         return ROCrateProvenanceAttributes(name=new_name, project_name=new_project_name,
                                            organization_name=new_organization_name,
