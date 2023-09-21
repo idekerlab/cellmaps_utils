@@ -261,9 +261,40 @@ class TestProvenanceUtil(unittest.TestCase):
                                                     'data-format': 'Format of data'})
             self.assertTrue(len(d_id) > 0)
 
-        except CellMapsProvenanceError as ce:
-            self.assertEqual('', str(ce))
-            self.assertTrue('Error adding dataset' in str(ce))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_dataset_with_url(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            subdir = os.path.join(temp_dir, 'input')
+            os.makedirs(subdir, mode=0o755)
+            src_file = os.path.join(subdir, 'xx')
+            with open(src_file, 'w') as f:
+                f.write('hi')
+
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='some 10 character name', description='10 character description')
+            d_id = prov.register_dataset(temp_dir,
+                                         source_file=src_file,
+                                         skip_copy=False,
+                                         data_dict={'name': 'Name of dataset',
+                                                    'author': 'Author of dataset',
+                                                    'version': 'Version of dataset',
+                                                    'url': 'foo.com',
+                                                    'date-published': 'Date dataset was published MM-DD-YYYY',
+                                                    'description': 'Description of dataset',
+                                                    'data-format': 'Format of data'})
+            self.assertTrue(len(d_id) > 0)
+            rocrate_dict = prov.get_rocrate_as_dict(temp_dir)
+            foundurl = False
+            for entry in rocrate_dict['@graph']:
+                if 'name' in entry:
+                    if entry['name'] == 'Name of dataset':
+                        foundurl = True
+                        self.assertEqual(entry['url'], 'foo.com')
+            self.assertTrue(foundurl)
         finally:
             shutil.rmtree(temp_dir)
 
@@ -291,9 +322,6 @@ class TestProvenanceUtil(unittest.TestCase):
                                                     'keywords': ['one', 'two x', 'three x']})
             self.assertTrue(len(d_id) > 0)
 
-        except CellMapsProvenanceError as ce:
-            self.assertEqual('', str(ce))
-            self.assertTrue('Error adding dataset' in str(ce))
         finally:
             shutil.rmtree(temp_dir)
 
@@ -319,9 +347,6 @@ class TestProvenanceUtil(unittest.TestCase):
                                                     'data-format': 'Format of data'})
             self.assertTrue(len(d_id) > 0)
 
-        except CellMapsProvenanceError as ce:
-            self.assertEqual('', str(ce))
-            self.assertTrue('Error adding dataset' in str(ce))
         finally:
             shutil.rmtree(temp_dir)
 

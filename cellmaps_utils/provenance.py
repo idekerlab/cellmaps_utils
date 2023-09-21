@@ -692,6 +692,7 @@ class ProvenanceUtil(object):
             {'name': 'Name of dataset',
              'author': 'Author of dataset',
              'version': 'Version of dataset',
+             'url': 'Url of dataset (optional)',
              'date-published': 'Date dataset was published MM-DD-YYYY',
              'description': 'Description of dataset',
              'data-format': 'Format of data',
@@ -732,6 +733,9 @@ class ProvenanceUtil(object):
                '--description', data_dict['description'],
                '--date-published', data_dict['date-published'],
                '--author', data_dict['author']]
+
+        if 'url' in data_dict:
+            cmd.extend(['--url', data_dict['url']])
 
         if 'keywords' not in data_dict:
             cmd.extend(self._get_keywords(keywords=''))
