@@ -6,8 +6,8 @@ Cell Maps Utilities
 .. image:: https://img.shields.io/pypi/v/cellmaps_utils.svg
         :target: https://pypi.python.org/pypi/cellmaps_utils
 
-.. image:: https://img.shields.io/travis/idekerlab/cellmaps_utils.svg
-        :target: https://travis-ci.com/idekerlab/cellmaps_utils
+.. image:: https://app.travis-ci.com/idekerlab/cellmaps_utils.svg?branch=main
+        :target: https://app.travis-ci.com/idekerlab/cellmaps_utils
 
 .. image:: https://readthedocs.org/projects/cellmaps-utils/badge/?version=latest
         :target: https://cellmaps-utils.readthedocs.io/en/latest/?badge=latest
