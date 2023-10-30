@@ -28,8 +28,13 @@ containing information passed into the ``register_rocrate`` method
 
 .. code-block:: python
 
+   import os
    from cellmaps_utils.provenance import ProvenanceUtil
 
+   # create directory
+   os.makedirs('mycratedir', mode=0o755)
+
+   # register created directory as RO-Crate
    prov = ProvenanceUtil()
    prov.register_rocrate('mycratedir', name='RO-Crate 1',
                          organization_name='foo_organization', project_name='create_project',
