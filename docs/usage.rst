@@ -77,24 +77,63 @@ registers a computation
 Configuring logging for command line
 ======================================
 
-Example on how to configure logging for a command line
-tool that leverages ``-v`` flag or ``--logconf`` set by
-the caller
+Example showing how to use the function `logutils.setup_cmd_logging()`
+to setup logging levels and configuration for command line tools
+that expose a `-v` (verbosity) or alternate logging config `--logconf`:
 
 .. code-block:: python
 
-    todo
+    import argparse
+    import logging
+    from cellmaps_utils import constants
+    from cellmaps_utils import logutils
+
+    logger = logging.getLogger('mytestlogger')
+
+    parser = argparse.ArgumentParser(description='desc of my command',
+                                     formatter_class=constants.ArgParseFormatter)
+    parser.add_argument('--logconf', default=None,
+                        help='Path to python logging configuration file in '
+                             'this format: https://docs.python.org/3/library/'
+                             'logging.config.html#logging-config-fileformat '
+                             'Setting this overrides -v parameter which uses '
+                             ' default logger. (default None)')
+    parser.add_argument('--verbose', '-v', action='count', default=0,
+                        help='Increases verbosity of logger to standard '
+                             'error for log messages in this module. Messages are '
+                             'output at these python logging levels '
+                             '-v = ERROR, -vv = WARNING, -vvv = INFO, '
+                             '-vvvv = DEBUG, -vvvvv = NOTSET (default no '
+                             'logging)')
+    theargs = parser.parse_args(['-vv'])
+    logutils.setup_cmd_logging(theargs)
+    logger.debug('will not be printed')
+    logger.warning('will be printed')
 
 Configuring logging into directory/`RO-Crate`_
 ================================================
 
-Example on how configure logging of all debug and higher
-log messages to ``output.log`` and all warning and
-higher log messages to ``output.log`` to a directory/`RO-Crate`_
+Example on how to use the function `logutils.setup_filelogger()` that
+adds handlers to log all messages to ``output.log`` and all warning or
+higher log messages to ``error.log`` to a directory/`RO-Crate`_
 
 .. code-block:: python
 
-    todo
+    import os
+    import logging
+    from cellmaps_utils import logutils
+
+    logger = logging.getLogger('mytestlogger')
+
+    os.makedirs('mycratedir', mode=0o755)
+
+    logutils.setup_filelogger(outdir='mycratedir',
+                              handlerprefix='someprefix')
+    # will write debug message to output.log
+    logger.debug('Some debug message')
+
+    # will write error message to both output.log & error.log
+    logger.error('Some error message')
 
 .. note::
 
