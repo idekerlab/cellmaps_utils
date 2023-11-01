@@ -137,7 +137,7 @@ higher log messages to ``error.log`` to a directory/`RO-Crate`_
 
 .. note::
 
-    It is up to logger to clear this logging configuration
+    It is up to logger to clear/remove these added logging handlers
     if directory no longer exists
 
 .. _CM4AI: https://cm4ai.org
