@@ -99,7 +99,7 @@ class ProvenanceUtil(object):
     Wrapper around `FAIRSCAPE-cli <https://github.com/fairscape/fairscape-cli>`__ calls
     """
     def __init__(self, fairscape_binary='fairscape-cli',
-                 default_date_format_str='%Y-%m-%d'):
+                 default_date_format_str='%Y-%m-%d', raise_on_error=False):
         """
         Constructor
 
@@ -110,6 +110,10 @@ class ProvenanceUtil(object):
                                  binary executing this script resides. To bypass this
                                  set the value to a full path with ex: ``/tmp/foo.py``
         :type fairscape_binary: str
+                :param default_date_format_str: Default date format string
+        :type default_date_format_str: str
+        :param raise_on_error: Flag to determine if exceptions should be raised on errors
+        :type raise_on_error: bool
         """
         self._python = sys.executable
         if os.sep not in fairscape_binary:
@@ -119,6 +123,7 @@ class ProvenanceUtil(object):
             self._binary = fairscape_binary
 
         self._default_date_fmt_str = default_date_format_str
+        self._raise_on_error = raise_on_error
 
     def _run_cmd(self, cmd, cwd=None, timeout=360):
         """
