@@ -9,9 +9,8 @@ import sys
 import shutil
 import tempfile
 import json
-from datetime import date
 import unittest
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
@@ -632,3 +631,31 @@ class TestProvenanceUtil(unittest.TestCase):
                                                           'description': 'Description of dataset',
                                                           'data-format': 'Format of data'})
         self.assertIn('out', str(result))
+
+    @patch('cellmaps_utils.provenance.logger')
+    def test_log_fairscape_error(self, mock_logger):
+        mock_cmd = ['command', 'arg1', 'arg2']
+        mock_exit_code = 1
+        mock_err = b'Some error occurred'
+
+        temp_dir = tempfile.mkdtemp()
+        log_file = os.path.join(temp_dir, 'provenance_errors.json')
+
+        try:
+            prov_util = ProvenanceUtil(raise_on_error=False)
+            prov_util._log_fairscape_error(mock_cmd, mock_exit_code, mock_err, cwd=temp_dir)
+
+            mock_logger.error.assert_called()
+
+            with open(log_file, 'r') as file:
+                data = json.load(file)
+                expected_log_entry = {
+                    "cmd": mock_cmd,
+                    "exit_code": mock_exit_code,
+                    "reason": 'non zero exit code : ' + mock_err.decode().strip()
+                }
+                self.assertEqual(data[0], expected_log_entry)
+
+        finally:
+            os.remove(log_file)
+            os.rmdir(temp_dir)
