@@ -296,8 +296,11 @@ class ProvenanceUtil(object):
                 data = json.load(f)
             return data
         except Exception as e:
-            raise CellMapsProvenanceError('Error parsing ' + str(rocrate_file) +
-                                          ' ' + str(e))
+            if self._raise_on_error:
+                raise CellMapsProvenanceError('Error parsing ' + str(rocrate_file) +
+                                              ' ' + str(e))
+            else:
+                return {'@id': None, 'name': '', 'description': '', 'keywords': [''], 'isPartOf': []}
 
     def get_id_of_rocrate(self, rocrate):
         """
@@ -337,7 +340,7 @@ class ProvenanceUtil(object):
 
         :param rocrate: `RO-Crate <https://www.researchobject.org/ro-crate/>`__ :py:class:`dict` or directory containing
                 `ro-crate-metadata.json` file or
-                path to file assumed to be `RO-Crate <https://www.researchobject.org/ro-crate/>`__ meta data
+                path to file assumed to be `RO-Crate <https://www.researchobject.org/ro-crate/>`__ metadata
                 file
         :type rocrate: str or dict
         :return:
@@ -411,6 +414,8 @@ class ProvenanceUtil(object):
         :param keywords_to_preserve: Denotes number of keywords to preserve. A value of 5
                                      means keep the 1st 5. ``None`` means preserve all keywords
         :type keywords_to_preserve: int
+        :param merged_delimiter: default is '|'
+        :type merged_delimiter: str
         :raises CellMapsProvenanceError: If **rocrate**, **extra_keywords**
         :return: Merged rocrate provenance attributes
         :rtype: :py:class:`~cellmaps_utils.provenance.ROCrateProvenanceAttributes`
@@ -463,8 +468,7 @@ class ProvenanceUtil(object):
         # just grab 1st **keywords_to_preserve** elements assuming they are
         # project, data_release_name, cell line, treatment,
         # name_of_computation
-        if keywords_to_preserve is not None and\
-             len(keyword_set_dict.keys()) >= keywords_to_preserve:
+        if keywords_to_preserve is not None and len(keyword_set_dict.keys()) >= keywords_to_preserve:
             for index in range(keywords_to_preserve):
                 new_keywords.append(merged_delimiter.join(sorted(list(keyword_set_dict[index]))))
         else:
@@ -593,8 +597,8 @@ class ProvenanceUtil(object):
         :type generated: list
         :param keywords:
         :type keywords: list
-        :param guid:
-        :type guid:
+        :param guid: ID for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :type guid: str
         :param timeout: Time in seconds to wait for registration of computation to complete
         :type timeout: float
         """
@@ -674,6 +678,12 @@ class ProvenanceUtil(object):
         :type file_format: str
         :param url: URL to repository for software
         :type url: str
+        :param date_modified
+        :type date_modified
+        :param keywords:
+        :type keywords: list
+        :param guid: ID for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :type guid: str
         :param rocrate_path: Path to directory with registered rocrate
         :type rocrate_path: str
         :param timeout: Time in seconds to wait for registration of ro-crate to complete
@@ -758,6 +768,8 @@ class ProvenanceUtil(object):
         :param skip_copy: If ``True`` skip the copy of source file into
                           **crate_path**. Use this when source file already
                           resides in **crate_path**
+        :param guid: ID for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :type guid: str
         :param timeout: Time in seconds to wait for registration of dataset to complete
         :type timeout: float
         :return: id of dataset from `FAIRSCAPE <https://fairscape.github.io>`__
