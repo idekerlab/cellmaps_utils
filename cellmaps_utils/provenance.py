@@ -177,8 +177,7 @@ class ProvenanceUtil(object):
                                               str(p.returncode) +
                                               ' stdout: ' + str(out) +
                                               ' stderr: ' + str(err))
-            else:
-                self._log_fairscape_error(cmd, p.returncode, err, cwd=cwd, reason='Process timed out.')
+            self._log_fairscape_error(cmd, p.returncode, err, cwd=cwd, reason='Process timed out.')
         else:
             if not self._raise_on_error and p.returncode != 0:
                 self._log_fairscape_error(cmd, p.returncode, err)
@@ -299,8 +298,7 @@ class ProvenanceUtil(object):
             if self._raise_on_error:
                 raise CellMapsProvenanceError('Error parsing ' + str(rocrate_file) +
                                               ' ' + str(e))
-            else:
-                return {'@id': None, 'name': '', 'description': '', 'keywords': [''], 'isPartOf': []}
+            return {'@id': None, 'name': '', 'description': '', 'keywords': [''], 'isPartOf': []}
 
     def get_id_of_rocrate(self, rocrate):
         """
