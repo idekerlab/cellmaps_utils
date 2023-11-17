@@ -4,13 +4,14 @@
 """Tests for `cellmaps_utils.cellmaps_io` package."""
 
 import os
+import subprocess
 import sys
 import shutil
 import tempfile
 import json
 from datetime import date
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
 
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
@@ -33,7 +34,7 @@ class TestProvenanceUtil(unittest.TestCase):
             with open(py_file, 'w') as f:
                 f.write('import time\r\n')
                 f.write('time.sleep(60)\r\n')
-            p = ProvenanceUtil()
+            p = ProvenanceUtil(raise_on_error=True)
             p._run_cmd([sys.executable, py_file], timeout=1)
         except CellMapsProvenanceError as ce:
             self.assertTrue('Process timed out' in str(ce))
@@ -41,7 +42,7 @@ class TestProvenanceUtil(unittest.TestCase):
             shutil.rmtree(temp_dir)
 
     def test_get_keywords(self):
-        prov = ProvenanceUtil()
+        prov = ProvenanceUtil(raise_on_error=True)
         self.assertEqual(['--keywords', ''], prov._get_keywords(keywords=''))
         self.assertEqual([], prov._get_keywords(keywords=[]))
         self.assertEqual(['--keywords', 'a', '--keywords', 3],
@@ -85,7 +86,7 @@ class TestProvenanceUtil(unittest.TestCase):
         self.assertEqual(expected_full, example)
 
     def test_get_login(self):
-        prov = ProvenanceUtil()
+        prov = ProvenanceUtil(raise_on_error=True)
         res = prov.get_login()
         self.assertTrue(res is not None)
 
@@ -103,14 +104,14 @@ class TestProvenanceUtil(unittest.TestCase):
                 os.environ['LOGNAME'] = orig_logname
 
     def test_get_rocrate_as_dict_none_for_path(self):
-        prov = ProvenanceUtil()
+        prov = ProvenanceUtil(raise_on_error=True)
         try:
             prov.get_rocrate_as_dict(None)
         except CellMapsProvenanceError as ce:
             self.assertEqual('rocrate_path is None', str(ce))
 
     def test_get_rocrate_as_dict_invalid_rocrate_metadata(self):
-        prov = ProvenanceUtil()
+        prov = ProvenanceUtil(raise_on_error=True)
         temp_dir = tempfile.mkdtemp()
         try:
             rocrate = os.path.join(temp_dir, constants.RO_CRATE_METADATA_FILE)
@@ -130,7 +131,7 @@ class TestProvenanceUtil(unittest.TestCase):
         """
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='some 10 charactert name',
                                   description=' some 10 character desc')
             crate_file = os.path.join(temp_dir, constants.RO_CRATE_METADATA_FILE)
@@ -147,7 +148,7 @@ class TestProvenanceUtil(unittest.TestCase):
         """
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, keywords=None)
             self.fail('Expected exception')
         except CellMapsProvenanceError as ce:
@@ -163,7 +164,7 @@ class TestProvenanceUtil(unittest.TestCase):
         """
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(os.path.join(temp_dir, 'doesnotexist'))
             self.fail('Expected exception')
         except CellMapsProvenanceError as ce:
@@ -174,7 +175,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_register_computation(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='some 10 charactert name',
                                   description=' some 10 character desc')
             c_id = prov.register_computation(temp_dir, run_by='runby',
@@ -187,7 +188,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_register_computation_with_software_datasets(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='some 10 charactert name',
                                   description=' some 10 character desc')
 
@@ -212,7 +213,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_register_software(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir)
             s_id = prov.register_software(temp_dir, name='name',
                                           description='must be 10 characters',
@@ -226,7 +227,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_register_software_invalid_rocrate(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(os.path.join(temp_dir, 'doesnotexist'))
             prov.register_software(temp_dir, name='name',
                                    description='must be 10 characters',
@@ -248,7 +249,7 @@ class TestProvenanceUtil(unittest.TestCase):
             with open(src_file, 'w') as f:
                 f.write('hi')
 
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='some 10 character name', description='10 character description')
             d_id = prov.register_dataset(temp_dir,
                                          source_file=src_file,
@@ -274,7 +275,7 @@ class TestProvenanceUtil(unittest.TestCase):
             with open(src_file, 'w') as f:
                 f.write('hi')
 
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='some 10 character name', description='10 character description')
             d_id = prov.register_dataset(temp_dir,
                                          source_file=src_file,
@@ -308,7 +309,7 @@ class TestProvenanceUtil(unittest.TestCase):
             with open(src_file, 'w') as f:
                 f.write('hi')
 
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir)
             d_id = prov.register_dataset(temp_dir,
                                          source_file=src_file,
@@ -333,7 +334,7 @@ class TestProvenanceUtil(unittest.TestCase):
             with open(src_file, 'w') as f:
                 f.write('hi')
 
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='some 10 character name',
                                   description='some 10 character desc')
             d_id = prov.register_dataset(temp_dir,
@@ -354,7 +355,7 @@ class TestProvenanceUtil(unittest.TestCase):
 
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='foo', guid='12345',
                                   description='some 10 character desc')
             crate_dict = prov.get_rocrate_as_dict(temp_dir)
@@ -373,7 +374,7 @@ class TestProvenanceUtil(unittest.TestCase):
 
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='foo', guid='12345', description='some 10 character desc')
             self.assertEqual('12345', prov.get_id_of_rocrate(temp_dir))
 
@@ -387,7 +388,7 @@ class TestProvenanceUtil(unittest.TestCase):
 
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(temp_dir, name='foo', guid='12345',
                                   project_name='proj', organization_name='org',
                                   description='10 character desc sdfsdf')
@@ -402,7 +403,7 @@ class TestProvenanceUtil(unittest.TestCase):
             shutil.rmtree(temp_dir)
 
     def test_get_merged_rocrate_provenance_attrs_none_for_rocrate(self):
-        prov = ProvenanceUtil()
+        prov = ProvenanceUtil(raise_on_error=True)
         try:
             prov.get_merged_rocrate_provenance_attrs()
             self.fail('Expected Exception')
@@ -410,7 +411,7 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertEqual('rocrate is None', str(ce))
 
     def test_get_merged_rocrate_provenance_attrs_none_for_rocrate_invalidtype(self):
-        prov = ProvenanceUtil()
+        prov = ProvenanceUtil(raise_on_error=True)
         try:
             prov.get_merged_rocrate_provenance_attrs(rocrate=int(5))
             self.fail('Expected Exception')
@@ -418,7 +419,7 @@ class TestProvenanceUtil(unittest.TestCase):
             self.assertTrue('rocrate must be type str, list or dict' in str(ce))
 
     def test_get_merged_rocrate_provenance_attrs_none_for_rocrate_norocrates_in_list(self):
-        prov = ProvenanceUtil()
+        prov = ProvenanceUtil(raise_on_error=True)
         try:
             prov.get_merged_rocrate_provenance_attrs(rocrate=[])
             self.fail('Expected Exception')
@@ -428,7 +429,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_get_merged_rocrate_provenance_attrs_single_crate_nooverrides(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(rocrate_path=temp_dir,
                                   name='some name',
                                   project_name='some project name',
@@ -449,7 +450,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_get_merged_rocrate_provenance_attrs_single_crate_with_overrides(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(rocrate_path=temp_dir,
                                   name='some name',
                                   project_name='some project name',
@@ -472,7 +473,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_get_merged_rocrate_provenance_attrs_single_crate_four_extrakeywords(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             prov.register_rocrate(rocrate_path=temp_dir,
                                   name='some name',
                                   project_name='some project name',
@@ -498,7 +499,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_get_merged_rocrate_provenance_attrs_two_crates(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            prov = ProvenanceUtil()
+            prov = ProvenanceUtil(raise_on_error=True)
             crate_list = []
             for name in ['one', 'two']:
                 crate = os.path.join(temp_dir, name)
@@ -537,6 +538,97 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_success_raise_on_error_false(self, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'Success', b'')
+        mock_popen.return_value.returncode = 0
 
+        prov_util = ProvenanceUtil(raise_on_error=False)
+        result = prov_util._run_cmd(['fake_cmd'])
+        self.assertEqual(result[0], 0)
 
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    @patch('cellmaps_utils.provenance.ProvenanceUtil._log_fairscape_error')
+    def test_failure_raise_on_error_false(self, mock_log_error, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'', b'Error')
+        mock_popen.return_value.returncode = 1
 
+        prov_util = ProvenanceUtil(raise_on_error=False)
+        result = prov_util._run_cmd(['fake_cmd'])
+        self.assertEqual(result[0], 1)
+        mock_log_error.assert_called_once()
+
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_timeout(self, mock_popen):
+        mock_popen.return_value.communicate.side_effect = subprocess.TimeoutExpired(cmd='fake_cmd', timeout=360)
+        mock_popen.return_value.returncode = 1
+
+        prov_util = ProvenanceUtil(raise_on_error=True)
+        with self.assertRaises(subprocess.TimeoutExpired):
+            prov_util._run_cmd(['fake_cmd'])
+
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_register_computation_failure_raise_on_error_true(self, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'', b'Error')
+        mock_popen.return_value.returncode = 1
+
+        prov_util = ProvenanceUtil(raise_on_error=True)
+        with self.assertRaises(CellMapsProvenanceError):
+            prov_util.register_computation('fake_path', 'test_name')
+
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_register_computation_success(self, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'Success', b'')
+        mock_popen.return_value.returncode = 0
+
+        prov_util = ProvenanceUtil(raise_on_error=True)
+        result = prov_util.register_computation('fake_path', 'test_name')
+        self.assertIn('Success', str(result))
+
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_register_software_failure_raise_on_error_true(self, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'', b'Error')
+        mock_popen.return_value.returncode = 1
+
+        prov_util = ProvenanceUtil(raise_on_error=True)
+        with self.assertRaises(CellMapsProvenanceError):
+            prov_util.register_software('fake_path', 'test_software')
+
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_register_software_failure_raise_on_error_false(self, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'out', b'Error')
+        mock_popen.return_value.returncode = 1
+
+        prov_util = ProvenanceUtil(raise_on_error=False)
+        result = prov_util.register_software('fake_path', 'test_software')
+        self.assertIn('out', str(result))
+
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_register_dataset_failure_raise_on_error_true(self, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'', b'Error')
+        mock_popen.return_value.returncode = 1
+
+        prov_util = ProvenanceUtil(raise_on_error=True)
+        with self.assertRaises(CellMapsProvenanceError):
+            prov_util.register_dataset('fake_path', {'name': 'Name of dataset',
+                                                     'author': 'Author of dataset',
+                                                     'version': 'Version of dataset',
+                                                     'url': 'Url of dataset (optional)',
+                                                     'date-published': 'Date dataset was published MM-DD-YYYY',
+                                                     'description': 'Description of dataset',
+                                                     'data-format': 'Format of data'})
+
+    @patch('cellmaps_utils.provenance.subprocess.Popen')
+    def test_register_dataset_failure_raise_on_error_false(self, mock_popen):
+        mock_popen.return_value.communicate.return_value = (b'out', b'Error')
+        mock_popen.return_value.returncode = 1
+
+        prov_util = ProvenanceUtil(raise_on_error=False)
+        result = prov_util.register_dataset('fake_path', {'name': 'Name of dataset',
+                                                          'author': 'Author of dataset',
+                                                          'version': 'Version of dataset',
+                                                          'url': 'Url of dataset (optional)',
+                                                          'date-published': 'Date dataset was published MM-DD-YYYY',
+                                                          'description': 'Description of dataset',
+                                                          'data-format': 'Format of data'})
+        self.assertIn('out', str(result))
