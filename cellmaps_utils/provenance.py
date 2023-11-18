@@ -298,7 +298,8 @@ class ProvenanceUtil(object):
             if self._raise_on_error:
                 raise CellMapsProvenanceError('Error parsing ' + str(rocrate_file) +
                                               ' ' + str(e))
-            return {'@id': None, 'name': '', 'description': '', 'keywords': [''], 'isPartOf': []}
+            return {'@id': None, 'name': '', 'description': '', 'keywords': [''],
+                    'isPartOf': [{"@type": "Organization", "name": ""}, {"@type": "Project", "name": ""}]}
 
     def get_id_of_rocrate(self, rocrate):
         """
