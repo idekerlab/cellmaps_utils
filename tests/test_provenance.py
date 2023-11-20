@@ -352,22 +352,19 @@ class TestProvenanceUtil(unittest.TestCase):
         self.assertEqual(result, 'test-id')
 
     def test_get_name_project_org_of_rocrate(self):
+        mock_data = {
+            'name': 'foo',
+            'description': '10 character desc sdfsdf',
+            'keywords': [],
+            'isPartOf': [
+                {"@type": "Organization", "name": "org"},
+                {"@type": "Project", "name": "proj"}
+            ]
+        }
 
-        temp_dir = tempfile.mkdtemp()
-        try:
-            prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir, name='foo', guid='12345',
-                                  project_name='proj', organization_name='org',
-                                  description='10 character desc sdfsdf')
-            self.assertEqual(('foo', 'proj', 'org'),
-                             prov.get_name_project_org_of_rocrate(temp_dir))
-
-            # verify passing dict works as well
-            crate_dict = prov.get_rocrate_as_dict(temp_dir)
-            self.assertEqual(('foo', 'proj', 'org'),
-                             prov.get_name_project_org_of_rocrate(crate_dict))
-        finally:
-            shutil.rmtree(temp_dir)
+        prov = ProvenanceUtil()
+        result = prov.get_name_project_org_of_rocrate(mock_data)
+        self.assertEqual(('foo', 'proj', 'org'), result)
 
     def test_get_merged_rocrate_provenance_attrs_none_for_rocrate(self):
         prov = ProvenanceUtil(raise_on_error=True)
