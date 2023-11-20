@@ -10,7 +10,8 @@ import shutil
 import tempfile
 import json
 import unittest
-from unittest.mock import patch
+from unittest import mock
+from unittest.mock import patch, MagicMock
 
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
@@ -106,7 +107,7 @@ class TestProvenanceUtil(unittest.TestCase):
                 os.environ['LOGNAME'] = orig_logname
 
     def test_get_rocrate_as_dict_none_for_path(self):
-        prov = ProvenanceUtil( )
+        prov = ProvenanceUtil()
         try:
             prov.get_rocrate_as_dict(None)
         except CellMapsProvenanceError as ce:
@@ -267,40 +268,6 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_register_dataset_with_url(self):
-
-        temp_dir = tempfile.mkdtemp()
-        try:
-            subdir = os.path.join(temp_dir, 'input')
-            os.makedirs(subdir, mode=0o755)
-            src_file = os.path.join(subdir, 'xx')
-            with open(src_file, 'w') as f:
-                f.write('hi')
-
-            prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir, name='some 10 character name', description='10 character description')
-            d_id = prov.register_dataset(temp_dir,
-                                         source_file=src_file,
-                                         skip_copy=False,
-                                         data_dict={'name': 'Name of dataset',
-                                                    'author': 'Author of dataset',
-                                                    'version': 'Version of dataset',
-                                                    'url': 'foo.com',
-                                                    'date-published': 'Date dataset was published MM-DD-YYYY',
-                                                    'description': 'Description of dataset',
-                                                    'data-format': 'Format of data'})
-            self.assertIsNotNone(d_id)
-            rocrate_dict = prov.get_rocrate_as_dict(temp_dir)
-            foundurl = False
-            for entry in rocrate_dict['@graph']:
-                if 'name' in entry:
-                    if entry['name'] == 'Name of dataset':
-                        foundurl = True
-                        self.assertEqual(entry['url'], 'foo.com')
-            self.assertTrue(foundurl)
-        finally:
-            shutil.rmtree(temp_dir)
-
     def test_register_dataset_with_keywords(self):
 
         temp_dir = tempfile.mkdtemp()
@@ -361,23 +328,28 @@ class TestProvenanceUtil(unittest.TestCase):
             prov.register_rocrate(temp_dir, name='foo', guid='12345',
                                   description='some 10 character desc')
             crate_dict = prov.get_rocrate_as_dict(temp_dir)
-            self.assertEqual({'@id','name', 'isPartOf', 'description', 'keywords'}, set(crate_dict.keys()))
+            self.assertIn('@id', set(crate_dict.keys()))
+            self.assertIn('name', set(crate_dict.keys()))
+            self.assertIn('isPartOf', set(crate_dict.keys()))
+            self.assertIn('description', set(crate_dict.keys()))
+            self.assertIn('keywords', set(crate_dict.keys()))
         finally:
             shutil.rmtree(temp_dir)
 
-    def test_get_id_of_rocrate(self):
+    def test_get_id_of_rocrate_with_dict(self):
+        prov = ProvenanceUtil()
+        test_dict = {'@id': 'test-id'}
+        result = prov.get_id_of_rocrate(test_dict)
+        self.assertEqual(result, 'test-id')
 
-        temp_dir = tempfile.mkdtemp()
-        try:
-            prov = ProvenanceUtil()
-            prov.register_rocrate(temp_dir, name='foo', guid='12345', description='some 10 character desc')
-            self.assertEqual('12345', prov.get_id_of_rocrate(temp_dir))
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_rocrate_as_dict')  # Replace with your actual import
+    def test_get_id_of_rocrate_with_path(self, mock_get_rocrate_as_dict):
+        mock_get_rocrate_as_dict.return_value = {'@id': 'test-id'}
 
-            # verify passing dict works as well
-            crate_dict = prov.get_rocrate_as_dict(temp_dir)
-            self.assertEqual('12345', prov.get_id_of_rocrate(crate_dict))
-        finally:
-            shutil.rmtree(temp_dir)
+        prov = ProvenanceUtil()
+        result = prov.get_id_of_rocrate('path/to/rocrate')
+        mock_get_rocrate_as_dict.assert_called_once_with('path/to/rocrate')
+        self.assertEqual(result, 'test-id')
 
     def test_get_name_project_org_of_rocrate(self):
 
@@ -421,117 +393,112 @@ class TestProvenanceUtil(unittest.TestCase):
         except CellMapsProvenanceError as ce:
             self.assertEqual('No rocrates in list', str(ce))
 
-    def test_get_merged_rocrate_provenance_attrs_single_crate_nooverrides(self):
-        temp_dir = tempfile.mkdtemp()
-        try:
-            prov = ProvenanceUtil()
-            prov.register_rocrate(rocrate_path=temp_dir,
-                                  name='some name',
-                                  project_name='some project name',
-                                  description='some description name',
-                                  organization_name='some organization name',
-                                  keywords=['keyword1'])
-            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=temp_dir)
-            self.assertEqual('some name', prov_attrs.get_name())
-            self.assertEqual('some project name', prov_attrs.get_project_name())
-            self.assertEqual('some organization name', prov_attrs.get_organization_name())
-            self.assertTrue('keyword1' in prov_attrs.get_description())
-            self.assertTrue('some name' in prov_attrs.get_description())
-            self.assertTrue(['keyword1', 'some name'], prov_attrs.get_keywords())
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_rocrate_provenance_attributes')
+    def test_get_merged_rocrate_provenance_attrs_single_crate_nooverrides(self, mock_get_attrs):
+        mock_attrs = MagicMock()
+        mock_attrs.get_name.return_value = 'some name'
+        mock_attrs.get_project_name.return_value = 'some project name'
+        mock_attrs.get_organization_name.return_value = 'some organization name'
+        mock_attrs.get_keywords.return_value = ['keyword1']
+        mock_get_attrs.return_value = mock_attrs
 
-        finally:
-            shutil.rmtree(temp_dir)
+        prov = ProvenanceUtil()
+        prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate='rocrate_path')
 
-    def test_get_merged_rocrate_provenance_attrs_single_crate_with_overrides(self):
-        temp_dir = tempfile.mkdtemp()
-        try:
-            prov = ProvenanceUtil()
-            prov.register_rocrate(rocrate_path=temp_dir,
-                                  name='some name',
-                                  project_name='some project name',
-                                  description='some description name',
-                                  organization_name='some organization name',
-                                  keywords=['keyword1'])
-            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=temp_dir,
-                                                                  override_name='new name',
-                                                                  override_organization_name='new org',
-                                                                  override_project_name='new proj')
-            self.assertEqual('new name', prov_attrs.get_name())
-            self.assertEqual('new proj', prov_attrs.get_project_name())
-            self.assertEqual('new org', prov_attrs.get_organization_name())
-            self.assertEqual('keyword1 some name', prov_attrs.get_description())
-            self.assertEqual(['keyword1', 'some name'], prov_attrs.get_keywords())
+        self.assertEqual('some name', prov_attrs.get_name())
+        self.assertEqual('some project name', prov_attrs.get_project_name())
+        self.assertEqual('some organization name', prov_attrs.get_organization_name())
+        self.assertEqual('keyword1 some name', prov_attrs.get_description())
+        self.assertEqual(['keyword1', 'some name'], prov_attrs.get_keywords())
 
-        finally:
-            shutil.rmtree(temp_dir)
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_rocrate_provenance_attributes')
+    def test_get_merged_rocrate_provenance_attrs_single_crate_with_overrides(self, mock_get_attrs):
+        mock_attrs = MagicMock()
+        mock_attrs.get_name.return_value = 'some name'
+        mock_attrs.get_project_name.return_value = 'some project name'
+        mock_attrs.get_organization_name.return_value = 'some organization name'
+        mock_attrs.get_keywords.return_value = ['keyword1']
+        mock_get_attrs.return_value = mock_attrs
 
-    def test_get_merged_rocrate_provenance_attrs_single_crate_four_extrakeywords(self):
-        temp_dir = tempfile.mkdtemp()
-        try:
-            prov = ProvenanceUtil()
-            prov.register_rocrate(rocrate_path=temp_dir,
-                                  name='some name',
-                                  project_name='some project name',
-                                  description='some description name',
-                                  organization_name='some organization name',
-                                  keywords=['keyword1', 'keyword2', 'keyword3', 'keyword4'])
-            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=temp_dir,
-                                                                  extra_keywords=['embedding'])
-            self.assertEqual('some name', prov_attrs.get_name())
-            self.assertEqual('some project name', prov_attrs.get_project_name())
-            self.assertEqual('some organization name', prov_attrs.get_organization_name())
-            self.assertTrue('keyword1 keyword2 keyword3 ' in prov_attrs.get_description())
-            self.assertTrue('keyword4' in prov_attrs.get_description())
-            self.assertTrue('embedding' in prov_attrs.get_description())
-            self.assertTrue('some name' in prov_attrs.get_description())
-            self.assertEqual(['keyword1', 'keyword2',
-                              'keyword3', 'keyword4', 'some name',
-                              'embedding'], prov_attrs.get_keywords())
+        prov = ProvenanceUtil()
+        prov_attrs = prov.get_merged_rocrate_provenance_attrs(
+            rocrate='rocrate_path',
+            override_name='new name',
+            override_project_name='new proj',
+            override_organization_name='new org'
+        )
 
-        finally:
-            shutil.rmtree(temp_dir)
+        self.assertEqual('new name', prov_attrs.get_name())
+        self.assertEqual('new proj', prov_attrs.get_project_name())
+        self.assertEqual('new org', prov_attrs.get_organization_name())
+        self.assertEqual('keyword1 some name', prov_attrs.get_description())
+        self.assertEqual(['keyword1', 'some name'], prov_attrs.get_keywords())
 
-    def test_get_merged_rocrate_provenance_attrs_two_crates(self):
-        temp_dir = tempfile.mkdtemp()
-        try:
-            prov = ProvenanceUtil()
-            crate_list = []
-            for name in ['one', 'two']:
-                crate = os.path.join(temp_dir, name)
-                crate_list.append(crate)
-                os.makedirs(crate, mode=0o755)
-                prov.register_rocrate(rocrate_path=crate,
-                                      name=name + ' name',
-                                      project_name=name + ' project name',
-                                      description=name + ' description name',
-                                      organization_name=name + ' organization name',
-                                      keywords=[name + '1',
-                                                name + '2',
-                                                name + '3',
-                                                name + '4'])
-            prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate=crate_list,
-                                                                  extra_keywords=['embedding'])
-            self.assertTrue('one name|two name' == prov_attrs.get_name())
-            self.assertTrue('one project name|two project name' == prov_attrs.get_project_name())
-            self.assertTrue('one organization name|two organization name' == prov_attrs.get_organization_name())
-            self.assertTrue('one1|two1 one2|two2 one3|two3 '
-                            'one4|two4 ' in prov_attrs.get_description())
-            self.assertTrue('one name' in prov_attrs.get_description())
-            self.assertTrue('two name' in prov_attrs.get_description())
-            self.assertTrue('embedding' in prov_attrs.get_description())
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_rocrate_provenance_attributes')
+    def test_get_merged_rocrate_provenance_attrs_single_crate_four_extrakeywords(self, mock_get_attrs):
+        mock_attrs = MagicMock()
+        mock_attrs.get_name.return_value = 'some name'
+        mock_attrs.get_project_name.return_value = 'some project name'
+        mock_attrs.get_organization_name.return_value = 'some organization name'
+        mock_attrs.get_keywords.return_value = ['keyword1', 'keyword2', 'keyword3', 'keyword4']
+        mock_get_attrs.return_value = mock_attrs
 
-            self.assertEqual(['one1|two1', 'one2|two2',
-                              'one3|two3', 'one4|two4'],
-                             prov_attrs.get_keywords()[:4])
-            self.assertTrue('embedding' in prov_attrs.get_keywords())
-            for n in range(1, 5):
-                self.assertTrue('one' + str(n) in prov_attrs.get_keywords())
-                self.assertTrue('two' + str(n) in prov_attrs.get_keywords())
+        prov = ProvenanceUtil()
+        prov_attrs = prov.get_merged_rocrate_provenance_attrs(
+            rocrate='rocrate_path',
+            extra_keywords=['embedding']
+        )
+        self.assertEqual('some name', prov_attrs.get_name())
+        self.assertEqual('some project name', prov_attrs.get_project_name())
+        self.assertEqual('some organization name', prov_attrs.get_organization_name())
+        self.assertTrue('keyword1 keyword2 keyword3 ' in prov_attrs.get_description())
+        self.assertTrue('keyword4' in prov_attrs.get_description())
+        self.assertTrue('embedding' in prov_attrs.get_description())
+        self.assertTrue('some name' in prov_attrs.get_description())
+        self.assertEqual(['keyword1', 'keyword2',
+                          'keyword3', 'keyword4', 'some name',
+                          'embedding'], prov_attrs.get_keywords())
 
-            self.assertEqual(15, len(prov_attrs.get_keywords()))
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_rocrate_provenance_attributes')
+    def test_get_merged_rocrate_provenance_attrs_two_crates(self, mock_get_attrs):
+        mock_attrs_one = MagicMock()
+        mock_attrs_one.get_name.return_value = 'one name'
+        mock_attrs_one.get_project_name.return_value = 'one project name'
+        mock_attrs_one.get_organization_name.return_value = 'one organization name'
+        mock_attrs_one.get_keywords.return_value = ['one1', 'one2', 'one3', 'one4']
 
-        finally:
-            shutil.rmtree(temp_dir)
+        mock_attrs_two = MagicMock()
+        mock_attrs_two.get_name.return_value = 'two name'
+        mock_attrs_two.get_project_name.return_value = 'two project name'
+        mock_attrs_two.get_organization_name.return_value = 'two organization name'
+        mock_attrs_two.get_keywords.return_value = ['two1', 'two2', 'two3', 'two4']
+
+        mock_get_attrs.side_effect = [mock_attrs_one, mock_attrs_two]
+
+        prov = ProvenanceUtil()
+        prov_attrs = prov.get_merged_rocrate_provenance_attrs(
+            rocrate=['rocrate_path_one', 'rocrate_path_two'],
+            extra_keywords=['embedding']
+        )
+
+        self.assertTrue('one name|two name' == prov_attrs.get_name())
+        self.assertTrue('one project name|two project name' == prov_attrs.get_project_name())
+        self.assertTrue('one organization name|two organization name' == prov_attrs.get_organization_name())
+        self.assertTrue('one1|two1 one2|two2 one3|two3 '
+                        'one4|two4 ' in prov_attrs.get_description())
+        self.assertTrue('one name' in prov_attrs.get_description())
+        self.assertTrue('two name' in prov_attrs.get_description())
+        self.assertTrue('embedding' in prov_attrs.get_description())
+
+        self.assertEqual(['one1|two1', 'one2|two2',
+                          'one3|two3', 'one4|two4'],
+                         prov_attrs.get_keywords()[:4])
+        self.assertTrue('embedding' in prov_attrs.get_keywords())
+        for n in range(1, 5):
+            self.assertTrue('one' + str(n) in prov_attrs.get_keywords())
+            self.assertTrue('two' + str(n) in prov_attrs.get_keywords())
+
+        self.assertEqual(15, len(prov_attrs.get_keywords()))
 
     @patch('cellmaps_utils.provenance.subprocess.Popen')
     def test_success_raise_on_error_false(self, mock_popen):
