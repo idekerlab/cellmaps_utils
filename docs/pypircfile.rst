@@ -5,8 +5,8 @@ To run ``make testrelease`` or ``make release`` to deploy cellmaps_utils to Test
 
 #. If not already, create account on PyPi_
 #. If not already, create account on TestPyPi_
-#. Create a configuration file in your home directory ``~/.pypirc`` and fill it with the following information replacing **<XXX>**
-   values with correct information:
+#. Create a configuration file in your home directory ``~/.pypirc`` and fill it with the following information replacing **<API TOKEN>**
+   with `API TOKEN`_:
 
 .. code-block::
 
@@ -17,12 +17,13 @@ To run ``make testrelease`` or ``make release`` to deploy cellmaps_utils to Test
 
     [testpypi]
     repository:https://test.pypi.org/legacy/
-    username = <USERNAME>
-    password = <PASSWORD>
+    username = __token__
+    password = <API TOKEN>
 
     [pypi]
-    username:<USERNAME>
-    password:<PASSWORD>
+    username: __token__
+    password:<API TOKEN>
 
 .. _TestPyPi: https://test.pypi.org
 .. _PyPi: https://pypi.org
+.. _`API Token`: https://pypi.org/help/#apitoken
