@@ -569,7 +569,7 @@ class TestProvenanceUtil(unittest.TestCase):
 
     @patch('cellmaps_utils.provenance.subprocess.Popen')
     def test_register_software_failure_raise_on_error_false(self, mock_popen):
-        mock_popen.return_value.communicate.return_value = (b'out', b'Error')
+        mock_popen.return_value.communicate.return_value = ('out', 'Error')
         mock_popen.return_value.returncode = 1
 
         prov_util = ProvenanceUtil()
@@ -593,7 +593,7 @@ class TestProvenanceUtil(unittest.TestCase):
 
     @patch('cellmaps_utils.provenance.subprocess.Popen')
     def test_register_dataset_failure_raise_on_error_false(self, mock_popen):
-        mock_popen.return_value.communicate.return_value = (b'out', b'Error')
+        mock_popen.return_value.communicate.return_value = ('out', 'Error')
         mock_popen.return_value.returncode = 1
 
         prov_util = ProvenanceUtil()
@@ -610,7 +610,7 @@ class TestProvenanceUtil(unittest.TestCase):
     def test_log_fairscape_error(self, mock_logger):
         mock_cmd = ['command', 'arg1', 'arg2']
         mock_exit_code = 1
-        mock_err = b'Some error occurred'
+        mock_err = 'Some error occurred'
 
         temp_dir = tempfile.mkdtemp()
         log_file = os.path.join(temp_dir, 'provenance_errors.json')
@@ -626,10 +626,86 @@ class TestProvenanceUtil(unittest.TestCase):
                 expected_log_entry = {
                     "cmd": mock_cmd,
                     "exit_code": mock_exit_code,
-                    "reason": 'non zero exit code : ' + mock_err.decode().strip()
+                    "reason": 'non zero exit code : ' + mock_err.strip()
                 }
                 self.assertEqual(data[0], expected_log_entry)
 
         finally:
             os.remove(log_file)
             os.rmdir(temp_dir)
+
+    def test_rocrate_lifecycle_where_fairscape_fails(self):
+        """Test the lifecycle of RO-Crate operations in `cellmaps_utils`."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            nonexistant_cli = os.path.join(temp_dir, 'nonexistant-cli')
+
+            provenance_util = ProvenanceUtil(raise_on_error=False,
+                                             fairscape_binary=nonexistant_cli)
+
+            rocrate_path = os.path.join(temp_dir, "test_rocrate")
+            os.mkdir(rocrate_path)
+            provenance_util.register_rocrate(rocrate_path, name='Test Crate')
+            self.assertFalse(os.path.isfile(os.path.join(rocrate_path,
+                                                         'ro-crate-metadata.json')))
+
+            soft_id = provenance_util.register_software(rocrate_path,
+                                                        name='my software',
+                                                        author='bob smith',
+                                                        version='1.0.0',
+                                                        file_format='py',
+                                                        url='https://foo.com',
+                                                        keywords=['key1', 'key2'])
+
+            self.assertIsNotNone(soft_id)
+
+            i_data = os.path.join(temp_dir, 'input.txt')
+            open(i_data, 'a').close()
+            i_dset_id = provenance_util.register_dataset(rocrate_path,
+                                                         data_dict={'name': 'Input Dataset',
+                                                                    'author': 'Test i Author',
+                                                                    'version': '2.0',
+                                                                    'date-published': '2023-11-20',
+                                                                    'description': 'Test input description',
+                                                                    'data-format': 'text'},
+                                                         source_file=i_data)
+
+            dataset_path = os.path.join(rocrate_path, "dataset.txt")
+            with open(dataset_path, 'w') as f:
+                f.write("sample data")
+            dset_id = provenance_util.register_dataset(rocrate_path,
+                                                       data_dict={'name': 'Test Dataset',
+                                                                  'author': 'Test Author',
+                                                                  'version': '1.0',
+                                                                  'date-published': '2023-11-20',
+                                                                  'description': 'Test dataset description',
+                                                                  'data-format': 'text'},
+                                                       skip_copy=True,
+                                                       source_file=dataset_path)
+
+            self.assertIsNotNone(dset_id)
+            register_computation_result = provenance_util.register_computation(rocrate_path,
+                                                                               name='Test Computation',
+                                                                               used_software=[soft_id],
+                                                                               used_dataset=[i_dset_id],
+                                                                               generated=[dset_id],
+                                                                               keywords=['c1'])
+            self.assertIsNotNone(register_computation_result)
+
+            rocrate_dict = provenance_util.get_rocrate_as_dict(rocrate_path)
+            self.assertEqual({'@id': None, 'name': '',
+                              'description': '',
+                              'keywords': [''],
+                              'isPartOf': [{'@type': 'Organization',
+                                            'name': ''},
+                                           {'@type': 'Project',
+                                            'name': ''}]},
+                             rocrate_dict)
+
+            with open(os.path.join(rocrate_path, constants.PROVENANCE_ERRORS_FILE)) as f:
+                data = json.load(f)
+                self.assertEqual(5, len(data))
+        finally:
+            import time
+            print(os.listdir(os.path.join(temp_dir, 'test_rocrate')))
+            shutil.rmtree(temp_dir)

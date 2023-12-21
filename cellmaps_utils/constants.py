@@ -24,6 +24,11 @@ RO_CRATE_METADATA_FILE = 'ro-crate-metadata.json'
 `rocrate <https://www.researchobject.org/ro-crate>`__ metadata JSON file name
 """
 
+PROVENANCE_ERRORS_FILE = 'provenance_errors.json'
+"""
+Contains log of any failed fairscape-cli calls
+"""
+
 TASK_FILE_PREFIX = 'task_'
 """
 Prefix for task file

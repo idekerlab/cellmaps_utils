@@ -144,12 +144,17 @@ class ProvenanceUtil(object):
         """
         logger.error('Error occurred, but not raising exception due to '
                      'raise_on_error flag set to False')
+        err = str(err).strip()
         log_entry = {
             "cmd": cmd,
             "exit_code": exit_code,
-            "reason": reason + " : " + err.decode().strip()
+            "reason": reason + " : " + err
         }
-        log_file = os.path.join(os.getcwd() if cwd is None else cwd, 'provenance_errors.json')
+        if cwd is None:
+            log_file = os.path.join(os.getcwd(), constants.PROVENANCE_ERRORS_FILE)
+        else:
+            log_file = os.path.join(cwd, constants.PROVENANCE_ERRORS_FILE)
+
         try:
             if not os.path.exists(log_file):
                 with open(log_file, 'w') as file:
@@ -183,6 +188,7 @@ class ProvenanceUtil(object):
         logger.debug('Running command under ' + str(cwd) +
                      ' path: ' + str(cmd))
         p = subprocess.Popen(cmd, cwd=cwd,
+                             text=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         try:
@@ -201,8 +207,11 @@ class ProvenanceUtil(object):
                                       reason='Process timed out.')
         else:
             if not self._raise_on_error and p.returncode != 0:
-                self._log_fairscape_error(cmd, p.returncode, err)
+                self._log_fairscape_error(cmd, p.returncode, err, cwd=cwd)
 
+        # Removing ending new line if value is not None
+        if out is not None:
+            out = out.rstrip()
         return p.returncode, out, err
 
     def _get_keywords(self, keywords=None):
@@ -668,7 +677,7 @@ class ProvenanceUtil(object):
                 cmd.append('--generated')
                 cmd.append(entry)
         cmd.append(rocrate_path)
-        exit_code, out_str, err_str = self._run_cmd(cmd,
+        exit_code, out_str, err_str = self._run_cmd(cmd, cwd=rocrate_path,
                                                     timeout=timeout)
         logger.debug('add dataset exit code: ' + str(exit_code))
         if exit_code != 0 and self._raise_on_error:
@@ -749,7 +758,8 @@ class ProvenanceUtil(object):
         cmd.append('--filepath')
         cmd.append(url)
         cmd.append(rocrate_path)
-        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=timeout)
+        exit_code, out_str, err_str = self._run_cmd(cmd, cwd=rocrate_path,
+                                                    timeout=timeout)
 
         logger.debug('add software exit code: ' + str(exit_code))
         if exit_code != 0 and self._raise_on_error:
@@ -847,7 +857,8 @@ class ProvenanceUtil(object):
             cmd.append(source_file)
 
         cmd.append(rocrate_path)
-        exit_code, out_str, err_str = self._run_cmd(cmd, timeout=timeout)
+        exit_code, out_str, err_str = self._run_cmd(cmd, cwd=rocrate_path,
+                                                    timeout=timeout)
         logger.debug(operation_name + ' dataset exit code: ' + str(exit_code))
         if exit_code != 0 and self._raise_on_error:
             raise CellMapsProvenanceError('Error adding dataset: ' +
