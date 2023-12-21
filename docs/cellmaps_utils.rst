@@ -17,7 +17,8 @@ to setup logging
 cellmaps\_utils.provenance module
 ------------------------------------
 
-Contains wrapper functionality for calls to `FAIRSCAPE CLI <https://fairscape.github.io/fairscape-cli>`__
+Contains wrapper functionality for calls to
+`FAIRSCAPE CLI <https://fairscape.github.io/fairscape-cli>`__
 
 .. automodule:: cellmaps_utils.provenance
    :members:

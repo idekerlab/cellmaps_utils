@@ -200,9 +200,9 @@ higher log messages to ``error.log`` to a directory/`RO-Crate`_
     # will write error message to both output.log & error.log
     logger.error('Some error message')
 
-.. note::
+.. warning::
 
-    It is up to logger to clear/remove these added logging handlers
+    It is up to **caller** to clear/remove these added logging handlers
     if directory no longer exists
 
 .. _CM4AI: https://cm4ai.org

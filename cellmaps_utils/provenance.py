@@ -126,8 +126,24 @@ class ProvenanceUtil(object):
         self._raise_on_error = raise_on_error
 
     @staticmethod
-    def _log_fairscape_error(cmd, exit_code, err, reason='non zero exit code', cwd=None):
-        logger.error('Error occurred, but not raising exception due to raise_on_error flag set to False')
+    def _log_fairscape_error(cmd, exit_code, err,
+                             reason='non zero exit code', cwd=None):
+        """
+        Logs fairscape error to provenance_errors.json file
+
+        :param cmd:
+        :type cmd: list
+        :param exit_code:
+        :type exit_code: int
+        :param err: error message encoded
+        :type err: str
+        :param reason:
+        :type reason: str
+        :param cwd:
+        :type cwd: str
+        """
+        logger.error('Error occurred, but not raising exception due to '
+                     'raise_on_error flag set to False')
         log_entry = {
             "cmd": cmd,
             "exit_code": exit_code,
@@ -154,10 +170,13 @@ class ProvenanceUtil(object):
 
         :param cmd: command to run
         :type cmd: list
-        :param cwd
-        :type cwd
-        :param timeout
+        :param cwd: current working directory
+        :type cwd: str
+        :param timeout: timeout in seconds before killing process
         :type timeout: int or float
+        :raises CellMapsProvenanceError: If **raise_on_error** passed
+                                         into constructor is ``True`` and
+                                         process times out before completing
         :return: (return code, standard out, standard error)
         :rtype: tuple
         """
@@ -173,11 +192,13 @@ class ProvenanceUtil(object):
             p.kill()
             out, err = p.communicate()
             if self._raise_on_error:
-                raise CellMapsProvenanceError('Process timed out. exit code: ' +
+                raise CellMapsProvenanceError('Process timed out. '
+                                              'exit code: ' +
                                               str(p.returncode) +
                                               ' stdout: ' + str(out) +
                                               ' stderr: ' + str(err))
-            self._log_fairscape_error(cmd, p.returncode, err, cwd=cwd, reason='Process timed out.')
+            self._log_fairscape_error(cmd, p.returncode, err, cwd=cwd,
+                                      reason='Process timed out.')
         else:
             if not self._raise_on_error and p.returncode != 0:
                 self._log_fairscape_error(cmd, p.returncode, err)
@@ -190,6 +211,8 @@ class ProvenanceUtil(object):
 
         :param keywords:
         :type keywords: list or str
+        :raises CellMapsProvenanceError: if **keywords** is not of type
+                                         str or list
         :return: keywords commandline flags
         :rtype: list
         """
@@ -208,9 +231,14 @@ class ProvenanceUtil(object):
     def _generate_guid(self, data_type=None,
                        rocrate_path=None):
         """
+        Gets unique id by appending a UUID to **data_type** and basename of **rocrate_path**
 
         :param data_type:
-        :return:
+        :type data_type: str
+        :param rocrate_path: Path to ro-crate meta data file
+        :type rocrate_path: dict
+        :return:  unique id with data type and path information appended
+        :rtype: str
         """
         if data_type is not None:
             data_type_val = data_type
@@ -280,7 +308,13 @@ class ProvenanceUtil(object):
         :param rocrate_path: Directory containing `ro-crate-metadata.json` file or
                              path to file assumed to be ro-crate meta data file
         :type rocrate_path: str
-        :return:
+        :raises CellMapsProvenanceError: If **rocrate_path** is ``None`` or
+                                         if **raise_on_error** passed
+                                         into constructor is ``True`` and
+                                         there is an issue parsing the
+                                         ro-crate meta data file
+        :return: `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :rtype: dict
         """
         if rocrate_path is None:
             raise CellMapsProvenanceError('rocrate_path is None')
@@ -677,8 +711,8 @@ class ProvenanceUtil(object):
         :type file_format: str
         :param url: URL to repository for software
         :type url: str
-        :param date_modified
-        :type date_modified
+        :param date_modified:
+        :type date_modified: str
         :param keywords:
         :type keywords: list
         :param guid: ID for `RO-Crate <https://www.researchobject.org/ro-crate/>`__

@@ -113,6 +113,20 @@ class TestProvenanceUtil(unittest.TestCase):
         except CellMapsProvenanceError as ce:
             self.assertEqual('rocrate_path is None', str(ce))
 
+    def test_get_rocrate_as_dict_no_metadata_file(self):
+        prov = ProvenanceUtil(raise_on_error=False)
+        temp_dir = tempfile.mkdtemp()
+        try:
+            res = prov.get_rocrate_as_dict(temp_dir)
+            self.assertEqual({'@id': None, 'name': '', 'description': '',
+                              'keywords': [''],
+                              'isPartOf': [{"@type": "Organization",
+                                            "name": ""},
+                                           {"@type": "Project",
+                                            "name": ""}]}, res)
+        finally:
+            shutil.rmtree(temp_dir)
+
     def test_get_rocrate_as_dict_invalid_rocrate_metadata(self):
         prov = ProvenanceUtil(raise_on_error=True)
         temp_dir = tempfile.mkdtemp()
