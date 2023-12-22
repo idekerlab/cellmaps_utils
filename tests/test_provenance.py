@@ -153,7 +153,7 @@ class TestProvenanceUtil(unittest.TestCase):
                                   description=' some 10 character desc')
             crate_file = os.path.join(temp_dir, constants.RO_CRATE_METADATA_FILE)
             self.assertTrue(os.path.isfile(crate_file) or
-                            os.path.exists(os.path.join(os.getcwd(), 'provenance_errors.json')))
+                            os.path.exists(os.path.join(temp_dir, 'provenance_errors.json')))
         finally:
             shutil.rmtree(temp_dir)
 
