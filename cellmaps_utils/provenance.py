@@ -669,8 +669,9 @@ class ProvenanceUtil(object):
                 cmd.append(entry)
         if used_dataset is not None:
             for entry in used_dataset:
-                cmd.append('--used-dataset')
-                cmd.append(entry)
+                if entry is not None:
+                    cmd.append('--used-dataset')
+                    cmd.append(entry)
 
         if generated is not None:
             for entry in generated:
