@@ -115,7 +115,7 @@ class TableFromROCrates(BaseCommandLineTool):
             treatments.append('vorinostat')
         if 'paclitaxel' in keywords:
             treatments.append('paclitaxel')
-        return '|'.join(treatments)
+        return ','.join(treatments)
 
     def _get_geneset(self, keywords):
         """
@@ -132,7 +132,7 @@ class TableFromROCrates(BaseCommandLineTool):
             genesets.append('metabolic')
         if len(genesets) == 0:
             return 'Unknown'
-        return '|'.join(genesets)
+        return ','.join(genesets)
 
     def run(self):
         """
