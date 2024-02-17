@@ -840,6 +840,9 @@ class ProvenanceUtil(object):
         else:
             cmd.extend(self._get_keywords(keywords=data_dict['keywords']))
 
+        if 'schema' in data_dict:
+            cmd.extend(['--schema', data_dict['schema']])
+
         if guid is None:
             guid = self._generate_guid(data_type='dataset',
                                        rocrate_path=rocrate_path)

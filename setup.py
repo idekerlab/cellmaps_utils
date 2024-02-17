@@ -28,7 +28,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 
-requirements = ['fairscape-cli==0.1.8',
+requirements = ['fairscape-cli==0.1.14',
                 'scipy',
                 'scikit-learn',
                 'pandas',
