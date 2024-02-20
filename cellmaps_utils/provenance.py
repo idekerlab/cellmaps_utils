@@ -704,11 +704,6 @@ class ProvenanceUtil(object):
         ``ro-crate-metadata.json`` file stored in **rocrate_path**
         directory.
 
-        .. warning::
-
-            `fairscape-cli <https://github.com/fairscape>`__ 0.1.5 always fails this call
-            `See Issue #7 <https://github.com/fairscape/fairscape-cli/issues/7>`__
-
         :param name: Name of software
         :type name: str
         :param description: Description of software
@@ -792,14 +787,12 @@ class ProvenanceUtil(object):
              'date-published': 'Date dataset was published MM-DD-YYYY',
              'description': 'Description of dataset',
              'data-format': 'Format of data',
+             'schema': Path or URL to schema file in JSON format
              'keywords': ['keyword1','keyword2']}
 
-        .. warning::
+        .. versionchanged:: 0.2.0
 
-            `fairscape-cli <https://github.com/fairscape>`__ 0.1.5 fails when
-            skipping copy is ``True`` or if performing copy where
-            **source_file** is already in **rocrate_path** directory.
-            `See Issue #6 <https://github.com/fairscape/fairscape-cli/issues/6>`__
+            Added support for ``schema`` in **data_dict** passed in
 
 
         :param rocrate_path: Path to directory with registered rocrate
