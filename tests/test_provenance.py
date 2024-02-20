@@ -282,6 +282,32 @@ class TestProvenanceUtil(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir)
 
+    def test_register_dataset_with_schema(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            subdir = os.path.join(temp_dir, 'input')
+            os.makedirs(subdir, mode=0o755)
+            src_file = os.path.join(subdir, 'xx')
+            with open(src_file, 'w') as f:
+                f.write('hi')
+
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='some 10 character name', description='10 character description')
+            d_id = prov.register_dataset(temp_dir,
+                                         source_file=src_file,
+                                         skip_copy=False,
+                                         data_dict={'name': 'Name of dataset',
+                                                    'author': 'Author of dataset',
+                                                    'version': 'Version of dataset',
+                                                    'date-published': 'Date dataset was published MM-DD-YYYY',
+                                                    'description': 'Description of dataset',
+                                                    'schema': 'https://foo.com',
+                                                    'data-format': 'Format of data'})
+            self.assertIsNotNone(d_id)
+
+        finally:
+            shutil.rmtree(temp_dir)
+
     def test_register_dataset_with_keywords(self):
 
         temp_dir = tempfile.mkdtemp()
