@@ -22,6 +22,7 @@ Contains utilities needed by various tools in the cell maps toolkit.
 
 * Free software: MIT license
 * Documentation: https://cellmaps-utils.readthedocs.io.
+* Source code: https://github.com/idekerlab/cellmaps_utils
 
 Dependencies
 ------------

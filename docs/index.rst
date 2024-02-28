@@ -19,6 +19,9 @@ Cell Maps Utilities
 
 Contains utilities needed by various tools in the cell maps toolkit. 
 
+* Free software: MIT license
+* Source code: https://github.com/idekerlab/cellmaps_utils
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
