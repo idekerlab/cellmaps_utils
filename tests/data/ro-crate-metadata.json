@@ -1,0 +1,184 @@
+{
+  "@id": "41c9a9d1-a8e8-42ae-9f69-bb2112ccd0c9:rocrate::1.ppi_download",
+  "@context": {
+    "EVI": "https://w3id.org/EVI#",
+    "@vocab": "https://schema.org/"
+  },
+  "@type": "Dataset",
+  "name": "Example input dataset",
+  "description": "CM4AI Example Example input dataset AP-MS Edgelist",
+  "keywords": [
+    "CM4AI",
+    "Example",
+    "Example input dataset",
+    "AP-MS edgelist download"
+  ],
+  "isPartOf": [
+    {
+      "@id": "ark:/CM4AI",
+      "@type": "Organization",
+      "name": "CM4AI"
+    },
+    {
+      "@id": "ark:/CM4AI/Example",
+      "@type": "Project",
+      "name": "Example"
+    }
+  ],
+  "@graph": [
+    {
+      "@id": "41c9a9d1-a8e8-42ae-9f69-bb2112ccd0c9:rocrate::1.ppi_download/ro-crate-metadata.json",
+      "conformsTo": {
+        "@id": "https://w3id.org/ro/crate/1.1"
+      },
+      "about": {
+        "@id": "41c9a9d1-a8e8-42ae-9f69-bb2112ccd0c9:rocrate::1.ppi_download"
+      },
+      "isPartOf": {
+        "@id": "41c9a9d1-a8e8-42ae-9f69-bb2112ccd0c9:rocrate::1.ppi_download"
+      },
+      "contentUrl": "file:///Users/jlenkiewicz/Documents/fpipeline/1.ppi_download/ro-crate-metadata.json"
+    },
+    {
+      "@id": "9040a0e4-6221-4c04-bce2-ff7e757e46f4:dataset::1.ppi_download",
+      "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#"
+      },
+      "metadataType": "https://w3id.org/EVI#Dataset",
+      "url": null,
+      "name": "Antoine Forget sample edgelist",
+      "keywords": [
+        ""
+      ],
+      "description": "AP-MS Protein interactions on HSC2 cell line, example dataset",
+      "author": "Krogan Lab",
+      "datePublished": "07-31-2023",
+      "version": "1.0",
+      "associatedPublication": null,
+      "additionalDocumentation": null,
+      "format": "tsv",
+      "schema": {},
+      "generatedBy": [],
+      "derivedFrom": [],
+      "usedBy": [],
+      "contentUrl": "file:///Users/jlenkiewicz/Documents/fpipeline/1.ppi_download/edgelist.tsv"
+    },
+    {
+      "@id": "66bcd22c-6d44-4a73-ae17-70ad4db3b82c:dataset::1.ppi_download",
+      "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#"
+      },
+      "metadataType": "https://w3id.org/EVI#Dataset",
+      "url": null,
+      "name": "Antoine Forget sample baitlist",
+      "keywords": [
+        ""
+      ],
+      "description": "AP-MS Baits used for Protein interactions on HSC2 cell line",
+      "author": "Krogan Lab",
+      "datePublished": "07-31-2023",
+      "version": "1.0",
+      "associatedPublication": null,
+      "additionalDocumentation": null,
+      "format": "tsv",
+      "schema": {},
+      "generatedBy": [],
+      "derivedFrom": [],
+      "usedBy": [],
+      "contentUrl": "file:///Users/jlenkiewicz/Documents/fpipeline/1.ppi_download/baitlist.tsv"
+    },
+    {
+      "@id": "b2bde86b-12a2-404b-a1f3-11e6e1153101:software::1.ppi_download",
+      "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#"
+      },
+      "metadataType": "https://w3id.org/EVI#Software",
+      "url": "https://github.com/idekerlab/cellmaps_ppidownloader",
+      "name": "cellmaps_ppidownloader",
+      "keywords": [
+        "CM4AI",
+        "Example",
+        "Example input dataset",
+        "AP-MS edgelist download",
+        "tools",
+        "cellmaps_ppidownloader"
+      ],
+      "description": "CM4AI Example Example input dataset AP-MS Edgelist A tool to download AP-MS data for Cell Maps pipeline",
+      "author": "Ideker Lab Cell Maps team",
+      "dateModified": "2024-02-01",
+      "version": "0.1.0a8",
+      "associatedPublication": null,
+      "additionalDocumentation": null,
+      "format": "py",
+      "usedByComputation": [],
+      "contentUrl": "https://github.com/idekerlab/cellmaps_ppidownloader"
+    },
+    {
+      "@id": "17b6f2a6-e756-427c-8243-cf76c2ee00cf:dataset::1.ppi_download",
+      "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#"
+      },
+      "metadataType": "https://w3id.org/EVI#Dataset",
+      "url": null,
+      "name": "cellmaps_ppidownloader output file",
+      "keywords": [
+        ""
+      ],
+      "description": "CM4AI Example Example input dataset AP-MS Edgelist AP-MS gene node attributes file",
+      "author": "Ideker Lab Cell Maps team",
+      "datePublished": "2024-02-01",
+      "version": "0.1.0a8",
+      "associatedPublication": null,
+      "additionalDocumentation": null,
+      "format": "tsv",
+      "schema": {},
+      "generatedBy": [],
+      "derivedFrom": [],
+      "usedBy": [],
+      "contentUrl": "file:///Users/jlenkiewicz/Documents/fpipeline/1.ppi_download/ppi_gene_node_attributes.tsv"
+    },
+    {
+      "@id": "7edf8040-145d-479b-981f-b727aa030cc4:computation::1.ppi_download",
+      "@context": {
+        "@vocab": "https://schema.org/",
+        "evi": "https://w3id.org/EVI#"
+      },
+      "metadataType": "https://w3id.org/EVI#Computation",
+      "url": null,
+      "name": "AP-MS Loader",
+      "keywords": [
+        "CM4AI",
+        "Example",
+        "Example input dataset",
+        "AP-MS edgelist download",
+        "tools",
+        "cellmaps_ppidownloader",
+        "gene",
+        "attributes",
+        "file",
+        "computation",
+        "download"
+      ],
+      "description": "CM4AI Example Example input dataset AP-MS Edgelist run of cellmaps_ppidownloader",
+      "runBy": "jlenkiewicz",
+      "dateCreated": "2024-02-01",
+      "associatedPublication": null,
+      "additionalDocumentation": null,
+      "command": "{'outdir': 'fpipeline', 'cm4ai_apms': None, 'cm4ai_image': None, 'slurm': False, 'samples': '/Users/jlenkiewicz/Documents/repos/cellmaps_pipeline/examples/samples.csv', 'unique': '/Users/jlenkiewicz/Documents/repos/cellmaps_pipeline/examples/unique.csv', 'edgelist': '/Users/jlenkiewicz/Documents/repos/cellmaps_pipeline/examples/edgelist.tsv', 'baitlist': '/Users/jlenkiewicz/Documents/repos/cellmaps_pipeline/examples/baitlist.tsv', 'model_path': 'https://github.com/CellProfiling/densenet/releases/download/v0.1.0/external_crop512_focal_slov_hardlog_class_densenet121_dropout_i768_aug2_5folds_fold0_final.pth', 'fold': [1, 2], 'proteinatlasxml': 'https://www.proteinatlas.org/download/proteinatlas.xml.gz', 'ppi_cutoffs': [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.02, 0.03, 0.04, 0.05, 0.1], 'provenance': '/Users/jlenkiewicz/Documents/repos/cellmaps_pipeline/examples/provenance.json', 'fake': False, 'logconf': None, 'verbose': 1, 'program': '/Users/jlenkiewicz/anaconda3/envs/pipeline_env/bin/cellmaps_pipelinecmd.py', 'version': '0.1.0a17'}",
+      "usedSoftware": [
+        "b2bde86b-12a2-404b-a1f3-11e6e1153101:software::1.ppi_download"
+      ],
+      "usedDataset": [
+        "9040a0e4-6221-4c04-bce2-ff7e757e46f4:dataset::1.ppi_download",
+        "66bcd22c-6d44-4a73-ae17-70ad4db3b82c:dataset::1.ppi_download"
+      ],
+      "generated": [
+        "17b6f2a6-e756-427c-8243-cf76c2ee00cf:dataset::1.ppi_download"
+      ]
+    }
+  ]
+}
