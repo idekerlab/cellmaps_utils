@@ -18,6 +18,23 @@ from cellmaps_utils.provenance import ProvenanceUtil
 logger = logging.getLogger(__name__)
 
 
+def download_file_skip_existing(downloadtuple):
+    """
+    Downloads file in **downloadtuple** unless the file already exists
+    with a size greater then 0 bytes, in which case function
+    just returns
+
+    :param downloadtuple: (download link, dest file path)
+    :type downloadtuple: tuple
+    :return: None upon success otherwise:
+             (requests status code, text from request, downloadtuple)
+    :rtype: tuple
+    """
+    if os.path.isfile(downloadtuple[1]) and os.path.getsize(downloadtuple[1]) > 0:
+        return None
+    return download_file(downloadtuple)
+
+
 def download_file(downloadtuple):
     """
     Downloads file pointed to by 'download_url' to
@@ -119,7 +136,7 @@ class FakeImageDownloader(ImageDownloader):
             t.update()
             if download_file(entry) is not None:
                 raise CellMapsError('Unable to download ' +
-                                                   str(entry))
+                                    str(entry))
             fname = os.path.basename(entry[1])
             color = re.sub('\..*$', '', re.sub('^.*_', '', fname))
             src_image_dict[color] = entry[1]
