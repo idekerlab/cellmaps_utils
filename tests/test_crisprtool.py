@@ -91,12 +91,8 @@ class TestCRISPRDataLoader(unittest.TestCase):
         self.assertTrue('@@FEATURE_REF_UNDERLINE@@' in token_map)
 
     def test_copy_over_crispr_readme(self):
-        crispr_readme_path = os.path.join(os.path.dirname(__file__), 'crispr_readme.txt')
-        with open(crispr_readme_path, 'w') as f:
-            f.write('This is a mock CRISPR readme.')
         self.loader._copy_over_crispr_readme()
         self.assertTrue(os.path.exists(os.path.join(self.temp_outdir, 'readme.txt')))
-        os.remove(crispr_readme_path)
 
     def test_replace_readme_tokens(self):
         token_map = {
