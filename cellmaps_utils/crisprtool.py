@@ -49,6 +49,9 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
     def run(self):
         """
+        Runs the process of CRISPR data loading into a RO-Crate. It includes generating the output directory,
+        linking and registering guide RNA and expression files, copying over the feature file, and registering the
+        computation and software used in the process.
 
         :return:
         """
@@ -98,8 +101,10 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
     def _get_dataset_description(self):
         """
+        Provides a description of the dataset based on its type (1channel or subset).
 
-        :return:
+        :return: A string description of the dataset.
+        :rtype: str
         """
         if self._dataset.lower() == '1channel':
             return 'FASTQs file were obtain by concatenating 3 NGS run over 7 sequencing lanes'
@@ -109,8 +114,15 @@ class CRISPRDataLoader(BaseCommandLineTool):
     def _link_and_register_guiderna(self, description='',
                                     keywords=[]):
         """
+        Processes guide RNA files by optionally copying them to the output directory and registering each file in the
+        RO-Crate metadata.
 
-        :return:
+        :param description: A base description for the files being processed.
+        :type description: str
+        :param keywords: A list of keywords associated with these files for metadata purposes.
+        :type keywords: list
+        :return: A list of dataset identifiers for the registered guide RNA files.
+        :rtype: list
         """
         dset_ids = []
         for guiderna in self._guiderna:
@@ -146,8 +158,15 @@ class CRISPRDataLoader(BaseCommandLineTool):
     def _link_and_register_expression(self, description='',
                                       keywords=[]):
         """
+        Processes expression files by optionally copying them to the output directory and registering each file in the
+        RO-Crate metadata.
 
-        :return:
+        :param description: A base description for the files being processed.
+        :type description: str
+        :param keywords: A list of keywords associated with these files for metadata purposes.
+        :type keywords: list
+        :return: A list of dataset identifiers for the registered expression files.
+        :rtype: list
         """
         dset_ids = []
         for expression in self._expression:
@@ -199,8 +218,10 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
     def _create_token_replacement_map(self):
         """
+        Generates a map of tokens to their respective replacement values for use in modifying the CRISPR readme file.
 
-        :return:
+        :return: A dictionary where each key is a token to replace and each value is the replacement string.
+        :rtype: dict
         """
         prefix = self._cell_line + '_' + self._treatment
         return {'@@PREFIX@@': prefix,
@@ -256,9 +277,15 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
     def _replace_readme_tokens(self, line, tokenmap=None):
         """
+        Replaces tokens in a line of the CRISPR readme file with their corresponding values from the token
+        replacement map.
 
-        :param line:
-        :return:
+        :param line: The current line from the readme file to process.
+        :type line: str
+        :param tokenmap: A map of tokens and their replacement values.
+        :type tokenmap: dict
+        :return: The line with tokens replaced by their respective values.
+        :rtype: str
         """
         for token in tokenmap.keys():
             if token in line:
@@ -267,8 +294,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
     def _generate_rocrate_dir_path(self):
         """
-
-        :return:
+        Generates the directory path for the RO-Crate based on project name, gene set, cell line, treatment type,
+        dataset type, and release version.
         """
         dir_name = self._project_name.lower() + '_'
         if self._gene_set is not None:
@@ -285,6 +312,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
                               description='',
                               keywords=[]):
         """
+        Registers the computation.
         # Todo: added in used dataset, software and what is being generated
         :return:
         """
@@ -325,6 +353,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
     def add_subparser(subparsers):
         """
+        Adds a subparser for the CRISPR data loader command.
 
         :return:
         """
