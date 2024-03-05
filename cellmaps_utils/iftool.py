@@ -264,8 +264,13 @@ class IFImageDataConverter(BaseCommandLineTool):
 
     def run(self):
         """
+        Runs the process of converting IF Image data into a format consumable by the Cell Maps Pipeline.
+        This includes generating a directory path for the RO-Crate, creating the output directory, registering
+        the RO-Crate, filtering the input data based on criteria, downloading and organizing the images.
+        It also handles the registration of datasets and computations in the FAIRSCAPE ecosystem.
 
         :return:
+        :rtype: int
         """
         self._generate_rocrate_dir_path()
         self._create_output_directory()
@@ -340,6 +345,8 @@ class IFImageDataConverter(BaseCommandLineTool):
 
     def _generate_rocrate_dir_path(self):
         """
+        Generates the directory path for the RO-Crate based on project-specific attributes such as project name,
+        gene set, cell line, treatment, and release version.
 
         :return:
         """
@@ -406,10 +413,15 @@ class IFImageDataConverter(BaseCommandLineTool):
     def _download_data(self, baselinks=None,
                        max_retry=5):
         """
+        Initiates the download of images based on a list of base URLs. It manages the download process, retries failed
+        downloads up to a maximum number of attempts, and logs any errors encountered.
 
-        :param baselinks:
+        :param baselinks: A list of base URLs for image download.
         :type baselinks: list
-        :return:
+        :param max_retry: Maximum number of retries for failed downloads.
+        :type max_retry: int
+        :return: A tuple containing the status (0 for success) and a list of failed downloads.
+        :rtype: tuple
         """
         dtuples = self._get_download_tuples(baselinks=baselinks)
 
@@ -430,9 +442,13 @@ class IFImageDataConverter(BaseCommandLineTool):
 
     def _retry_failed_images(self, failed_downloads=None):
         """
+        Attempts to re-download images that failed in the initial download attempt. It organizes the failed downloads
+        based on error codes, logs the failure counts, and retries the downloads.
 
-        :param failed_downloads:
-        :return:
+        :param failed_downloads: A list of failed downloads to retry.
+        :type failed_downloads: list
+        :return: A list of downloads that failed after retrying.
+        :rtype: list
         """
         downloads_to_retry = []
         error_code_map = {}
@@ -510,6 +526,7 @@ class IFImageDataConverter(BaseCommandLineTool):
                               description='',
                               keywords=[]):
         """
+        Registers the computational process executed by this tool
         # Todo: added in used dataset, software and what is being generated
         :return:
         """
@@ -550,6 +567,7 @@ class IFImageDataConverter(BaseCommandLineTool):
 
     def add_subparser(subparsers):
         """
+        Adds command-line argument parsing for the IFImageDataConverter tool.
 
         :return:
         """
