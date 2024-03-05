@@ -47,6 +47,8 @@ class APMSDataLoader(BaseCommandLineTool):
 
     def run(self):
         """
+        Run method to create RO-Crate from AP-MS data tables. This process involves merging input tables,
+        registering the dataset and related software in the RO-Crate.
 
         :return:
         """
@@ -113,8 +115,8 @@ class APMSDataLoader(BaseCommandLineTool):
 
     def _generate_rocrate_dir_path(self):
         """
-
-        :return:
+        Generates a directory path for the RO-Crate based on provided metadata like project name, gene set,
+        cell line, treatment, and release version.
         """
         dir_name = self._project_name.lower() + '_'
         if self._gene_set is not None:
@@ -128,8 +130,10 @@ class APMSDataLoader(BaseCommandLineTool):
 
     def _merge_and_save_apms_data(self):
         """
+        Merges AP-MS data from input files into a single DataFrame and saves the combined data to a TSV file within
+        the RO-Crate directory.
 
-        :return:
+        :return: The file path to the saved AP-MS data TSV file.
         """
         df_list = []
         for input in self._inputs:
@@ -159,6 +163,7 @@ class APMSDataLoader(BaseCommandLineTool):
                               description='',
                               keywords=[]):
         """
+        Registers the computation process in the RO-Crate
         # Todo: added in used dataset, software and what is being generated
         :return:
         """
@@ -199,6 +204,7 @@ class APMSDataLoader(BaseCommandLineTool):
 
     def add_subparser(subparsers):
         """
+        Adds a command-line subparser for the APMSDataLoader tool.
 
         :return:
         """
