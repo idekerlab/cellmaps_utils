@@ -52,7 +52,7 @@ class TestCRISPRDataLoader(unittest.TestCase):
     @patch('cellmaps_utils.provenance.ProvenanceUtil.register_dataset')
     def test_link_and_register_guiderna(self, mock_register_dataset, mock_link_or_copy):
         mock_register_dataset.return_value = 'mock_dataset_id'
-        dset_ids = self.loader._link_and_register_guiderna(description='Test Description', keywords=['test'])
+        dset_ids = self.loader._link_and_register_h5ad(description='Test Description', keywords=['test'])
         self.assertTrue(len(dset_ids) > 0)
         mock_link_or_copy.assert_called()
         mock_register_dataset.assert_called()
@@ -67,7 +67,7 @@ class TestCRISPRDataLoader(unittest.TestCase):
     @patch('cellmaps_utils.provenance.ProvenanceUtil.register_dataset')
     def test_link_and_register_expression(self, mock_register_dataset, mock_link_or_copy):
         mock_register_dataset.return_value = 'mock_dataset_id'
-        dset_ids = self.loader._link_and_register_expression(description='Test Description', keywords=['test'])
+        dset_ids = self.loader._link_and_register_h5ad(description='Test Description', keywords=['test'])
         self.assertTrue(len(dset_ids) > 0)
         mock_link_or_copy.assert_called()
         mock_register_dataset.assert_called()
@@ -87,8 +87,7 @@ class TestCRISPRDataLoader(unittest.TestCase):
 
     def test_create_token_replacement_map(self):
         token_map = self.loader._create_token_replacement_map()
-        self.assertTrue('@@PREFIX@@' in token_map)
-        self.assertTrue('@@FEATURE_REF_UNDERLINE@@' in token_map)
+        self.assertTrue('@@H5AD@@' in token_map)
 
     def test_copy_over_crispr_readme(self):
         self.loader._copy_over_crispr_readme()
