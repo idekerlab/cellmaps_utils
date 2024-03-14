@@ -337,7 +337,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
                             choices=['paclitaxel', 'vorinostat', 'untreated'],
                             help='Treatment of sample.')
         parser.add_argument('--dataset', required=True,
-                            choices=['1channel', 'subset', ''],
+                            choices=['1channel', 'subset', '4channel'],
                             help='Collection set')
         parser.add_argument('--cell_line', default='MDA-MB-468',
                             choices=['MDA-MB-468', 'KOLF2.1J'],
