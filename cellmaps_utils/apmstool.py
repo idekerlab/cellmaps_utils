@@ -41,6 +41,16 @@ class APMSDataLoader(BaseCommandLineTool):
         self._treatment = theargs.treatment
         self._author = theargs.author
         self._gene_set = theargs.gene_set
+        if self._treatment is not None:
+            if self._treatment == 'untreated':
+                self._baitfilter = '_DMSO'
+            elif self._treatment == 'paclitaxel':
+                self._baitfilter = '_PTXL'
+            elif self._treatment == 'vorinostat':
+                self._baitfilter = '_VRST'
+        else:
+            self._baitfilter = None
+        self._set_name = theargs.set_name
         self._provenance_utils = provenance_utils
         self._softwareid = None
         self._input_data_dict = theargs.__dict__
@@ -122,11 +132,29 @@ class APMSDataLoader(BaseCommandLineTool):
         if self._gene_set is not None:
             dir_name += self._gene_set.lower() + '_'
         dir_name += self._cell_line.lower() + '_'
-        dir_name += self._treatment.lower() + '_apms_'
+        dir_name += self._treatment.lower()
+        if self._set_name is not None:
+            dir_name += '_' + self._set_name
+        dir_name += '_apms_'
         dir_name += self._release.lower()
 
         dir_name = dir_name.replace(' ', '_')
         self._outdir = os.path.join(self._outdir, dir_name)
+
+    def _filter_by_bait(self, df):
+        """
+        Filters dataframe by baitfilter in place
+        :param df:
+        :type df: :py:class:`~pandas.DataFrame`
+        :return:
+        """
+        if self._baitfilter is not None:
+            logger.debug('Keeping only rows that end with ' +
+                         self._baitfilter + ' in bait')
+            filtered_df = df[df['Bait'].str.endswith(self._baitfilter)]
+            filtered_df['Bait'] = filtered_df['Bait'].str.removesuffix(self._baitfilter)
+            return filtered_df
+        return df
 
     def _merge_and_save_apms_data(self):
         """
@@ -154,6 +182,8 @@ class APMSDataLoader(BaseCommandLineTool):
             df_list.append(cur_df)
 
         df = pd.concat(df_list)
+
+        df = self._filter_by_bait(df)
 
         apms_path = os.path.join(self._outdir, 'apms.tsv')
         df.to_csv(apms_path, sep='\t', index=False)
@@ -246,5 +276,8 @@ class APMSDataLoader(BaseCommandLineTool):
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
                             default='chromatin',
                             help='Gene set for dataset')
+        parser.add_argument('--set_name',
+                            help='If set, adds value to RO-Crate folder name before _apms_<version>. '
+                                 'Example values set1')
         return parser
 
