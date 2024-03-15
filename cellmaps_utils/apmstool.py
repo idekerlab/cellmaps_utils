@@ -152,7 +152,8 @@ class APMSDataLoader(BaseCommandLineTool):
             logger.debug('Keeping only rows that end with ' +
                          self._baitfilter + ' in bait')
             filtered_df = df[df['Bait'].str.endswith(self._baitfilter)]
-            filtered_df['Bait'] = filtered_df['Bait'].str.removesuffix(self._baitfilter)
+            filtered_df.reset_index()
+            filtered_df.loc[:, 'Bait'] = filtered_df.loc[:, 'Bait'].str.removesuffix(self._baitfilter)
             return filtered_df
         return df
 
@@ -165,7 +166,7 @@ class APMSDataLoader(BaseCommandLineTool):
         """
         df_list = []
         for input in self._inputs:
-            cur_df = pd.read_csv(input, sep='\t')
+            cur_df = pd.read_csv(input, sep='\t', na_filter=False)
             # Handles case where HDAC2 in initial cm4ai dataset
             # had several columns lacking .x suffix
             # we are fixing this by checking for those columns and if
