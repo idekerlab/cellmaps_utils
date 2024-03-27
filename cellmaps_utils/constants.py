@@ -281,4 +281,8 @@ HIERARCHYEVAL_STEP_DIR = '5.hierarchyeval'
 Name of directory where hierarchy evaluations are stored
 """
 
+DATASET_INFO_FILE = 'dataset_info.json'
+"""
+Name of file where information about a dataset is stored
+"""
 
