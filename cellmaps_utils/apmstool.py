@@ -46,30 +46,6 @@ class APMSDataLoader(BaseCommandLineTool):
         self._softwareid = None
         self._input_data_dict = theargs.__dict__
 
-    def save_dataset_info_to_json(self, file_name):
-        """
-        Saves project information to a JSON file.
-
-        :param file_name: Name of the file to save the information.
-        """
-        info_dict = {
-            'name': self._name,
-            'organization_name': self._organization_name,
-            'project_name': self._project_name,
-            'release': self._release,
-            'cell_line': self._cell_line,
-            'treatment': self._treatment,
-            'author': self._author,
-            'gene_set': self._gene_set
-        }
-
-        json_str = json.dumps(info_dict, indent=4)
-
-        json_file_path = os.path.join(self._outdir, file_name)
-
-        with open(json_file_path, 'w') as json_file:
-            json_file.write(json_str)
-
     def run(self):
         """
         Run method to create RO-Crate from AP-MS data tables. This process involves merging input tables,
@@ -92,7 +68,18 @@ class APMSDataLoader(BaseCommandLineTool):
 
         description = ' '.join(keywords)
 
-        self.save_dataset_info_to_json(constants.DATASET_INFO_FILE)
+        info_dict = {
+            constants.DATASET_NAME: self._name,
+            constants.DATASET_ORGANIZATION_NAME: self._organization_name,
+            constants.DATASET_PROJECT_NAME: self._project_name,
+            constants.DATASET_RELEASE: self._release,
+            constants.DATASET_CELL_LINE: self._cell_line,
+            constants.DATASET_TREATMENT: self._treatment,
+            constants.DATASET_AUTHOR: self._author,
+            constants.DATASET_GENE_SET: self._gene_set
+        }
+
+        self.save_dataset_info_to_json(info_dict, constants.DATASET_INFO_FILE)
 
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=self._name,
