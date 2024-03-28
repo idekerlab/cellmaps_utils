@@ -83,7 +83,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
             constants.DATASET_COLLECTION_SET: self._dataset
         }
 
-        self.save_dataset_info_to_json(info_dict, constants.DATASET_INFO_FILE)
+        self.save_dataset_info_to_json(self._outdir, info_dict, constants.DATASET_INFO_FILE)
 
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=self._name,

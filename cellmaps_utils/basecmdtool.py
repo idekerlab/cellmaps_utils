@@ -25,16 +25,18 @@ class BaseCommandLineTool(object):
         """
         pass
 
-    def save_dataset_info_to_json(self, info_dict, file_name):
+    def save_dataset_info_to_json(self, outdir, info_dict, file_name):
         """
         Saves project information to a JSON file.
 
+        :param outdir: Output directory where the file will be saved
+        :param info_dict: Dictionary with dataset information
         :param file_name: Name of the file to save the information.
         """
 
         json_str = json.dumps(info_dict, indent=4)
 
-        json_file_path = os.path.join(self._outdir, file_name)
+        json_file_path = os.path.join(outdir, file_name)
 
         with open(json_file_path, 'w') as json_file:
             json_file.write(json_str)
