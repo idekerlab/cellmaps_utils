@@ -5,7 +5,7 @@ History
 0.3.0 (2024-04-15)
 -------------------
 
-* Bumped fairscape-cli dependency to ``0.2.0`` to support schemas
+* Bumped fairscape-cli dependency to ``0.2.0``
 
 
 0.2.0 (2024-02-20)
