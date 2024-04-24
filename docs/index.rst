@@ -28,6 +28,7 @@ Contains utilities needed by various tools in the cell maps toolkit.
 
    installation
    usage
+   outputs
    modules
    developer
    authors
