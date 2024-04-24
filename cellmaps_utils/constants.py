@@ -316,6 +316,11 @@ DATASET_TREATMENT = 'treatment'
 Treatment
 """
 
+DATASET_TISSUE = 'tissue'
+"""
+Tissue
+"""
+
 DATASET_AUTHOR = 'author'
 """
 Author of the dataset
