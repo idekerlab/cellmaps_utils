@@ -56,7 +56,8 @@ class TestIntegrationCellmapsUtils(unittest.TestCase):
                                                                     'date-published': '2023-11-20',
                                                                     'description': 'Test input description',
                                                                     'data-format': 'text'},
-                                                         source_file=i_data)
+                                                         source_file=i_data,
+                                                         skip_copy=False)
 
             dataset_path = os.path.join(rocrate_path, "dataset.txt")
             with open(dataset_path, 'w') as f:
@@ -85,26 +86,30 @@ class TestIntegrationCellmapsUtils(unittest.TestCase):
             outputdataset_found = False
             computation_found = False
             rocrate_dict = provenance_util.get_rocrate_as_dict(rocrate_path)
-
             for entry in rocrate_dict['@graph']:
-                if 'metadataType' not in entry:
+                entrykey = None
+                if 'metadataType' in entry:
+                    entrykey = 'metadataType'
+                if '@type' in entry:
+                    entrykey = '@type'
+                if entrykey is None:
                     continue
-                if 'Software' in entry['metadataType']:
+                if 'Software' in entry[entrykey]:
                     self.assertEqual('my software', entry['name'])
                     self.assertEqual('https://foo.com', entry['url'])
                     self.assertEqual('bob smith', entry['author'])
                     self.assertEqual('Must be at least 10 characters', entry['description'])
                     self.assertEqual('1.0.0', entry['version'])
                     software_found = True
-                if 'Dataset' in entry['metadataType'] and entry['name'] == 'Input Dataset':
+                if 'Dataset' in entry[entrykey] and entry['name'] == 'Input Dataset':
                     self.assertEqual('Test input description', entry['description'])
                     self.assertEqual('Test i Author', entry['author'])
                     inputdataset_found = True
-                if 'Dataset' in entry['metadataType'] and entry['name'] == 'Test Dataset':
+                if 'Dataset' in entry[entrykey] and entry['name'] == 'Test Dataset':
                     self.assertEqual('Test dataset description', entry['description'])
                     self.assertEqual('Test Author', entry['author'])
                     outputdataset_found = True
-                if 'Computation' in entry['metadataType']:
+                if 'Computation' in entry[entrykey]:
                     self.assertEqual('Test Computation', entry['name'])
                     self.assertEqual('Must be at least 10 characters', entry['description'])
                     self.assertEqual([soft_id], entry['usedSoftware'])

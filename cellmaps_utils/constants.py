@@ -281,4 +281,57 @@ HIERARCHYEVAL_STEP_DIR = '5.hierarchyeval'
 Name of directory where hierarchy evaluations are stored
 """
 
+DATASET_INFO_FILE = 'dataset_info.json'
+"""
+Name of file where information about a dataset is stored
+"""
 
+DATASET_NAME = 'name'
+"""
+Name of the dataset
+"""
+
+DATASET_ORGANIZATION_NAME = 'organization_name'
+"""
+Name of the organization
+"""
+
+DATASET_PROJECT_NAME = 'project_name'
+"""
+Name of the project
+"""
+
+DATASET_RELEASE = 'release'
+"""
+Release of the dataset
+"""
+
+DATASET_CELL_LINE = 'cell_line'
+"""
+Cell line
+"""
+
+DATASET_TREATMENT = 'treatment'
+"""
+Treatment
+"""
+
+DATASET_AUTHOR = 'author'
+"""
+Author of the dataset
+"""
+
+DATASET_SLICE = 'slice'
+"""
+Slice
+"""
+
+DATASET_GENE_SET = 'gene_set'
+"""
+Gene set
+"""
+
+DATASET_COLLECTION_SET = 'collection_set'
+"""
+Collection set
+"""

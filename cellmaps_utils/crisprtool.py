@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import uuid
@@ -73,6 +74,20 @@ class CRISPRDataLoader(BaseCommandLineTool):
             keywords.append(self._gene_set)
 
         description = ' '.join(keywords)
+
+        info_dict = {
+            constants.DATASET_NAME: self._name,
+            constants.DATASET_ORGANIZATION_NAME: self._organization_name,
+            constants.DATASET_PROJECT_NAME: self._project_name,
+            constants.DATASET_RELEASE: self._release,
+            constants.DATASET_CELL_LINE: self._cell_line,
+            constants.DATASET_TREATMENT: self._treatment,
+            constants.DATASET_AUTHOR: self._author,
+            constants.DATASET_GENE_SET: self._gene_set,
+            constants.DATASET_COLLECTION_SET: self._dataset
+        }
+
+        self.save_dataset_info_to_json(self._outdir, info_dict, constants.DATASET_INFO_FILE)
 
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=self._name,
