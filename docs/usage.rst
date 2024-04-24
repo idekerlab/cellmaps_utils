@@ -261,6 +261,11 @@ Affinity Purification Mass Spectrometry (AP-MS) data release
 
 TODO
 
+Size Exclusion Chromatography with Mass Spectrometry (SEC-MS) data release
+=============================================================================
+
+TODO
+
 
 Immunofluorescent Image (IFImage) data release
 ==================================================================
