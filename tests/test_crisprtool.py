@@ -19,13 +19,18 @@ class TestCRISPRDataLoader(unittest.TestCase):
                                    release='1.0',
                                    cell_line='Test Line',
                                    treatment='Test Treatment',
+                                   tissue='breast; mammary gland',
                                    author='Test Author',
                                    gene_set='Test Set',
                                    feature='Test Feature',
                                    expression=['Test Expression'],
                                    guiderna=['Test GuideRNA'],
                                    dataset='1channel',
-                                   skipcopy=False)
+                                   skipcopy=False,
+                                   num_perturb_guides='1',
+                                   num_non_target_ctrls='2',
+                                   num_screen_targets='3'
+        )
         self.loader = CRISPRDataLoader(self.mock_args)
 
     def tearDown(self):
@@ -59,8 +64,11 @@ class TestCRISPRDataLoader(unittest.TestCase):
 
     def test_generate_rocrate_dir_path(self):
         self.loader._generate_rocrate_dir_path()
-        expected_dir_name = f"{self.mock_args.project_name.lower()}_{self.mock_args.gene_set.lower()}_{self.mock_args.cell_line.lower()}_{self.mock_args.treatment.lower()}_crispr_{self.mock_args.dataset.lower()}_{self.mock_args.release.lower()}".replace(
-            ' ', '_')
+        expected_dir_name = f"{self.mock_args.project_name.lower()}_" \
+            f"{self.mock_args.gene_set.lower()}_{self.mock_args.cell_line.lower()}" \
+            f"_breast__mammary_gland_{self.mock_args.treatment.lower()}_crispr_" \
+            f"{self.mock_args.dataset.lower()}_" \
+            f"{self.mock_args.release.lower()}".replace(' ', '_')
         self.assertTrue(self.loader._outdir.endswith(expected_dir_name))
 
     @patch('cellmaps_utils.crisprtool.CRISPRDataLoader._link_or_copy')

@@ -3,6 +3,7 @@ import os
 import shutil
 import uuid
 from datetime import date
+import re
 import logging
 import cellmaps_utils
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
@@ -82,6 +83,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
             constants.DATASET_RELEASE: self._release,
             constants.DATASET_CELL_LINE: self._cell_line,
             constants.DATASET_TREATMENT: self._treatment,
+            constants.DATASET_TISSUE: self._tissue,
             constants.DATASET_AUTHOR: self._author,
             constants.DATASET_GENE_SET: self._gene_set,
             constants.DATASET_COLLECTION_SET: self._dataset
@@ -203,10 +205,10 @@ class CRISPRDataLoader(BaseCommandLineTool):
         return {'@@H5AD@@': self._get_h5ad_file_name(),
                 '@@CELL_LINE@@': self._cell_line,
                 '@@TREATMENT@@': self._treatment,
-                '@@NUM_SCREEN_TARGETS_AND_GENE_SET@@': self._num_screen_targets +
+                '@@NUM_SCREEN_TARGETS_AND_GENE_SET@@': str(self._num_screen_targets) +
                                                        ' ' + self._gene_set,
-                '@@NUM_NON_TARGET_CTRLS@@': self._num_non_target_ctrls,
-                '@@NUM_PERTURB_GUIDES@@': self._num_perturb_guides}
+                '@@NUM_NON_TARGET_CTRLS@@': str(self._num_non_target_ctrls),
+                '@@NUM_PERTURB_GUIDES@@': str(self._num_perturb_guides)}
 
     def _copy_over_crispr_readme(self):
         """
@@ -249,13 +251,13 @@ class CRISPRDataLoader(BaseCommandLineTool):
     def _generate_rocrate_dir_path(self):
         """
         Generates the directory path for the RO-Crate based on project name, gene set, cell line, treatment type,
-        dataset type, and release version.
+        tissue, dataset type, and release version.
         """
         dir_name = self._project_name.lower() + '_'
         if self._gene_set is not None:
             dir_name += self._gene_set.lower() + '_'
         dir_name += self._cell_line.lower() + '_'
-        dir_name += self._tissue.lower() + '_'
+        dir_name += re.sub('[^a-zA-Z0-9\w\n\.]', '_', self._tissue.lower()) + '_'
         dir_name += self._treatment.lower() + '_crispr_'
         if self._dataset.lower() != '':
             dir_name += self._dataset.lower() + '_'
@@ -317,7 +319,10 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
         Version {version}
 
-        {cmd} Loads CRISPR data into a RO-Crate
+        {cmd} Loads CRISPR data into a RO-Crate by creating a 
+        directory, copying over relevant and using FAIRSCAPE CLI to 
+        register the data files in the directory known as an RO-Crate
+
         """.format(version=cellmaps_utils.__version__,
                    cmd=CRISPRDataLoader.COMMAND)
 
@@ -328,10 +333,9 @@ class CRISPRDataLoader(BaseCommandLineTool):
         parser.add_argument('outdir',
                             help='Directory where RO-Crate will be created')
         parser.add_argument('--skipcopy', action='store_true',
-                            help='If set, --guiderna and --expression files will not be hardlinked, '
-                                 'but instead 0 byte files will be placed in the RO-Crate as placeholders. '
+                            help='If set, --h5ad file will not be copied, '
+                                 'but instead a 0 byte file will be placed in the RO-Crate as a placeholder. '
                                  'It is up to the caller to manually move/copy the files over before distribution')
-
         parser.add_argument('--h5ad', required=True,
                             help='Path to h5ad file')
         parser.add_argument('--author', default='Mali Lab',
@@ -362,7 +366,10 @@ class CRISPRDataLoader(BaseCommandLineTool):
                             help='Gene set for dataset')
         parser.add_argument('--tissue', choices=['undifferentiated', 'neuron',
                                                  'cardiomyocytes', ''],
-                            default='')
+                            default='breast; mammary gland',
+                            help='Tissue for dataset. Since the default --cell_line '
+                                 'is MDA-MB-468, this value is set to the tissue '
+                                 'for that cell line')
         parser.add_argument('--num_perturb_guides', default='6',
                             help='Number of guides per perturbation')
         parser.add_argument('--num_non_target_ctrls', default='109',
