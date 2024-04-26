@@ -249,6 +249,7 @@ class IFImageDataConverter(BaseCommandLineTool):
         self._release = theargs.release
         self._cell_line = theargs.cell_line
         self._treatment = theargs.treatment
+        self._tissue = theargs.tissue
         self._author = theargs.author
         self._slice = theargs.slice
         self._gene_set = theargs.gene_set
@@ -277,7 +278,8 @@ class IFImageDataConverter(BaseCommandLineTool):
         self._create_output_directory()
 
         keywords = [self._project_name, self._release,
-                    self._cell_line, self._treatment, 'IF microscopy', 'images']
+                    self._cell_line, self._treatment, 'IF microscopy', 'images',
+                    self._tissue]
 
         if self._gene_set is not None:
             keywords.append(self._gene_set)
@@ -291,6 +293,7 @@ class IFImageDataConverter(BaseCommandLineTool):
             constants.DATASET_RELEASE: self._release,
             constants.DATASET_CELL_LINE: self._cell_line,
             constants.DATASET_TREATMENT: self._treatment,
+            constants.DATASET_TISSUE: self._tissue,
             constants.DATASET_AUTHOR: self._author,
             constants.DATASET_SLICE: self._slice,
             constants.DATASET_GENE_SET: self._gene_set
@@ -622,6 +625,12 @@ class IFImageDataConverter(BaseCommandLineTool):
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
                             default='chromatin',
                             help='Gene set for dataset')
+        parser.add_argument('--tissue', choices=['undifferentiated', 'neuron',
+                                                 'cardiomyocytes', ''],
+                            default='breast; mammary gland',
+                            help='Tissue for dataset. Since the default --cell_line '
+                                 'is MDA-MB-468, this value is set to the tissue '
+                                 'for that cell line')
         parser.add_argument('--slice', default='z01',
                             help='Slice to keep')
         return parser
