@@ -393,7 +393,8 @@ class TableFromROCrates(BaseCommandLineTool):
                             help='Date to list in table for RO-Crates')
         parser.add_argument('--release', default='0.1 alpha',
                             help='Version of release')
-        parser.add_argument('--downloadurlprefix', default='https://g-9b3b6e.9ad93.a567.data.globus.org/Data/cm4ai_0.1alpha/')
+        parser.add_argument('--downloadurlprefix', default='https://g-9b3b6e.9ad93.a567.data.globus.org/Data/cm4ai_0.1alpha/',
+                            help='URL prefix for downloads. MUST END WITH /')
 
         return parser
 
