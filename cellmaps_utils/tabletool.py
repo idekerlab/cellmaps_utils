@@ -134,6 +134,8 @@ class TableFromROCrates(BaseCommandLineTool):
             return 'neuron'
         if 'cardiomyocytes' in keywords:
             return 'cardiomyocytes'
+        if 'breast; mammary gland' in keywords:
+            return 'breast; mammary gland'
         return ''
 
     def _get_geneset(self, keywords):
