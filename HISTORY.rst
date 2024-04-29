@@ -2,13 +2,17 @@
 History
 =======
 
-0.4.0 (TBD)
+0.4.0 (2024-04-29)
 -------------------
 
+* Updated ``cellmaps_utilscmd.py`` ``apmsconverter``, ``ifconverter``,
+  ``crisprconverter`` to support tissue as well as output
+  ``data_info.json`` file to resulting RO-Crate so subsequent tools can
+  more easily get provenance information
+
+
 * Updated ``cellmaps_utilscmd.py crisprconverter`` to consume ``.h5ad``
-  files and to support tissue as well as output ``dataset_info.json`` file
-  to resulting RO-Crate so subsequent tools can more easily get provenance
-  information
+  files and updated readme.txt file
 
 0.3.0 (2024-04-15)
 -------------------
