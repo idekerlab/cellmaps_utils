@@ -215,9 +215,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
         Copies over crispr_readme.txt
 
         """
-        crispr_readme = os.path.join(os.path.dirname(__file__), 'crispr_readme.txt')
-        if not os.path.isfile(crispr_readme):
-            return
+        crispr_readme = os.path.join(os.path.dirname(__file__),
+                                     'crispr_readme.txt')
 
         tokenmap = self._create_token_replacement_map()
         result_readme = os.path.join(self._outdir, 'readme.txt')
