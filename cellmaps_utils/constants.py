@@ -84,6 +84,11 @@ IMAGE_GENE_NODE_ERRORS_FILE = 'image_gene_node_attributes.errors'
 Image gene node attributes errors filename
 """
 
+PERTURBATION_FILE = 'perturbation.h5ad'
+"""
+Perturbation/CRISPRi h5ad file
+"""
+
 IMAGE_GENE_NODE_NAME_COL = 'name'
 """
 Gene Symbol name column
