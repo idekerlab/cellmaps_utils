@@ -326,7 +326,7 @@ class IFImageDataConverter(BaseCommandLineTool):
         if self._slice is not None:
             filtered_df.drop('Slice', axis=1, inplace=True)
 
-        file_path = os.path.join(self._outdir, 'antibody_gene_table.tsv')
+        file_path = os.path.join(self._outdir, constants.ANTIBODY_GENE_TABLE_FILE)
 
         filtered_df.to_csv(file_path, sep='\t', index=False)
 
