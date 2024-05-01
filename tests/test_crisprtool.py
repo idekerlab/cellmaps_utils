@@ -13,8 +13,10 @@ class TestCRISPRDataLoader(unittest.TestCase):
 
     def setUp(self):
         self.temp_outdir = tempfile.mkdtemp()
-        self.mock_args = MagicMock(outdir=self.temp_outdir,
-                                   name='Test Name',
+        self.output_dir = os.path.join(self.temp_outdir, 'run')
+        h5adfile = os.path.join(self.temp_outdir, 'fake.h5ad')
+        open(h5adfile, 'a').close()
+        self.mock_args = MagicMock(outdir=self.output_dir,
                                    organization_name='Test Org',
                                    project_name='Test Project',
                                    release='1.0',
@@ -22,6 +24,7 @@ class TestCRISPRDataLoader(unittest.TestCase):
                                    treatment='Test Treatment',
                                    tissue='breast; mammary gland',
                                    author='Test Author',
+                                   h5ad=h5adfile,
                                    gene_set='Test Set',
                                    feature='Test Feature',
                                    expression=['Test Expression'],
@@ -30,12 +33,12 @@ class TestCRISPRDataLoader(unittest.TestCase):
                                    skipcopy=False,
                                    num_perturb_guides='1',
                                    num_non_target_ctrls='2',
-                                   num_screen_targets='3'
-        )
+                                   num_screen_targets='3')
+        self.mock_args.name = MagicMock(return_value='Test Name')
         self.loader = CRISPRDataLoader(self.mock_args)
 
     def tearDown(self):
-        shutil.rmtree(self.mock_args.outdir)
+        shutil.rmtree(self.temp_outdir)
 
     @patch('os.path.exists', return_value=True)
     def test_run_directory_exists(self, mock_exists):
@@ -67,7 +70,11 @@ class TestCRISPRDataLoader(unittest.TestCase):
         mock_register_dataset.assert_called()
 
     @patch('cellmaps_utils.provenance.ProvenanceUtil.register_dataset')
-    def test_link_and_register_guiderna(self, mock_register_dataset):
+    def test_link_and_register_h5ad(self, mock_register_dataset):
+        # since the run() method makes the output directory we
+        # need to do it ourselves
+        os.makedirs(self.loader._outdir, mode=0o755)
+
         mock_register_dataset.return_value = 'mock_dataset_id'
         self.loader._skipcopy = True
         dset_ids = self.loader._link_and_register_h5ad(description='Test Description', keywords=['test'])
@@ -123,8 +130,13 @@ class TestCRISPRDataLoader(unittest.TestCase):
         self.assertTrue('@@H5AD@@' in token_map)
 
     def test_copy_over_crispr_readme(self):
+        # since the run() method makes the output directory we
+        # need to do it ourselves
+        os.makedirs(self.loader._outdir, mode=0o755)
+
         self.loader._copy_over_crispr_readme()
-        self.assertTrue(os.path.exists(os.path.join(self.temp_outdir, 'readme.txt')))
+        self.assertTrue(os.path.exists(os.path.join(self.loader._outdir,
+                                                    'readme.txt')))
 
     def test_replace_readme_tokens(self):
         token_map = {
@@ -182,14 +194,37 @@ class TestCRISPRDataLoader(unittest.TestCase):
     def test_add_subparser(self):
         mock_subparsers = MagicMock()
         mock_parser = MagicMock()
+        mock_parser.add_argument = MagicMock()
         mock_subparsers.add_parser = MagicMock(return_value=mock_parser)
         CRISPRDataLoader.add_subparser(mock_subparsers)
         mock_subparsers.add_parser.assert_called_with('crisprconverter',
                                                       help='Loads CRISPR data into a RO-Crate',
-                                                      description='\n\n        Version 0.4.0a1\n\n        crisprconverter Loads CRISPR data into a RO-Crate by creating a \n        directory, copying over relevant and using FAIRSCAPE CLI to \n        register the data files in the directory known as an RO-Crate\n\n        ',
+                                                      description='\n\n        Version 0.4.0a1\n\n'
+                                                                  '        crisprconverter Loads '
+                                                                  'CRISPR data into a RO-Crate by '
+                                                                  'creating a \n        directory, '
+                                                                  'copying over relevant and using '
+                                                                  'FAIRSCAPE CLI to \n        '
+                                                                  'register the data files in '
+                                                                  'the directory known as an '
+                                                                  'RO-Crate\n\n        ',
                                                       formatter_class=cellmaps_utils.constants.ArgParseFormatter)
-        # mock_parser.assert_called_once()
-        # TODO: Finish this test
+        mock_parser.add_argument.assert_called()
+
+    def test_run(self):
+        # not sure why but magicmock is not doing the right thing
+        # with name for mock_args
+        self.loader._name = 'Test Name'
+
+        self.assertEqual(0, self.loader.run())
+        self.assertTrue(os.path.exists(os.path.join(self.loader._outdir,
+                                                    'readme.txt')))
+        self.assertTrue(os.path.exists(os.path.join(self.loader._outdir,
+                                                    'perturbation.h5ad')))
+
+
+
+
 
 
 if __name__ == '__main__':

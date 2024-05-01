@@ -88,8 +88,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
             constants.DATASET_GENE_SET: self._gene_set,
             constants.DATASET_COLLECTION_SET: self._dataset
         }
-
-        self.save_dataset_info_to_json(self._outdir, info_dict, constants.DATASET_INFO_FILE)
+        self.save_dataset_info_to_json(self._outdir, info_dict,
+                                       constants.DATASET_INFO_FILE)
 
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=self._name,
@@ -129,16 +129,6 @@ class CRISPRDataLoader(BaseCommandLineTool):
             return 'Subset run'
         return ''
 
-    def _get_h5ad_file_name(self):
-        """
-
-        :return:
-        :rtype: str
-        """
-        return self._cell_line + '_' +\
-               self._tissue + '_' + self._treatment +\
-               '_' + self._gene_set + '.h5ad'
-
     def _link_and_register_h5ad(self, description='',
                                 keywords=[]):
         """
@@ -155,7 +145,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
         """
         dset_ids = []
 
-        dest_file = os.path.join(self._outdir, self._get_h5ad_file_name())
+        dest_file = os.path.join(self._outdir, constants.PERTURBATION_FILE)
         if self._skipcopy is True:
             open(dest_file, 'a').close()
         else:
@@ -202,7 +192,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
         :return: A dictionary where each key is a token to replace and each value is the replacement string.
         :rtype: dict
         """
-        return {'@@H5AD@@': self._get_h5ad_file_name(),
+        return {'@@H5AD@@': constants.PERTURBATION_FILE,
                 '@@CELL_LINE@@': self._cell_line,
                 '@@TREATMENT@@': self._treatment,
                 '@@NUM_SCREEN_TARGETS_AND_GENE_SET@@': str(self._num_screen_targets) +
