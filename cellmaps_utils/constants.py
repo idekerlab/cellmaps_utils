@@ -89,6 +89,11 @@ PERTURBATION_FILE = 'perturbation.h5ad'
 Perturbation/CRISPRi h5ad file
 """
 
+ANTIBODY_GENE_TABLE_FILE = 'antibody_gene_table.tsv'
+"""
+Antibody Gene Table file
+"""
+
 IMAGE_GENE_NODE_NAME_COL = 'name'
 """
 Gene Symbol name column
