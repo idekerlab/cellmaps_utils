@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock, call
 
 import pandas as pd
 
+import cellmaps_utils
 from cellmaps_utils import constants
 from cellmaps_utils.exceptions import CellMapsError
 from cellmaps_utils.iftool import (download_file, download_file_skip_existing, FakeImageDownloader,
@@ -221,4 +222,18 @@ class TestIFImageDataConverter(unittest.TestCase):
         mock_read_csv.assert_called_once_with('fake_input.csv', sep=',')
         pd.testing.assert_frame_equal(filtered_df.reset_index(drop=True), expected_df.reset_index(drop=True), check_like=True)
 
+    def test_add_subparser(self):
+        mock_subparsers = MagicMock()
+        mock_parser = MagicMock()
+        mock_parser.add_argument = MagicMock()
+        mock_subparsers.add_parser = MagicMock(return_value=mock_parser)
+        IFImageDataConverter.add_subparser(mock_subparsers)
+        mock_subparsers.add_parser.assert_called_with('ifconverter',
+                                                      help='Loads IF Image data into a RO-Crate',
+                                                      description='\n\n        '
+                                                                  'Version 0.4.0a1\n\n        '
+                                                                  'ifconverter Loads IF Image '
+                                                                  'data into a RO-Crate\n        ',
+                                                      formatter_class=cellmaps_utils.constants.ArgParseFormatter)
+        mock_parser.add_argument.assert_called()
 
