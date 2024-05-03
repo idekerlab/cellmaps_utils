@@ -5,3 +5,4 @@ pandas
 numpy
 dill
 tqdm
+requests
