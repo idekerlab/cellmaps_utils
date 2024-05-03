@@ -223,9 +223,5 @@ class TestCRISPRDataLoader(unittest.TestCase):
                                                     'perturbation.h5ad')))
 
 
-
-
-
-
 if __name__ == '__main__':
     unittest.main()
