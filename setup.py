@@ -34,11 +34,12 @@ requirements = ['fairscape-cli==0.2.0',
                 'pandas',
                 'numpy',
                 'dill',
-                'tqdm']
+                'tqdm',
+                'requests']
 
 setup_requirements = [ ]
 
-test_requirements = [ ]
+test_requirements = ['requests_mock']
 
 setup(
     author=author,
