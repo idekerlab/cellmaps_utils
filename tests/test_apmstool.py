@@ -7,6 +7,8 @@ import pandas as pd
 
 import cellmaps_utils
 from cellmaps_utils.apmstool import APMSDataLoader
+from cellmaps_utils import constants
+from cellmaps_utils.exceptions import CellMapsError
 
 
 class TestAPMSDataLoader(unittest.TestCase):
@@ -114,6 +116,83 @@ class TestAPMSDataLoader(unittest.TestCase):
                                                   url=cellmaps_utils.__repo_url__,
                                                   guid='someid')
 
+    def test_merge_and_save_apms_data(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            first_tsv = os.path.join(temp_dir, 'first.tsv')
+            second_tsv = os.path.join(temp_dir, 'second.tsv')
+
+            df = pd.DataFrame({'NumReplicates': [1], 'NumReplicates.x': [3]})
+            df.to_csv(first_tsv, sep='\t', index=False)
+
+            df = pd.DataFrame({'NumReplicates.x': [4]})
+            df.to_csv(second_tsv, sep='\t', index=False)
+
+            self.loader._inputs = [first_tsv, second_tsv]
+            self.loader._outdir = temp_dir
+            apms_path = os.path.join(temp_dir, constants.APMS_TSV_FILE)
+            self.assertEqual(apms_path, self.loader._merge_and_save_apms_data())
+            df = pd.read_csv(apms_path, sep='\t')
+            self.assertEqual([1, 4], list(df['NumReplicates.x']))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_run_outdir_already_exists(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            self.loader._name = 'Test Name'
+            self.loader._outdir = temp_dir
+
+            # get new rocrate dir
+            # create the directory to cause the next part to fail
+            self.loader._generate_rocrate_dir_path()
+            os.makedirs(self.loader._outdir, mode=0o755)
+            # put _outdir back to temp_dir
+            # maybe we shouldnt do this cause
+            # outdir changes values...
+            self.loader._outdir = temp_dir
+
+            self.loader.run()
+            self.fail('Expected exception')
+        except CellMapsError as ce:
+            self.assertTrue(' already exists' in str(ce))
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_run(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            input_tsv = os.path.join(temp_dir, 'input.tsv')
+            df = pd.DataFrame({'NumReplicates': [1], 'NumReplicates.x': [3]})
+            df.to_csv(input_tsv, sep='\t', index=False)
+            out_dir = os.path.join(temp_dir, 'run')
+            self.mock_args = MagicMock(outdir=out_dir,
+                                       inputs=[input_tsv],
+                                       name='Test Name',
+                                       organization_name='Test Org',
+                                       project_name='Test Project',
+                                       release='1.0',
+                                       cell_line='Test Line',
+                                       treatment='Test Treatment',
+                                       author='Test Author',
+                                       gene_set='Test Set',
+                                       tissue='breast; mammory gland')
+            self.loader = APMSDataLoader(self.mock_args)
+            # not sure why but magicmock is not doing the right thing
+            # with name for mock_args
+            self.loader._name = 'Test Name'
+
+            self.assertEqual(0, self.loader.run())
+            self.assertTrue(os.path.exists(os.path.join(self.loader._outdir,
+                                                        'readme.txt')))
+            apms_path = os.path.join(self.loader._outdir,
+                                     constants.APMS_TSV_FILE)
+            self.assertTrue(os.path.exists(apms_path))
+            df = pd.read_csv(apms_path, sep='\t')
+            self.assertEqual([1], list(df['NumReplicates.x']))
+        finally:
+            shutil.rmtree(temp_dir)
+
     def test_add_subparser(self):
         mock_subparsers = MagicMock()
         mock_parser = MagicMock()
@@ -129,7 +208,6 @@ class TestAPMSDataLoader(unittest.TestCase):
                                                                   'data into a RO-Crate\n        ',
                                                       formatter_class=cellmaps_utils.constants.ArgParseFormatter)
         mock_parser.add_argument.assert_called()
-
 
 
 if __name__ == '__main__':
