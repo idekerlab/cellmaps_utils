@@ -199,7 +199,9 @@ class TestCRISPRDataLoader(unittest.TestCase):
         CRISPRDataLoader.add_subparser(mock_subparsers)
         mock_subparsers.add_parser.assert_called_with('crisprconverter',
                                                       help='Loads CRISPR data into a RO-Crate',
-                                                      description='\n\n        Version 0.4.0a1\n\n'
+                                                      description='\n\n        Version ' +
+                                                                  str(cellmaps_utils.__version__) +
+                                                                  '\n\n'
                                                                   '        crisprconverter Loads '
                                                                   'CRISPR data into a RO-Crate by '
                                                                   'creating a \n        directory, '
