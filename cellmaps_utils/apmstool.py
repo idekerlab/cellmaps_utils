@@ -172,7 +172,7 @@ class APMSDataLoader(BaseCommandLineTool):
 
         df = pd.concat(df_list)
 
-        apms_path = os.path.join(self._outdir, 'apms.tsv')
+        apms_path = os.path.join(self._outdir, constants.APMS_TSV_FILE)
         df.to_csv(apms_path, sep='\t', index=False)
         return apms_path
 

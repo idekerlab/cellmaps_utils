@@ -5,16 +5,25 @@ import unittest
 from unittest.mock import MagicMock, patch, call
 import pandas as pd
 
+import cellmaps_utils
 from cellmaps_utils.apmstool import APMSDataLoader
 
 
 class TestAPMSDataLoader(unittest.TestCase):
 
     def setUp(self):
-        self.mock_args = MagicMock(outdir='/fakepath', inputs=['fake_input1.tsv', 'fake_input2.tsv'],
-                                   name='Test Name', organization_name='Test Org', project_name='Test Project',
-                                   release='1.0', cell_line='Test Line', treatment='Test Treatment',
-                                   author='Test Author', gene_set='Test Set')
+        self.mock_args = MagicMock(outdir='/fakepath',
+                                   inputs=['fake_input1.tsv',
+                                           'fake_input2.tsv'],
+                                   name='Test Name',
+                                   organization_name='Test Org',
+                                   project_name='Test Project',
+                                   release='1.0',
+                                   cell_line='Test Line',
+                                   treatment='Test Treatment',
+                                   author='Test Author',
+                                   gene_set='Test Set',
+                                   tissue='breast; mammory gland')
         self.loader = APMSDataLoader(self.mock_args)
 
     def test_initialization(self):
@@ -69,6 +78,58 @@ class TestAPMSDataLoader(unittest.TestCase):
             self.assertTrue(os.path.getsize(apms_path) > 0)
         finally:
             shutil.rmtree(temp_dir)
+
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_login', return_value='smith')
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.register_computation')
+    def test_register_computation(self, mock_register_computation, mock_login):
+        self.loader._softwareid = 'softid'
+        self.loader._input_data_dict = {'hi': 'there'}
+        self.loader._get_fairscape_id = MagicMock(return_value='someid')
+        self.loader._register_computation(description='Test Description', keywords=['test'],
+                                          generated_dataset_ids=['1'])
+
+        mock_register_computation.assert_called_with(self.loader._outdir,
+                                                     name='AP-MS',
+                                                     run_by='smith',
+                                                     command=str(self.loader._input_data_dict),
+                                                     description='Test Description run of cellmaps_utils',
+                                                     keywords=['test', 'computation'],
+                                                     used_software=[self.loader._softwareid],
+                                                     generated=['1'],
+                                                     guid='someid')
+
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_login', return_value='smith')
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.register_software', return_value='12345')
+    def test_register_software(self, mock_register_software, mock_login):
+        self.loader._get_fairscape_id = MagicMock(return_value='someid')
+        self.loader._register_software(description='desc', keywords=['x'])
+        self.assertEqual('12345', self.loader._softwareid)
+        mock_register_software.assert_called_with(self.loader._outdir,
+                                                  name=cellmaps_utils.__name__,
+                                                  description='desc ' + cellmaps_utils.__description__,
+                                                  author=cellmaps_utils.__author__,
+                                                  version=cellmaps_utils.__version__,
+                                                  file_format='py',
+                                                  keywords=['x', 'tools', cellmaps_utils.__name__],
+                                                  url=cellmaps_utils.__repo_url__,
+                                                  guid='someid')
+
+    def test_add_subparser(self):
+        mock_subparsers = MagicMock()
+        mock_parser = MagicMock()
+        mock_parser.add_argument = MagicMock()
+        mock_subparsers.add_parser = MagicMock(return_value=mock_parser)
+        APMSDataLoader.add_subparser(mock_subparsers)
+        mock_subparsers.add_parser.assert_called_with('apmsconverter',
+                                                      help='Loads AP-MS data into a RO-Crate',
+                                                      description='\n\n        '
+                                                                  'Version ' + str(cellmaps_utils.__version__) +
+                                                                  '\n\n        '
+                                                                  'apmsconverter Loads AP-MS '
+                                                                  'data into a RO-Crate\n        ',
+                                                      formatter_class=cellmaps_utils.constants.ArgParseFormatter)
+        mock_parser.add_argument.assert_called()
+
 
 
 if __name__ == '__main__':
