@@ -345,7 +345,9 @@ class TestIFImageDataConverter(unittest.TestCase):
         mock_subparsers.add_parser.assert_called_with('ifconverter',
                                                       help='Loads IF Image data into a RO-Crate',
                                                       description='\n\n        '
-                                                                  'Version 0.4.0a1\n\n        '
+                                                                  'Version ' +
+                                                                  str(cellmaps_utils.__version__) +
+                                                                  '\n\n        '
                                                                   'ifconverter Loads IF Image '
                                                                   'data into a RO-Crate\n        ',
                                                       formatter_class=cellmaps_utils.constants.ArgParseFormatter)
