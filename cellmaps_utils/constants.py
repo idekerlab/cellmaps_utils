@@ -135,6 +135,11 @@ IMAGE_GENE_NODE_COLS = [IMAGE_GENE_NODE_NAME_COL,
 Columns in :py:const:`IMAGE_GENE_NODE_ATTR_FILE` file
 """
 
+APMS_TSV_FILE = 'apms.tsv'
+"""
+AP-MS tsv file
+"""
+
 PPI_EDGELIST_FILE = 'ppi_edgelist.tsv'
 """
 Protein to Protein interaction edgelist file name
