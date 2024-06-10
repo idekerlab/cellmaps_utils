@@ -29,6 +29,7 @@ with open('HISTORY.rst') as history_file:
 
 
 requirements = ['fairscape-cli==0.2.0',
+                'ndex2>=3.8.0,<4.0.0',
                 'scipy',
                 'scikit-learn',
                 'pandas',
