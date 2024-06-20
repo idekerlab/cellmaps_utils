@@ -449,6 +449,24 @@ class TestProvenanceUtil(unittest.TestCase):
         self.assertEqual(['keyword1', 'some name'], prov_attrs.get_keywords())
 
     @patch('cellmaps_utils.provenance.ProvenanceUtil.get_rocrate_provenance_attributes')
+    def test_get_merged_rocrate_provenance_attrs_single_crate_nooverrides_with_none(self, mock_get_attrs):
+        mock_attrs = MagicMock()
+        mock_attrs.get_name.return_value = 'some name'
+        mock_attrs.get_project_name.return_value = 'some project name'
+        mock_attrs.get_organization_name.return_value = None
+        mock_attrs.get_keywords.return_value = None
+        mock_get_attrs.return_value = mock_attrs
+
+        prov = ProvenanceUtil()
+        prov_attrs = prov.get_merged_rocrate_provenance_attrs(rocrate='rocrate_path')
+
+        self.assertEqual('some name', prov_attrs.get_name())
+        self.assertEqual('some project name', prov_attrs.get_project_name())
+        self.assertEqual('', prov_attrs.get_organization_name())
+        self.assertEqual('some name', prov_attrs.get_description())
+        self.assertEqual(['some name'], prov_attrs.get_keywords())
+
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_rocrate_provenance_attributes')
     def test_get_merged_rocrate_provenance_attrs_single_crate_with_overrides(self, mock_get_attrs):
         mock_attrs = MagicMock()
         mock_attrs.get_name.return_value = 'some name'
