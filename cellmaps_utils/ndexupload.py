@@ -1,12 +1,13 @@
 import os
 import time
+import uuid
 
 import ndex2
 import logging
 import copy
 from cellmaps_utils import constants
 
-from ndex2.cx2 import RawCX2NetworkFactory
+from ndex2.cx2 import RawCX2NetworkFactory, CX2Network
 from requests import RequestException
 
 from cellmaps_utils.exceptions import CellMapsError
@@ -143,32 +144,50 @@ class NDExHierarchyUploader(object):
         :return: UUIDs and URLs for both the parent network and the hierarchy.
         :rtype: tuple
         """
-        parent_uuid, parenturl = self._save_network(parent_ppi)
+        parent_url = None
+        if isinstance(parent_ppi, CX2Network):
+            parent_uuid, parent_url = self._save_network(parent_ppi)
+        else:
+            try:
+                _ = uuid.UUID(parent_ppi, version=4)
+                parent_uuid = parent_ppi
+            except ValueError:
+                raise CellMapsError(f'Invalid UUID format for parent_ppi: {parent_ppi}')
+
         hierarchy_for_ndex = self._update_hcx_annotations(hierarchy, parent_uuid)
-        hierarchy_uuid, hierarchyurl = self._save_network(hierarchy_for_ndex)
-        return parent_uuid, parenturl, hierarchy_uuid, hierarchyurl
+        hierarchy_uuid, hierarchy_url = self._save_network(hierarchy_for_ndex)
+        return parent_uuid, parent_url, hierarchy_uuid, hierarchy_url
 
-    def upload_hierary_and_parent_network_from_files(self, outdir):
+    def upload_hierarchy_and_parent_network_from_files(self, hier_dir=None, hierarchy_path=None, parent_path=None):
         """
-        Uploads hierarchy and parent network to NDEx from CX2 files located in a specified directory.
-        It first checks the existence of the hierarchy and parent network files, then loads them into
-        network objects, and finally saves them to NDEx using `save_hierarchy_and_parent_network` method.
+        Uploads hierarchy and parent network to NDEx from CX2 files.
+        It first checks if hierarchy_path and parent_path are provided.
+        If not provided, it tries to get them from hier_dir directory.
+        If none is specified or cannot find hierarchy and parent in hier_dir, it raises an exception.
 
-        :param outdir: The directory where the hierarchy and parent network files are located.
-        :type outdir: str
+        :param hier_dir: The directory where the hierarchy and parent network files are located.
+        :type hier_dir: str
+        :param hierarchy_path: The path to the hierarchy network file.
+        :type hierarchy_path: str, optional
+        :param parent_path: The path to the parent network file.
+        :type parent_path: str, optional
         :return: UUIDs and URLs for both the hierarchy and parent network.
         :rtype: tuple
-        :raises CellmapsGenerateHierarchyError: If the required hierarchy or parent network files do not exist
-                                                in the directory.
+        :raises CellMapsError: If the required hierarchy or parent network files do not exist.
         """
-        hierarchy_path = os.path.join(outdir, constants.HIERARCHY_NETWORK_PREFIX + constants.CX2_SUFFIX)
-        parent_network_path = os.path.join(outdir, 'hierarchy_parent' + constants.CX2_SUFFIX)
+        if not hierarchy_path and hier_dir:
+            hierarchy_path = os.path.join(hier_dir, constants.HIERARCHY_NETWORK_PREFIX + constants.CX2_SUFFIX)
+        if not parent_path and hier_dir:
+            parent_path = os.path.join(hier_dir, constants.HIERARCHY_PARENT_NETWORK_PREFIX + constants.CX2_SUFFIX)
 
-        if not os.path.exists(hierarchy_path) or not os.path.exists(parent_network_path):
-            raise CellMapsError(f'Hierarchy or parent network file does not exist in dir {outdir}.')
+        if not hierarchy_path or not os.path.exists(hierarchy_path):
+            raise CellMapsError(f'Hierarchy network file does not exist at {hierarchy_path}.')
+
+        if not parent_path or not os.path.exists(parent_path):
+            raise CellMapsError(f'Parent network file does not exist at {parent_path}.')
 
         cx_factory = RawCX2NetworkFactory()
         hierarchy_network = cx_factory.get_cx2network(hierarchy_path)
-        parent_network = cx_factory.get_cx2network(parent_network_path)
+        parent_network = cx_factory.get_cx2network(parent_path)
 
         return self.save_hierarchy_and_parent_network(hierarchy_network, parent_network)

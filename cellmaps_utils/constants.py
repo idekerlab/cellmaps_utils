@@ -189,7 +189,12 @@ PPI_NETWORK_PREFIX = 'ppi'
 
 HIERARCHY_NETWORK_PREFIX = 'hierarchy'
 """
-CX format hierarchy filename
+CX2 format hierarchy filename
+"""
+
+HIERARCHY_PARENT_NETWORK_PREFIX = 'hierarchy_parent'
+"""
+CX2 format hierarchy parent (interactome_ filename
 """
 
 HIERARCHY_NODES_FILE = 'hierarchy_node_attributes.tsv'
