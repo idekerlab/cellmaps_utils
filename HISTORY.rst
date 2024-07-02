@@ -2,8 +2,17 @@
 History
 =======
 
-0.4.0 (2024-04-29)
+0.4.0 (TBD - 2024-07-01)
 -------------------
+
+* Updated provenance utils, added checks in for missing data in input RO-Crate,
+  and allowing to continue but logging errors in the process
+
+* Add ``HierarchyToHiDeFConverter``, a class to convert a hierarchy network
+  (in CX2 format) to a HiDeF format nodes and edges lists.
+
+* Add ``NDExHierarchyUploader``, a class for uploading hierarchy and
+  its parent network to NDEx.
 
 * Updated ``cellmaps_utilscmd.py`` ``apmsconverter``, ``ifconverter``,
   ``crisprconverter`` to support tissue as well as output
