@@ -2,7 +2,7 @@
 History
 =======
 
-0.4.0 (TBD - 2024-07-01)
+0.4.0 (2024-07-02)
 -------------------
 
 * Updated provenance utils, added checks in for missing data in input RO-Crate,
