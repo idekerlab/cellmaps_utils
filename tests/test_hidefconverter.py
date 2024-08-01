@@ -1,6 +1,10 @@
+import os
 import unittest
 from unittest.mock import Mock, patch
-from cellmaps_utils.hidefconverter import HierarchyToHiDeFConverter
+
+from ndex2.cx2 import CX2Network
+
+from cellmaps_utils.hidefconverter import HierarchyToHiDeFConverter, HiDeFToHierarchyConverter
 from ndex2 import constants
 
 
@@ -42,3 +46,20 @@ class TestHierarchyToHiDeFConverter(unittest.TestCase):
         }
         result = self.converter._find_node_name_by_id(1)
         self.assertEqual(result, "Node1")
+
+
+class TestHiDeFToHierarchyConverter(unittest.TestCase):
+    def setUp(self):
+        self.output_dir = os.path.join(os.path.dirname(__file__), 'data')
+        self.nodes_file_path = os.path.join(os.path.dirname(__file__), 'data', 'hidef_output.nodes')
+        self.edges_file_path = os.path.join(os.path.dirname(__file__), 'data', 'hidef_output.edges')
+        self.parent_url = 'XYZ'
+
+        self.converter = HiDeFToHierarchyConverter(self.output_dir, self.nodes_file_path, self.edges_file_path,
+                                                   parent_ndex_url=self.parent_url)
+
+    def test_get_hierarchy(self):
+        interactome = CX2Network()
+        hierarchy = self.converter._get_hierarchy(interactome)
+        self.assertEqual(len(hierarchy.get_nodes()), 2)
+        self.assertEqual(len(hierarchy.get_edges()), 1)
