@@ -1,6 +1,9 @@
+import json
 import logging
 import os
-from ndex2.cx2 import RawCX2NetworkFactory
+
+import ndex2
+from ndex2.cx2 import RawCX2NetworkFactory, CX2Network
 import ndex2.constants as constants
 import cellmaps_utils.constants as cellmaps_constants
 from cellmaps_utils.exceptions import CellMapsError
@@ -18,8 +21,8 @@ class HierarchyToHiDeFConverter:
         """
         Constructor
 
-        :param output_dir: The directory containing the hierarchy file.
-        :type output_dir: str
+        :param input_dir: The directory containing the hierarchy file.
+        :type input_dir: str
         :param output_dir: The directory where the output files will be stored.
         :type output_dir: str
         """
@@ -124,3 +127,76 @@ class HierarchyToHiDeFConverter:
         with open(file_path, 'w') as file:
             file.write('\n'.join(lines))
         return file_path
+
+
+class HiDeFToHierarchyConverter:
+    """
+    A class to convert a hierarchy network (in CX2 format) to a HiDeF format.
+    """
+
+    def __init__(self, output_dir, nodes_file_path, edges_file_path, parent_ndex_url=None, parent_edgelist_path=None):
+        """
+        Constructor
+
+        :param output_dir: The directory containing the hierarchy file.
+        :type output_dir: str
+        :param output_dir: The directory where the output files will be stored.
+        :type output_dir: str
+        """
+        self.output_dir = output_dir
+        self.nodes_file_path = nodes_file_path
+        self.edges_file_path = edges_file_path
+        if parent_ndex_url is None and parent_edgelist_path is None:
+            raise CellMapsError("Specifying either url of parent interactome in NDEx, or edge list of the interactome"
+                                " is required!")
+        self.parent_url = parent_ndex_url
+        self.parent_edgelist = parent_edgelist_path
+
+    def generate_hierarchy_hcx_file(self, hierarchy_filename='hierarchy.cx2'):
+        hierarchy_path = os.path.join(self.output_dir, hierarchy_filename)
+        interactome = self._get_interactome()
+        hierarchy = self._get_hierarchy(interactome)
+        hierarchy.write_as_raw_cx2(hierarchy_path)
+
+    def _get_interactome(self):
+        interactome = CX2Network()
+        if self.parent_url is not None:
+            host, _, _, uuid = self.parent_url.replace('https://', '').replace('http:/', '').split('/')
+            client = ndex2.client.Ndex2(host=host)
+            factory = RawCX2NetworkFactory()
+            client_resp = client.get_network_as_cx2_stream(uuid)
+            interactome = factory.get_cx2network(json.loads(client_resp.content))
+        else:
+            with open(self.parent_edgelist, 'r') as f:
+                for line in f:
+                    parts = line.split()
+                    source_node = interactome.add_node(attributes={'name': parts[0]})
+                    target_node = interactome.add_node(attributes={'name': parts[1]})
+                    interactome.add_edge(source=source_node, target=target_node)
+        return interactome
+
+    def _get_hierarchy(self, interactome):
+        hierarchy = CX2Network()
+
+        with open(self.nodes_file_path, 'r') as f:
+            for line in f:
+                name, size, genes, persistence = line.strip().split('\t')
+                node_attributes = {
+                    constants.NODE_NAME_EXPANDED: name,
+                    'CD_MemberList_Size': size,
+                    'CD_MemberList': genes,
+                    'HiDeF_persistence': persistence
+                }
+                hierarchy.add_node(attributes=node_attributes)
+
+        with open(self.edges_file_path, 'r') as f:
+            for line in f:
+                source, target, _ = line.strip().split('\t')
+                source_id = hierarchy.lookup_node_id_by_name(source)
+                target_id = hierarchy.lookup_node_id_by_name(target)
+                if source_id is not None and target_id is not None:
+                    hierarchy.add_edge(source=source_id, target=target_id)
+
+        return hierarchy
+
+
