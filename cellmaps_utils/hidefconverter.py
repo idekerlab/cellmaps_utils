@@ -131,17 +131,23 @@ class HierarchyToHiDeFConverter:
 
 class HiDeFToHierarchyConverter:
     """
-    A class to convert a hierarchy network (in CX2 format) to a HiDeF format.
+    A class to convert a edge list and node list in HiDeF format to hierarchy in HCX.
     """
 
     def __init__(self, output_dir, nodes_file_path, edges_file_path, parent_ndex_url=None, parent_edgelist_path=None):
         """
-        Constructor
+        Initializes the converter with file paths and optional parent network details.
 
-        :param output_dir: The directory containing the hierarchy file.
+        :param output_dir: Directory where the output files will be stored.
         :type output_dir: str
-        :param output_dir: The directory where the output files will be stored.
-        :type output_dir: str
+        :param nodes_file_path: File path for the nodes file.
+        :type nodes_file_path: str
+        :param edges_file_path: File path for the edges file.
+        :type edges_file_path: str
+        :param parent_ndex_url: URL of parent interactome in NDEx (optional).
+        :type parent_ndex_url: str, optional
+        :param parent_edgelist_path: Path to the edge list of the interactome (optional).
+        :type parent_edgelist_path: str, optional
         """
         self.output_dir = output_dir
         self.nodes_file_path = nodes_file_path
@@ -154,13 +160,29 @@ class HiDeFToHierarchyConverter:
         self.host = None
         self.uuid = None
 
-    def generate_hierarchy_hcx_file(self, hierarchy_filename='hierarchy.cx2'):
+    def generate_hierarchy_hcx_file(self, hierarchy_filename='hierarchy.cx2',
+                                    interactome_filename='hierarchy_parent.cx2'):
+        """
+        Generates the HiDeF hierarchy file in CX2 format.
+
+        :param hierarchy_filename: The name of the file to write the hierarchy.
+        :type hierarchy_filename: str
+        :param interactome_filename: The name of the file to write the interactome (parent network of the hierarchy).
+        :type interactome_filename: str
+        """
         hierarchy_path = os.path.join(self.output_dir, hierarchy_filename)
         interactome = self._get_interactome()
-        hierarchy = self._get_hierarchy(interactome)
+        hierarchy = self._add_hcx_network_annotations(self._get_hierarchy(interactome), interactome,
+                                                      interactome_filename)
         hierarchy.write_as_raw_cx2(hierarchy_path)
 
     def _get_interactome(self):
+        """
+        Retrieves the interactome either from NDEx or from a local edge list.
+
+        :return: A CX2Network object representing the interactome.
+        :rtype: CX2Network
+        """
         interactome = CX2Network()
         if self.parent_url is not None:
             self.host, _, _, self.uuid = self.parent_url.replace('https://', '').replace('http:/', '').split('/')
@@ -182,6 +204,14 @@ class HiDeFToHierarchyConverter:
         return interactome
 
     def _get_hierarchy(self, interactome):
+        """
+        Constructs the hierarchy based on the HiDeF edge list and node list and uses interactome to add HCX information.
+
+        :param interactome: The interactome network.
+        :type interactome: CX2Network
+        :return: A CX2Network object representing the hierarchy.
+        :rtype: CX2Network
+        """
         hierarchy = CX2Network()
 
         with open(self.nodes_file_path, 'r') as f:
@@ -208,8 +238,11 @@ class HiDeFToHierarchyConverter:
                     hierarchy.add_edge(source=source_id, target=target_id)
 
         root_nodes = self._get_root_nodes(hierarchy)
-
         self._add_isroot_node_attribute(hierarchy, root_nodes=root_nodes)
+
+        return hierarchy
+
+    def _add_hcx_network_annotations(self, hierarchy, interactome, interactome_name):
 
         hierarchy.add_network_attribute('ndexSchema', 'hierarchy_v0.1',
                                         datatype='string')
@@ -220,12 +253,10 @@ class HiDeFToHierarchyConverter:
             hierarchy.add_network_attribute('HCX::interactionNetworkHost', self.host)
             hierarchy.add_network_attribute('HCX::interactionNetworkUUID', self.uuid)
         else:
-            interactome_name = 'hierarchy_parent.cx2'
             interactome_path = os.path.join(self.output_dir, interactome_name)
             interactome.write_as_raw_cx2(interactome_path)
             hierarchy.add_network_attribute('HCX::interactionNetworkName', interactome_name,
                                             datatype='string')
-
         return hierarchy
 
     @staticmethod
