@@ -1,8 +1,8 @@
 import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
-
-from ndex2.cx2 import CX2Network
 
 from cellmaps_utils.hidefconverter import HierarchyToHiDeFConverter, HiDeFToHierarchyConverter
 from ndex2 import constants
@@ -50,16 +50,30 @@ class TestHierarchyToHiDeFConverter(unittest.TestCase):
 
 class TestHiDeFToHierarchyConverter(unittest.TestCase):
     def setUp(self):
-        self.output_dir = os.path.join(os.path.dirname(__file__), 'data')
+        self.output_dir = tempfile.mkdtemp()
         self.nodes_file_path = os.path.join(os.path.dirname(__file__), 'data', 'hidef_output.nodes')
         self.edges_file_path = os.path.join(os.path.dirname(__file__), 'data', 'hidef_output.edges')
-        self.parent_url = 'XYZ'
+        self.parent = os.path.join(os.path.dirname(__file__), 'data', 'parent_edgelist')
 
         self.converter = HiDeFToHierarchyConverter(self.output_dir, self.nodes_file_path, self.edges_file_path,
-                                                   parent_ndex_url=self.parent_url)
+                                                   parent_edgelist_path=self.parent)
+
+    def tearDown(self):
+        shutil.rmtree(self.output_dir)
+
+    def test_generate_hierarchy_hcx_file(self):
+        self.converter.generate_hierarchy_hcx_file()
+        self.assertTrue(os.path.exists(os.path.join(self.output_dir, 'hierarchy.cx2')))
+
+    def test_get_interactome(self):
+        interactome = self.converter._get_interactome()
+        self.assertEqual(len(interactome.get_nodes()), 6)
+        self.assertEqual(len(interactome.get_edges()), 7)
 
     def test_get_hierarchy(self):
-        interactome = CX2Network()
+        interactome = self.converter._get_interactome()
         hierarchy = self.converter._get_hierarchy(interactome)
         self.assertEqual(len(hierarchy.get_nodes()), 2)
         self.assertEqual(len(hierarchy.get_edges()), 1)
+        self.assertEqual(len(hierarchy.get_node(0).get(constants.ASPECT_VALUES).get('HCX::members')),
+                         6)
