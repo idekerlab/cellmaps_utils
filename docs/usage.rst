@@ -229,7 +229,7 @@ There are four steps to the data release:
 
 
 1) Perturbation/CRISPR data release (step 1 above)
-================================================
+===================================================
 
 The command line tool ``cellmaps_utilscmd.py crisprconverter`` takes a  `h5ad`_ file
 and copies that file along with other meta data files into a `RO-Crate`_ suitable
