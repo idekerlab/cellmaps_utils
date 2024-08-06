@@ -1,4 +1,12 @@
 Sphinx>=1.8.1
 sphinx-rtd-theme
 sphinx-copybutton
-
+fairscape-cli==0.2.0
+ndex2>=3.8.0,<4.0.0
+scipy
+scikit-learn
+pandas
+numpy
+dill
+tqdm
+requests
