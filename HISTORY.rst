@@ -2,6 +2,11 @@
 History
 =======
 
+0.5.0 (TBD)
+------------------
+
+* Add ``HiDeFToHierarchyConverter``, a class to convert a edge list and node list in HiDeF format to hierarchy in HCX.
+
 0.4.0 (2024-07-02)
 -------------------
 

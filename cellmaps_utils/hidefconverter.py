@@ -132,6 +132,9 @@ class HierarchyToHiDeFConverter:
 class HiDeFToHierarchyConverter:
     """
     A class to convert a edge list and node list in HiDeF format to hierarchy in HCX.
+
+    .. versionadded:: 0.5.0
+           The class was added to enable conversion from HiDeF-formatted edge and node files to hierarchy in HCX.
     """
 
     def __init__(self, output_dir, nodes_file_path, edges_file_path, parent_ndex_url=None, parent_edgelist_path=None):
@@ -163,7 +166,9 @@ class HiDeFToHierarchyConverter:
     def generate_hierarchy_hcx_file(self, hierarchy_filename='hierarchy.cx2',
                                     interactome_filename='hierarchy_parent.cx2'):
         """
-        Generates the HiDeF hierarchy file in CX2 format.
+        Generates the HiDeF hierarchy file in CX2 format. If the object is initialized with parent network's edge list,
+        the interactome in CX2 format will be generated in output directory as well. If the object is initialized with
+        uuid of parent network, only hierarchy will be generated.
 
         :param hierarchy_filename: The name of the file to write the hierarchy.
         :type hierarchy_filename: str
