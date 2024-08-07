@@ -137,9 +137,13 @@ class HiDeFToHierarchyConverter:
            The class was added to enable conversion from HiDeF-formatted edge and node files to hierarchy in HCX.
     """
 
-    def __init__(self, output_dir, nodes_file_path, edges_file_path, parent_ndex_url=None, parent_edgelist_path=None):
+    def __init__(self, output_dir, nodes_file_path, edges_file_path, parent_ndex_url=None, parent_edgelist_path=None,
+                 ndex_user=None, ndex_password=None):
         """
         Initializes the converter with file paths and optional parent network details.
+
+        Parent network can be specified as edge list or link to interactome in NDEx needs to be provided, if the
+        network is private, username and password need to be specified.
 
         :param output_dir: Directory where the output files will be stored.
         :type output_dir: str
@@ -151,6 +155,10 @@ class HiDeFToHierarchyConverter:
         :type parent_ndex_url: str, optional
         :param parent_edgelist_path: Path to the edge list of the interactome (optional).
         :type parent_edgelist_path: str, optional
+        :param ndex_user: NDEx username (optional).
+        :type ndex_user: str, optional
+        :param ndex_password: NDEx password (optional).
+        :type ndex_password: str, optional
         """
         self.output_dir = output_dir
         self.nodes_file_path = nodes_file_path
@@ -162,6 +170,8 @@ class HiDeFToHierarchyConverter:
         self.parent_edgelist = parent_edgelist_path
         self.host = None
         self.uuid = None
+        self.username = ndex_user
+        self.password = ndex_password
 
     def generate_hierarchy_hcx_file(self, hierarchy_filename='hierarchy.cx2',
                                     interactome_filename='hierarchy_parent.cx2'):
@@ -191,7 +201,7 @@ class HiDeFToHierarchyConverter:
         interactome = CX2Network()
         if self.parent_url is not None:
             self.host, _, _, self.uuid = self.parent_url.replace('https://', '').replace('http:/', '').split('/')
-            client = ndex2.client.Ndex2(host=self.host)
+            client = ndex2.client.Ndex2(host=self.host, username=self.username, password=self.password)
             factory = RawCX2NetworkFactory()
             client_resp = client.get_network_as_cx2_stream(self.uuid)
             interactome = factory.get_cx2network(json.loads(client_resp.content))
