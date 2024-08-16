@@ -200,7 +200,8 @@ class HiDeFToHierarchyConverter:
         """
         interactome = CX2Network()
         if self.parent_url is not None:
-            self.host, _, _, self.uuid = self.parent_url.replace('https://', '').replace('http:/', '').split('/')
+            parts = self.parent_url.replace('https://', '').replace('http:/', '').split('/')
+            self.host, self.uuid = parts[0], parts[-1]
             client = ndex2.client.Ndex2(host=self.host, username=self.username, password=self.password)
             factory = RawCX2NetworkFactory()
             client_resp = client.get_network_as_cx2_stream(self.uuid)
