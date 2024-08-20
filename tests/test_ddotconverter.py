@@ -2,11 +2,21 @@ import os
 import shutil
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
 
 from cellmaps_utils import hcx_utils
-from cellmaps_utils.ddotconverter import DDOTToHierarchyConverter
+from cellmaps_utils.ddotconverter import DDOTToHierarchyConverter, DDOTToInteractomeConverter
 from ndex2 import constants
+
+
+class TestDDOTToInteractomeConverter(unittest.TestCase):
+    def setUp(self):
+        self.output_dir = tempfile.mkdtemp()
+        self.parent = os.path.join(os.path.dirname(__file__), 'data', 'reactome_ddot.txt')
+        self.converter = DDOTToInteractomeConverter(self.output_dir, self.parent)
+
+    def test_generate_interactome_file(self):
+        self.converter.generate_interactome_file()
+        self.assertTrue(os.path.exists(os.path.join(self.output_dir, 'interactome.cx2')))
 
 
 class TestDDOTToHierarchyConverter(unittest.TestCase):
@@ -32,3 +42,5 @@ class TestDDOTToHierarchyConverter(unittest.TestCase):
         self.assertEqual(len(hierarchy.get_edges()), 4)
         self.assertEqual(len(hierarchy.get_node(0).get(constants.ASPECT_VALUES).get('HCX::members')),
                          6)
+        self.assertEqual(len(hierarchy.get_node(1).get(constants.ASPECT_VALUES).get('HCX::members')),
+                         4)

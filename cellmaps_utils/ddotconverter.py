@@ -145,7 +145,71 @@ class DDOTToHierarchyConverter:
                         target_id = hierarchy.add_node(attributes={constants.NODE_NAME_EXPANDED: target})
                     hierarchy.add_edge(source=source_id, target=target_id)
 
+        self._update_memberlist(hierarchy=hierarchy, interactome=interactome)
         root_nodes = hcx_utils.get_root_nodes(hierarchy)
         hcx_utils.add_isroot_node_attribute(hierarchy, root_nodes=root_nodes)
 
         return hierarchy
+
+    def _update_memberlist(self, hierarchy=None, interactome=None):
+        """
+        Iterates through all nodes of network updating the CD_MemberList and HCX::members by
+        aggregating all the gene lists from the node and its children
+
+        :param hierarchy:
+        :type hierarchy: :py:class:`~ndex2.cx2.CX2Network`
+        """
+        for node_id, node_obj in hierarchy.get_nodes().items():
+            children_nodes = self._get_children_of_node(hierarchy, node_id)
+            children_nodes.add(node_id)
+            member_list, member_ids = self._get_memberlists_from_nodes(hierarchy, interactome, children_nodes)
+            hierarchy.add_node_attribute(node_id, 'CD_MemberList', ' '.join(member_list))
+            hierarchy.add_node_attribute(node_id, 'HCX::members', member_ids)
+
+    def _get_children_of_node(self, network=None, node_id=None):
+        """
+        Gets children of node as set. It is assumed the child node is the target
+        of the edge.
+
+        :param network:
+        :type network: :py:class:`~ndex2.cx2.CX2Network`
+        :param node_id: node whose children should be found
+        :return: id of children nodes
+        :rtype: set
+        """
+        child_set = set()
+        for edge_id, edge_obj in network.get_edges().items():
+            if edge_obj[constants.EDGE_SOURCE] == node_id:
+                if edge_obj[constants.EDGE_TARGET] not in child_set:
+                    child_set.add(edge_obj[constants.EDGE_TARGET])
+                    child_set.update(self._get_children_of_node(network=network,
+                                                                node_id=edge_obj[constants.EDGE_TARGET]))
+        return child_set
+
+    @staticmethod
+    def _get_memberlists_from_nodes(hierarchy=None, interactome=None, node_set=None):
+        """
+        Gets set of genes from all nodes in **node_set**
+
+        :param hierarchy:
+        :type hierarchy: :py:class:`~ndex2.cx2.CX2Network`
+        :param interactome:
+        :type interactome: :py:class:`~ndex2.cx2.CX2Network`
+        :param node_set:
+        :type node_set: set
+        :return: gene_set
+        :rtype: list
+        :return: hcx_set
+        :rtype: list
+        """
+        gene_set = set()
+        hcx_set = set()
+        for node_id in node_set:
+            member_list = hierarchy.get_node(node_id).get(constants.ASPECT_VALUES, {}).get('CD_MemberList', None)
+            if member_list is None:
+                continue
+            member_set = set(member_list.split(' '))
+            gene_set.update(member_set)
+            for member in list(member_set):
+                hcx_set.add(interactome.lookup_node_id_by_name(member))
+        return list(gene_set), list(hcx_set)
