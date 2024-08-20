@@ -138,13 +138,16 @@ class HiDeFToHierarchyConverter:
            The class was added to enable conversion from HiDeF-formatted edge and node files to hierarchy in HCX.
     """
 
-    def __init__(self, output_dir, nodes_file_path, edges_file_path, parent_ndex_url=None, parent_edgelist_path=None,
-                 ndex_user=None, ndex_password=None):
+    def __init__(self, output_dir, nodes_file_path, edges_file_path, parent_edgelist_path=None, parent_ndex_url=None,
+                 host='ndexbio.org', parent_uuid=None, ndex_user=None, ndex_password=None):
         """
         Initializes the converter with file paths and optional parent network details.
 
-        Parent network can be specified as edge list or link to interactome in NDEx needs to be provided, if the
-        network is private, username and password need to be specified.
+        Parent network can be specified one of the following:
+        - edge list file
+        - link to interactome in NDEx
+        - uuid of NDEx network along with the host where the network is hosted.
+        If the network is private, username and password need to be specified.
 
         :param output_dir: Directory where the output files will be stored.
         :type output_dir: str
@@ -152,10 +155,14 @@ class HiDeFToHierarchyConverter:
         :type nodes_file_path: str
         :param edges_file_path: File path for the edges file.
         :type edges_file_path: str
-        :param parent_ndex_url: URL of parent interactome in NDEx (optional).
-        :type parent_ndex_url: str, optional
         :param parent_edgelist_path: Path to the edge list of the interactome (optional).
         :type parent_edgelist_path: str, optional
+        :param parent_ndex_url: URL of parent interactome in NDEx (optional).
+        :type parent_ndex_url: str, optional
+        :param parent_uuid: UUID of the network in NDEx.
+        :type parent_uuid: str, optional
+        :param host: NDEx host.
+        :type host: str, optional
         :param ndex_user: NDEx username (optional).
         :type ndex_user: str, optional
         :param ndex_password: NDEx password (optional).
@@ -167,10 +174,13 @@ class HiDeFToHierarchyConverter:
         if parent_ndex_url is None and parent_edgelist_path is None:
             raise CellMapsError("Specifying either url of parent interactome in NDEx, or edge list of the interactome"
                                 " is required!")
-        self.parent_url = parent_ndex_url
+        if parent_edgelist_path is not None and (parent_ndex_url is not None or parent_uuid is not None):
+            raise CellMapsError("You need to specify parent network as edge list in file, or as network in NDEx, "
+                                "not both!")
         self.parent_edgelist = parent_edgelist_path
-        self.host = None
-        self.uuid = None
+        self.parent_url = parent_ndex_url
+        self.host = host
+        self.uuid = parent_uuid
         self.username = ndex_user
         self.password = ndex_password
 
@@ -187,7 +197,8 @@ class HiDeFToHierarchyConverter:
         :type interactome_filename: str
         """
         hierarchy_path = os.path.join(self.output_dir, hierarchy_filename)
-        self.host, self.uuid = hcx_utils.get_host_and_uuid_from_network_url(self.parent_url)
+        if self.parent_url is not None:
+            self.host, self.uuid = hcx_utils.get_host_and_uuid_from_network_url(self.parent_url)
         interactome = hcx_utils.get_interactome(self.host, self.uuid, self.username, self.password,
                                                 self.parent_edgelist)
         hierarchy = hcx_utils.add_hcx_network_annotations(self._get_hierarchy(interactome), interactome,
