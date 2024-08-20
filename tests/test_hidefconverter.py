@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
+from cellmaps_utils import hcx_utils
 from cellmaps_utils.hidefconverter import HierarchyToHiDeFConverter, HiDeFToHierarchyConverter
 from ndex2 import constants
 
@@ -66,12 +67,12 @@ class TestHiDeFToHierarchyConverter(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.output_dir, 'hierarchy.cx2')))
 
     def test_get_interactome(self):
-        interactome = self.converter._get_interactome()
+        interactome = hcx_utils.get_interactome(None, None, None, None, self.parent)
         self.assertEqual(len(interactome.get_nodes()), 6)
         self.assertEqual(len(interactome.get_edges()), 7)
 
     def test_get_hierarchy(self):
-        interactome = self.converter._get_interactome()
+        interactome = hcx_utils.get_interactome(None, None, None, None, self.parent)
         hierarchy = self.converter._get_hierarchy(interactome)
         self.assertEqual(len(hierarchy.get_nodes()), 2)
         self.assertEqual(len(hierarchy.get_edges()), 1)
@@ -79,22 +80,23 @@ class TestHiDeFToHierarchyConverter(unittest.TestCase):
                          6)
 
     def test_add_hcx_network_annotations(self):
-        interactome = self.converter._get_interactome()
+        interactome = hcx_utils.get_interactome(None, None, None, None, self.parent)
         hierarchy = self.converter._get_hierarchy(interactome)
-        annotated_hierarchy = self.converter._add_hcx_network_annotations(hierarchy, interactome, 'test.cx2')
+        annotated_hierarchy = hcx_utils.add_hcx_network_annotations(hierarchy, interactome, self.output_dir,
+                                                                    'test.cx2', None, None)
         self.assertEqual(annotated_hierarchy.get_network_attributes().get('HCX::interactionNetworkName'), 'test.cx2')
 
     def test_get_root_nodes(self):
-        interactome = self.converter._get_interactome()
+        interactome = hcx_utils.get_interactome(None, None, None, None, self.parent)
         hierarchy = self.converter._get_hierarchy(interactome)
-        root_nodes = self.converter._get_root_nodes(hierarchy)
+        root_nodes = hcx_utils.get_root_nodes(hierarchy)
         self.assertEqual(len(root_nodes), 1)
         self.assertEqual(list(root_nodes)[0], 0)
 
     def test_add_isroot_node_attribute(self):
-        interactome = self.converter._get_interactome()
+        interactome = hcx_utils.get_interactome(None, None, None, None, self.parent)
         hierarchy = self.converter._get_hierarchy(interactome)
-        root_nodes = self.converter._get_root_nodes(hierarchy)
-        self.converter._add_isroot_node_attribute(hierarchy, root_nodes=root_nodes)
+        root_nodes = hcx_utils.get_root_nodes(hierarchy)
+        hcx_utils.add_isroot_node_attribute(hierarchy, root_nodes=root_nodes)
         self.assertEqual(hierarchy.get_nodes().get(0).get(constants.ASPECT_VALUES).get('HCX::isRoot'), True)
 
