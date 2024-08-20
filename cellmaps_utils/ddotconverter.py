@@ -13,10 +13,24 @@ logger = logging.getLogger(__name__)
 class InteractomeToDDOTConverter:
 
     def __init__(self, output_dir, interactome_path, ddot_file_name='interactome_ddot.txt'):
+        """
+        Initializes the converter with the path to the interactome data in CX2 format, output directory, and file name.
+
+        :param output_dir: Directory where the output file will be saved
+        :type output_dir: str
+        :param interactome_path: Path to the interactome file
+        :type interactome_path: str
+        :param ddot_file_name: Name of the output file to write DDOT formatted data
+        :type ddot_file_name: str
+        """
         self._interactome_path = interactome_path
         self._output_file = os.path.join(output_dir, ddot_file_name)
 
     def generate_ddot_format_file(self):
+        """
+        Reads an interactome from a specified path and writes it out in DDOT format.
+        The output includes nodes and their interactions.
+        """
         factory = RawCX2NetworkFactory()
         interactome = factory.get_cx2network(self._interactome_path)
         with open(self._output_file, 'w') as f:
@@ -33,10 +47,24 @@ class InteractomeToDDOTConverter:
 class DDOTToInteractomeConverter:
 
     def __init__(self, output_dir, interactome_ddot_path, interactome_file_name='interactome.cx2'):
+        """
+        Initializes the converter to transform a DDOT formatted file to an CX2 format.
+
+        :param output_dir: Directory where the output file will be saved
+        :type output_dir: str
+        :param interactome_ddot_path: Path to the DDOT formatted file
+        :type interactome_ddot_path: str
+        :param interactome_file_name: Name of the output file for the interactome
+        :type interactome_file_name: str
+        """
         self._interactome_ddot_path = interactome_ddot_path
         self._output_file = os.path.join(output_dir, interactome_file_name)
 
     def generate_interactome_file(self):
+        """
+        Converts a DDOT formatted file to an interactome CX2 network file. It parses the DDOT file,
+        constructs nodes and edges in the interactome, and saves the output.
+        """
         interactome = CX2Network()
         with open(self._interactome_ddot_path, 'r') as f:
             for line in f:
@@ -56,10 +84,24 @@ class DDOTToInteractomeConverter:
 class HierarchyToDDOTConverter:
 
     def __init__(self, output_dir, hierarchy_path, ontology_file_name='ontology.ont'):
+        """
+        Initializes the converter to transform a hierarchy data file in CX2 format into a DDOT ontology file.
+
+        :param output_dir: Directory where the output ontology file will be saved
+        :type output_dir: str
+        :param hierarchy_path: Path to the hierarchy data file
+        :type hierarchy_path: str
+        :param ontology_file_name: Name of the output ontology file
+        :type ontology_file_name: str
+        """
         self._hierarchy_path = hierarchy_path
         self._output_file = os.path.join(output_dir, ontology_file_name)
 
     def generate_ontology_ddot_file(self):
+        """
+        Converts a hierarchy network file into a DDOT ontology file format. This method extracts hierarchy
+        edges and node information to create an ontology representation suitable for DDOT applications.
+        """
         factory = RawCX2NetworkFactory()
         hierarchy = factory.get_cx2network(self._hierarchy_path)
         with open(self._output_file, 'w') as f:
@@ -84,6 +126,30 @@ class DDOTToHierarchyConverter:
     def __init__(self, output_dir, ontology_ddot_path, parent_ddot_path=None, parent_ndex_url=None,
                  host='ndexbio.org', parent_uuid=None, ndex_user=None, ndex_password=None,
                  hierarchy_filename='hierarchy.cx2', interactome_filename='hierarchy_parent.cx2'):
+        """
+        Initializes the converter to create a hierarchy in CX2 from DDOT ontology file.
+
+        :param output_dir: Directory where the output files will be saved
+        :type output_dir: str
+        :param ontology_ddot_path: Path to the DDOT formatted ontology file
+        :type ontology_ddot_path: str
+        :param parent_ddot_path: Optional path to the parent interactome DDOT file
+        :type parent_ddot_path: str, optional
+        :param parent_ndex_url: Optional URL to the parent interactome in NDEx
+        :type parent_ndex_url: str, optional
+        :param host: Hostname for the NDEx server
+        :type host: str
+        :param parent_uuid: UUID of the parent network in NDEx
+        :type parent_uuid: str, optional
+        :param ndex_user: Username for NDEx server authentication
+        :type ndex_user: str, optional
+        :param ndex_password: Password for NDEx server authentication
+        :type ndex_password: str, optional
+        :param hierarchy_filename: Name for the output hierarchy file
+        :type hierarchy_filename: str
+        :param interactome_filename: Name for the output interactome file (parent network)
+        :type interactome_filename: str
+        """
         self._output_dir = output_dir
         self._hierarchy_file = os.path.join(output_dir, hierarchy_filename)
         self._interactome_filename = interactome_filename
@@ -102,6 +168,10 @@ class DDOTToHierarchyConverter:
         self._password = ndex_password
 
     def generate_hierarchy_hcx_file(self):
+        """
+        Constructs a hierarchy network from a DDOT formatted ontology file, utilizing a parent interactome.
+        The hierarchy is enriched with hierarchical context (HCX) information and saved as CX2.
+        """
         interactome = hcx_utils.get_interactome(self._host, self._uuid, self._username, self._password,
                                                 self._parent_edgelist)
         hierarchy = self._get_hierarchy(interactome)
