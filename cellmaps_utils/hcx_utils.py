@@ -21,12 +21,7 @@ def get_interactome(host, uuid, username, password, parent_edgelist):
     :rtype: CX2Network
     """
     interactome = CX2Network()
-    if host is not None and uuid is not None:
-        client = ndex2.client.Ndex2(host=host, username=username, password=password)
-        factory = RawCX2NetworkFactory()
-        client_resp = client.get_network_as_cx2_stream(uuid)
-        interactome = factory.get_cx2network(json.loads(client_resp.content))
-    else:
+    if parent_edgelist is not None:
         with open(parent_edgelist, 'r') as f:
             for line in f:
                 parts = line.split()
@@ -37,6 +32,11 @@ def get_interactome(host, uuid, username, password, parent_edgelist):
                 target_node = id_target_node if id_target_node is not None else interactome.add_node(
                     attributes={'name': parts[1]})
                 interactome.add_edge(source=source_node, target=target_node)
+    elif host is not None and uuid is not None:
+        client = ndex2.client.Ndex2(host=host, username=username, password=password)
+        factory = RawCX2NetworkFactory()
+        client_resp = client.get_network_as_cx2_stream(uuid)
+        interactome = factory.get_cx2network(json.loads(client_resp.content))
     return interactome
 
 
