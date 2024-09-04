@@ -40,8 +40,6 @@ requirements = ['fairscape-cli==0.2.0',
 
 setup_requirements = [ ]
 
-test_requirements = ['requests_mock']
-
 setup(
     author=author,
     author_email=email,
@@ -70,8 +68,6 @@ setup(
                                      'ifimage_readme.txt']},
     scripts=['cellmaps_utils/cellmaps_utilscmd.py'],
     setup_requires=setup_requirements,
-    test_suite='tests',
-    tests_require=test_requirements,
     url=repo_url,
     version=version,
     zip_safe=False)
