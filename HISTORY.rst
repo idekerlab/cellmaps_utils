@@ -5,7 +5,11 @@ History
 0.5.0 (TBD)
 ------------------
 
-* Add ``HiDeFToHierarchyConverter``, a class to convert a edge list and node list in HiDeF format to hierarchy in HCX.
+* Add ``HiDeFToHierarchyConverter``, a class to convert a edge list and node list
+  in HiDeF format to hierarchy in HCX.
+* Add ``InteractomeToDDOTConverter`` and ``DDOTToInteractomeConverter``, classes to convert network in
+  CX2 format to DDOT format and vice versa, ``HierarchyToDDOTConverter`` and ``DDOTToHierarchyConverter``,
+  classes to convert hierarchy network in HCX format to DDOT and vice versa.
 
 0.4.0 (2024-07-02)
 -------------------
