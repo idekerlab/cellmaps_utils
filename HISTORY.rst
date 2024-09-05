@@ -2,7 +2,7 @@
 History
 =======
 
-0.5.0 (TBD)
+0.5.0 (2024-09-05)
 ------------------
 
 * Add ``HiDeFToHierarchyConverter``, a class to convert a edge list and node list
