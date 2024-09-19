@@ -17,7 +17,7 @@ Cell Maps Pipeline Utilities
         :target: https://zenodo.org/doi/10.5281/zenodo.10607322
         :alt: Zenodo DOI badge
 
-Contains utilities needed by various tools in the cell maps toolkit. 
+Contains utilities needed by various tools in the cell maps toolkit.
 
 
 * Free software: MIT license
@@ -50,7 +50,7 @@ Installation
    pip install dist/cellmaps_utils*whl
 
 
-Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
+Run **make** command with no arguments to see other build/deploy options including creation of Docker image
 
 .. code-block::
 
@@ -74,6 +74,8 @@ Output:
    release              package and upload a release
    dist                 builds source and wheel package
    install              install the package to the active Python's site-packages
+
+Before running tests, please install ``pip install -r requirements_dev``
 
 For developers
 -------------------------------------------

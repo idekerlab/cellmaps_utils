@@ -248,6 +248,7 @@ class IFImageDataConverter(BaseCommandLineTool):
         self._release = theargs.release
         self._cell_line = theargs.cell_line
         self._treatment = theargs.treatment
+        self._tissue = theargs.tissue
         self._author = theargs.author
         self._slice = theargs.slice
         self._gene_set = theargs.gene_set
@@ -276,12 +277,28 @@ class IFImageDataConverter(BaseCommandLineTool):
         self._create_output_directory()
 
         keywords = [self._project_name, self._release,
-                    self._cell_line, self._treatment, 'IF microscopy', 'images']
+                    self._cell_line, self._treatment, 'IF microscopy', 'images',
+                    self._tissue]
 
         if self._gene_set is not None:
             keywords.append(self._gene_set)
 
         description = ' '.join(keywords)
+
+        info_dict = {
+            constants.DATASET_NAME: self._name,
+            constants.DATASET_ORGANIZATION_NAME: self._organization_name,
+            constants.DATASET_PROJECT_NAME: self._project_name,
+            constants.DATASET_RELEASE: self._release,
+            constants.DATASET_CELL_LINE: self._cell_line,
+            constants.DATASET_TREATMENT: self._treatment,
+            constants.DATASET_TISSUE: self._tissue,
+            constants.DATASET_AUTHOR: self._author,
+            constants.DATASET_SLICE: self._slice,
+            constants.DATASET_GENE_SET: self._gene_set
+        }
+
+        self.save_dataset_info_to_json(self._outdir, info_dict, constants.DATASET_INFO_FILE)
 
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=self._name,
@@ -308,9 +325,7 @@ class IFImageDataConverter(BaseCommandLineTool):
         if self._slice is not None:
             filtered_df.drop('Slice', axis=1, inplace=True)
 
-        file_path = os.path.join(self._outdir, self._cell_line +
-                                 '_' + self._treatment +
-                                 '_antibody_gene_table.tsv')
+        file_path = os.path.join(self._outdir, constants.ANTIBODY_GENE_TABLE_FILE)
 
         filtered_df.to_csv(file_path, sep='\t', index=False)
 
@@ -406,8 +421,10 @@ class IFImageDataConverter(BaseCommandLineTool):
             for c in constants.COLORS:
                 link_w_filename = link + c + '.jpg'
                 dtuples.append((link_w_filename,
-                                     os.path.join(color_map[c],
-                                                  os.path.basename(link_w_filename))))
+                                os.path.join(color_map[c],
+                                             os.path.basename(link_w_filename))))
+        logger.debug('Returning ' + str(len(dtuples)) + ' download tuples')
+        logger.debug(str(dtuples))
         return dtuples
 
     def _download_data(self, baselinks=None,
@@ -476,13 +493,13 @@ class IFImageDataConverter(BaseCommandLineTool):
         if self._slice is not None:
             logger.info('Keeping only slice: ' + str(self._slice))
             df = df[df['Slice'] == self._slice]
+            logger.debug(str(len(df)) + ' rows remain after slice filter')
 
         # keep only treatment specified
+        logger.info('Keeping only treatment: ' + str(self._treatment))
         df = df[df['Treatment'].str.contains(self._treatment, case=False)]
+        logger.debug(str(len(df)) + ' rows remain after treatment filter')
 
-        # remove baselink, slice
-
-        # df.to_csv(apms_path, sep='\t', index=False)
         return df
 
     def _register_downloaded_images(self,
@@ -509,7 +526,7 @@ class IFImageDataConverter(BaseCommandLineTool):
                 data_dict['name'] = entry + ' ' + c +\
                                     ' channel image'
                 if len(data_dict['name']) >= 64:
-                    data_dict['name'] = data_dict['name'][:63]
+                    data_dict['name'] = '...' + data_dict['name'][-60:]
                 data_dict['keywords'] = keywords.copy()
                 data_dict['keywords'].extend([c, 'IF', 'image', constants.COLOR_LABELS_MAP[c]])
                 dset_ids.append(self._provenance_utils.register_dataset(self._outdir,
@@ -609,6 +626,12 @@ class IFImageDataConverter(BaseCommandLineTool):
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
                             default='chromatin',
                             help='Gene set for dataset')
+        parser.add_argument('--tissue', choices=['undifferentiated', 'neuron',
+                                                 'cardiomyocytes', ''],
+                            default='breast; mammary gland',
+                            help='Tissue for dataset. Since the default --cell_line '
+                                 'is MDA-MB-468, this value is set to the tissue '
+                                 'for that cell line')
         parser.add_argument('--slice', default='z01',
                             help='Slice to keep')
         return parser

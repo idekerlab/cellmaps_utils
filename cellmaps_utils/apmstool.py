@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import uuid
@@ -39,6 +40,7 @@ class APMSDataLoader(BaseCommandLineTool):
         self._release = theargs.release
         self._cell_line = theargs.cell_line
         self._treatment = theargs.treatment
+        self._tissue = theargs.tissue
         self._author = theargs.author
         self._gene_set = theargs.gene_set
         if self._treatment is not None:
@@ -70,12 +72,27 @@ class APMSDataLoader(BaseCommandLineTool):
         os.makedirs(self._outdir, mode=0o755)
 
         keywords = [self._project_name, self._release,
-                    self._cell_line, self._treatment, 'AP-MS edgelist']
+                    self._cell_line, self._treatment, self._tissue,
+                    'AP-MS edgelist']
 
         if self._gene_set is not None:
             keywords.append(self._gene_set)
 
         description = ' '.join(keywords)
+
+        info_dict = {
+            constants.DATASET_NAME: self._name,
+            constants.DATASET_ORGANIZATION_NAME: self._organization_name,
+            constants.DATASET_PROJECT_NAME: self._project_name,
+            constants.DATASET_RELEASE: self._release,
+            constants.DATASET_CELL_LINE: self._cell_line,
+            constants.DATASET_TREATMENT: self._treatment,
+            constants.DATASET_TISSUE: self._tissue,
+            constants.DATASET_AUTHOR: self._author,
+            constants.DATASET_GENE_SET: self._gene_set
+        }
+
+        self.save_dataset_info_to_json(self._outdir, info_dict, constants.DATASET_INFO_FILE)
 
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=self._name,
@@ -184,9 +201,11 @@ class APMSDataLoader(BaseCommandLineTool):
 
         df = pd.concat(df_list)
 
+
         df = self._filter_by_bait(df)
 
-        apms_path = os.path.join(self._outdir, 'apms.tsv')
+        apms_path = os.path.join(self._outdir, constants.APMS_TSV_FILE)
+
         df.to_csv(apms_path, sep='\t', index=False)
         return apms_path
 
@@ -280,5 +299,12 @@ class APMSDataLoader(BaseCommandLineTool):
         parser.add_argument('--set_name',
                             help='If set, adds value to RO-Crate folder name before _apms_<version>. '
                                  'Example values set1')
+        parser.add_argument('--tissue', choices=['undifferentiated', 'neuron',
+                                                 'cardiomyocytes', ''],
+                            default='breast; mammary gland',
+                            help='Tissue for dataset. Since the default --cell_line '
+                                 'is MDA-MB-468, this value is set to the tissue '
+                                 'for that cell line')
+
         return parser
 

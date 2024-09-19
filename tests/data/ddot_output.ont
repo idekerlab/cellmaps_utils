@@ -1,0 +1,10 @@
+ROOT	Coarse-1	default
+ROOT	Coarse-2	default
+Coarse-1	Fine-1	default
+Coarse-1	Fine-2	default
+Fine-1	geneA	gene
+Fine-1	geneB	gene
+Coarse-2	geneC	gene
+Coarse-2	geneD	gene
+Coarse-1	geneE	gene
+Fine-2	geneF	gene

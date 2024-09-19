@@ -1,13 +1,19 @@
 import os
+import uuid
+from datetime import date
 import unittest
+import json
 from unittest.mock import patch, MagicMock, call
-
 import pandas as pd
+import tempfile
+import shutil
+import warnings
 
+import cellmaps_utils
 from cellmaps_utils import constants
 from cellmaps_utils.exceptions import CellMapsError
 from cellmaps_utils.iftool import (download_file, download_file_skip_existing, FakeImageDownloader,
-                                   MultiProcessImageDownloader, IFImageDataConverter)
+                                   MultiProcessImageDownloader, IFImageDataConverter, ImageDownloader)
 
 
 class TestDownloadFile(unittest.TestCase):
@@ -126,13 +132,54 @@ class TestMultiProcessImageDownloader(unittest.TestCase):
         downloader._dfunc.assert_any_call(('http://example.com/image2.jpg', '/tmp/image2.jpg'))
 
 
+class FakeTestImageDownloader(ImageDownloader):
+    """
+    Fake image downloader that simply copies the images
+    from tests/data/images/<color>.jpg to destination path
+    """
+    def __init__(self):
+        """
+        Constructor
+        """
+        super().__init__()
+        warnings.warn('This downloader generates FAKE test images\n'
+                      'You have been warned!!!\n'
+                      'Have a nice day')
+
+    def download_images(self, download_list=None):
+        """
+        Downloads 1st image from server and then
+        and makes renamed copies for subsequent images
+
+        :param download_list:
+        :type download_list: list of tuple
+        :return:
+        """
+        image_dir = os.path.join(os.path.dirname(__file__),
+                                 'data', 'images')
+        image_map = {}
+        for c in constants.COLORS:
+            image_map[c] = os.path.join(image_dir, c + '.jpg')
+
+        for entry in download_list:
+            color = None
+            for c in constants.COLORS:
+                if entry[1].endswith(c + '.jpg'):
+                    color = c
+                    break
+            shutil.copy(image_map[color], entry[1])
+
+        return []
+
+
 class TestIFImageDataConverter(unittest.TestCase):
 
     def setUp(self):
         self.mock_args = MagicMock(outdir='/fakepath', input='fake_input.csv', name='Test Name',
                                    organization_name='Test Org', project_name='Test Project',
                                    release='1.0', cell_line='Test Line', treatment='Test Treatment',
-                                   author='Test Author', slice='Test Slice', gene_set='Test Set')
+                                   author='Test Author', slice='Test Slice', gene_set='Test Set',
+                                   tissue='breast; mammory gland', )
         self.converter = IFImageDataConverter(self.mock_args)
 
     @patch('cellmaps_utils.provenance.ProvenanceUtil')
@@ -221,4 +268,136 @@ class TestIFImageDataConverter(unittest.TestCase):
         mock_read_csv.assert_called_once_with('fake_input.csv', sep=',')
         pd.testing.assert_frame_equal(filtered_df.reset_index(drop=True), expected_df.reset_index(drop=True), check_like=True)
 
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.get_login', return_value='smith')
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.register_computation')
+    def test_register_computation(self, mock_register_computation, mock_login):
+        self.converter._input_data_dict = {'hi': 'there'}
+        self.converter._softwareid = 'softid'
+        self.converter._get_fairscape_id = MagicMock(return_value='someid')
+        self.converter._register_computation(generated_dataset_ids=['id1'],
+                                             description='desc',
+                                             keywords=['x'])
+
+        mock_register_computation.assert_called_with(self.converter._outdir,
+                                                     name='IF images',
+                                                     run_by='smith',
+                                                     command=str(self.converter._input_data_dict),
+                                                     description='desc run of ' + cellmaps_utils.__name__,
+                                                     keywords=['x', 'computation'],
+                                                     used_software=[self.converter._softwareid],
+                                                     generated=['id1'],
+                                                     guid='someid')
+
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.register_software')
+    def test_register_software(self, mock_register_software):
+        self.converter._get_fairscape_id = MagicMock(return_value='someid')
+        self.converter._register_software(description='desc',
+                                          keywords=['x'])
+
+        mock_register_software.assert_called_with(self.converter._outdir,
+                                                  name=cellmaps_utils.__name__,
+                                                  description='desc ' +
+                                                              cellmaps_utils.__description__,
+                                                  author=cellmaps_utils.__author__,
+                                                  version=cellmaps_utils.__version__,
+                                                  keywords=['x', 'tools',
+                                                            cellmaps_utils.__name__],
+                                                  file_format='py',
+                                                  url=cellmaps_utils.__repo_url__,
+                                                  guid='someid')
+
+    @patch('cellmaps_utils.provenance.ProvenanceUtil.register_dataset', return_value='1')
+    def test_register_downloaded_images(self, mock_register_dataset):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            self.converter._outdir = temp_dir
+            for c in constants.COLORS:
+                os.makedirs(os.path.join(temp_dir, c), mode=0o755)
+
+            red_image = os.path.join(temp_dir, constants.RED, '11111111111111111111111111111111111111111111111111111111111111.jpg')
+            open(red_image, 'a').close()
+            open(os.path.join(temp_dir, constants.BLUE, 'nonimagefile.txt'), 'a').close()
+
+            self.converter._get_fairscape_id = MagicMock(return_value='someid')
+            res = self.converter._register_downloaded_images(description='desc',
+                                                             keywords=['x'])
+            self.assertEqual(['1'], res)
+
+            mock_register_dataset.assert_called_with(self.converter._outdir,
+                                                     source_file=red_image,
+                                                     data_dict={'name': '...11111111111111111111111111111111111111.jpg red channel image',
+                                                                'description': 'desc IF image file',
+                                                                'data-format': 'jpg',
+                                                                'author': 'Test Author',
+                                                                'version': '1.0',
+                                                                'date-published': date.today().strftime('%Y-%m-%d')},
+                                                     skip_copy=True,
+                                                     guid='someid')
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_add_subparser(self):
+        mock_subparsers = MagicMock()
+        mock_parser = MagicMock()
+        mock_parser.add_argument = MagicMock()
+        mock_subparsers.add_parser = MagicMock(return_value=mock_parser)
+        IFImageDataConverter.add_subparser(mock_subparsers)
+        mock_subparsers.add_parser.assert_called_with('ifconverter',
+                                                      help='Loads IF Image data into a RO-Crate',
+                                                      description='\n\n        '
+                                                                  'Version ' +
+                                                                  str(cellmaps_utils.__version__) +
+                                                                  '\n\n        '
+                                                                  'ifconverter Loads IF Image '
+                                                                  'data into a RO-Crate\n        ',
+                                                      formatter_class=cellmaps_utils.constants.ArgParseFormatter)
+        mock_parser.add_argument.assert_called()
+
+    def test_run(self):
+        temp_dir = tempfile.mkdtemp()
+        try:
+            data = {'Antibody ID': ['CAB079904', 'CAB079904'],
+                    'ENSEMBL ID': ['ENSG00000187555', 'ENSG00000187555'],
+                    'Treatment': ['Test Treatment', 'Paclitaxel'],
+                    'Well': ['C1', 'C1'],
+                    'Region': ['R1', 'R2'],
+                    'Slice': ['z01', 'z02'],
+                    'Baselink': ['http://foo/1_', 'http://foo/2_']}
+            df = pd.DataFrame(data=data)
+            self.converter._input = os.path.join(temp_dir, 'input.csv')
+            df.to_csv(self.converter._input, sep=',', index=False)
+            run_dir = os.path.join(temp_dir, 'run')
+            self.converter._outdir = run_dir
+            self.converter._imagedownloader = FakeTestImageDownloader()
+
+            # not sure why but magicmock is having problems with name
+            # just setting to str here
+            self.converter._name = 'Test Name'
+
+            self.converter._slice = 'z01'
+
+            self.assertEqual(0, self.converter.run())
+            self.assertTrue(os.path.isfile(os.path.join(self.converter._outdir,
+                                                        'readme.txt')))
+            self.assertTrue(os.path.isfile(os.path.join(self.converter._outdir,
+                                                        constants.ANTIBODY_GENE_TABLE_FILE)))
+            for c in constants.COLORS:
+                self.assertTrue(os.path.isfile(os.path.join(self.converter._outdir, c,
+                                                            '1_' + c + '.jpg')))
+            with open(os.path.join(self.converter._outdir,
+                                   constants.DATASET_INFO_FILE), 'r') as f:
+                data = json.load(f)
+                self.assertEqual(data, {"name": "Test Name",
+                                        "organization_name": "Test Org",
+                                        "project_name": "Test Project",
+                                        "release": "1.0",
+                                        "cell_line": "Test Line",
+                                        "treatment": "Test Treatment",
+                                        "tissue": "breast; mammory gland",
+                                        "author": "Test Author",
+                                        "slice": "z01",
+                                        "gene_set": "Test Set"
+                                        })
+        finally:
+            shutil.rmtree(temp_dir)
 

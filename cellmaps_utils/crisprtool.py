@@ -1,7 +1,9 @@
+import json
 import os
 import shutil
 import uuid
 from datetime import date
+import re
 import logging
 import cellmaps_utils
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
@@ -35,22 +37,25 @@ class CRISPRDataLoader(BaseCommandLineTool):
         self._project_name = theargs.project_name
         self._release = theargs.release
         self._cell_line = theargs.cell_line
+        self._tissue = theargs.tissue
         self._treatment = theargs.treatment
         self._author = theargs.author
         self._gene_set = theargs.gene_set
-        self._feature = theargs.feature
-        self._expression = theargs.expression
-        self._guiderna = theargs.guiderna
+        self._h5ad = theargs.h5ad
         self._dataset = theargs.dataset
         self._skipcopy = theargs.skipcopy
+        self._num_perturb_guides = theargs.num_perturb_guides
+        self._num_non_target_ctrls = theargs.num_non_target_ctrls
+        self._num_screen_targets = theargs.num_screen_targets
         self._provenance_utils = provenance_utils
         self._softwareid = None
         self._input_data_dict = theargs.__dict__
 
     def run(self):
         """
-        Runs the process of CRISPR data loading into a RO-Crate. It includes generating the output directory,
-        linking and registering guide RNA and expression files, copying over the feature file, and registering the
+        Runs the process of CRISPR data loading into a RO-Crate.
+        It includes generating the output directory,
+        linking and registering h5ad file and registering the
         computation and software used in the process.
 
         :return:
@@ -63,12 +68,28 @@ class CRISPRDataLoader(BaseCommandLineTool):
         os.makedirs(self._outdir, mode=0o755)
 
         keywords = [self._project_name, self._release,
-                    self._cell_line, self._treatment, 'CRISPR', self._dataset]
+                    self._cell_line, self._treatment, 'CRISPR',
+                    self._tissue, self._dataset]
 
         if self._gene_set is not None:
             keywords.append(self._gene_set)
 
         description = ' '.join(keywords)
+
+        info_dict = {
+            constants.DATASET_NAME: self._name,
+            constants.DATASET_ORGANIZATION_NAME: self._organization_name,
+            constants.DATASET_PROJECT_NAME: self._project_name,
+            constants.DATASET_RELEASE: self._release,
+            constants.DATASET_CELL_LINE: self._cell_line,
+            constants.DATASET_TREATMENT: self._treatment,
+            constants.DATASET_TISSUE: self._tissue,
+            constants.DATASET_AUTHOR: self._author,
+            constants.DATASET_GENE_SET: self._gene_set,
+            constants.DATASET_COLLECTION_SET: self._dataset
+        }
+        self.save_dataset_info_to_json(self._outdir, info_dict,
+                                       constants.DATASET_INFO_FILE)
 
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=self._name,
@@ -79,12 +100,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                                 guid=self._get_fairscape_id())
         gen_dsets = []
 
-        gen_dsets.extend(self._link_and_register_guiderna(keywords=keywords,
-                                                          description=description))
-        gen_dsets.extend(self._link_and_register_expression(keywords=keywords,
-                                                            description=description))
-        gen_dsets.append(self._copy_over_feature_and_register(keywords=keywords,
-                                                              description=description))
+        gen_dsets.extend(self._link_and_register_h5ad(keywords=keywords,
+                                                      description=description))
         self._register_software(keywords=keywords, description=description)
         self._register_computation(generated_dataset_ids=gen_dsets,
                                    description=description,
@@ -110,55 +127,13 @@ class CRISPRDataLoader(BaseCommandLineTool):
             return 'FASTQs file were obtain by concatenating 3 NGS run over 7 sequencing lanes'
         elif self._dataset.lower() == 'subset':
             return 'Subset run'
+        return ''
 
-    def _link_and_register_guiderna(self, description='',
-                                    keywords=[]):
+    def _link_and_register_h5ad(self, description='',
+                                keywords=[]):
         """
-        Processes guide RNA files by optionally copying them to the output directory and registering each file in the
-        RO-Crate metadata.
-
-        :param description: A base description for the files being processed.
-        :type description: str
-        :param keywords: A list of keywords associated with these files for metadata purposes.
-        :type keywords: list
-        :return: A list of dataset identifiers for the registered guide RNA files.
-        :rtype: list
-        """
-        dset_ids = []
-        for guiderna in self._guiderna:
-            orig_filename = os.path.basename(guiderna)
-            offset = 0
-            if '_CRISPR' in orig_filename:
-                offset = orig_filename.index('_CRISPR')
-            dest_file = os.path.join(self._outdir, self._cell_line + '_' +
-                                     self._treatment + '_'
-                                     + orig_filename[offset:])
-            if self._skipcopy is True:
-                open(dest_file, 'a').close()
-            else:
-                self._link_or_copy(guiderna, dest_file)
-            file_desc = description + ' file'
-            file_keywords = keywords.copy()
-            file_keywords.extend(['file'])
-            dset_id = self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=dest_file,
-                                                              skip_copy=True,
-                                                              data_dict={'name': 'Guide RNA sequences file',
-                                                                         'description': file_desc,
-                                                                         'keywords': file_keywords,
-                                                                         'data-format': 'fastq',
-                                                                         'author': self._author,
-                                                                         'version': self._release,
-                                                                         'date-published': date.today().strftime(
-                                                                             '%Y-%m-%d')},
-                                                              guid=self._get_fairscape_id())
-            dset_ids.append(dset_id)
-
-        return dset_ids
-
-    def _link_and_register_expression(self, description='',
-                                      keywords=[]):
-        """
-        Processes expression files by optionally copying them to the output directory and registering each file in the
+        Processes expression file by optionally copying it to the output directory and
+        registering the file in the
         RO-Crate metadata.
 
         :param description: A base description for the files being processed.
@@ -169,33 +144,27 @@ class CRISPRDataLoader(BaseCommandLineTool):
         :rtype: list
         """
         dset_ids = []
-        for expression in self._expression:
-            orig_filename = os.path.basename(expression)
-            offset = 0
-            if '_scRNA' in orig_filename:
-                offset = orig_filename.index('_scRNA')
-            dest_file = os.path.join(self._outdir, self._cell_line + '_' +
-                                     self._treatment + '_'
-                                     + orig_filename[offset:])
-            if self._skipcopy is True:
-                open(dest_file, 'a').close()
-            else:
-                self._link_or_copy(expression, dest_file)
-            file_desc = description + ' file'
-            file_keywords = keywords.copy()
-            file_keywords.extend(['file'])
-            dset_id = self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=dest_file,
-                                                              skip_copy=True,
-                                                              data_dict={'name': 'Single-cell RNA expression file',
-                                                                         'description': file_desc,
-                                                                         'keywords': file_keywords,
-                                                                         'data-format': 'fastq',
-                                                                         'author': self._author,
-                                                                         'version': self._release,
-                                                                         'date-published': date.today().strftime(
-                                                                             '%Y-%m-%d')},
-                                                              guid=self._get_fairscape_id())
-            dset_ids.append(dset_id)
+
+        dest_file = os.path.join(self._outdir, constants.PERTURBATION_FILE)
+        if self._skipcopy is True:
+            open(dest_file, 'a').close()
+        else:
+            self._link_or_copy(self._h5ad, dest_file)
+        file_desc = description + ' file'
+        file_keywords = keywords.copy()
+        file_keywords.extend(['file'])
+        dset_id = self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=dest_file,
+                                                          skip_copy=True,
+                                                          data_dict={'name': 'Single pooled crispr screens analysis',
+                                                                     'description': file_desc,
+                                                                     'keywords': file_keywords,
+                                                                     'data-format': 'h5ad',
+                                                                     'author': self._author,
+                                                                     'version': self._release,
+                                                                     'date-published': date.today().strftime(
+                                                                         '%Y-%m-%d')},
+                                                          guid=self._get_fairscape_id())
+        dset_ids.append(dset_id)
 
         return dset_ids
 
@@ -223,20 +192,21 @@ class CRISPRDataLoader(BaseCommandLineTool):
         :return: A dictionary where each key is a token to replace and each value is the replacement string.
         :rtype: dict
         """
-        prefix = self._cell_line + '_' + self._treatment
-        return {'@@PREFIX@@': prefix,
-                '@@FEATURE_REF_UNDERLINE@@': '-' * (len(prefix) + 23),
-                '@@CRISPR_UNDERLINE@@': '-' * (len(prefix) + 18),
-                '@@SCRNA_UNDERLINE@@': '-' * (len(prefix) + 19)}
+        return {'@@H5AD@@': constants.PERTURBATION_FILE,
+                '@@CELL_LINE@@': self._cell_line,
+                '@@TREATMENT@@': self._treatment,
+                '@@NUM_SCREEN_TARGETS_AND_GENE_SET@@': str(self._num_screen_targets) +
+                                                       ' ' + self._gene_set,
+                '@@NUM_NON_TARGET_CTRLS@@': str(self._num_non_target_ctrls),
+                '@@NUM_PERTURB_GUIDES@@': str(self._num_perturb_guides)}
 
     def _copy_over_crispr_readme(self):
         """
         Copies over crispr_readme.txt
 
         """
-        crispr_readme = os.path.join(os.path.dirname(__file__), 'crispr_readme.txt')
-        if not os.path.isfile(crispr_readme):
-            return
+        crispr_readme = os.path.join(os.path.dirname(__file__),
+                                     'crispr_readme.txt')
 
         tokenmap = self._create_token_replacement_map()
         result_readme = os.path.join(self._outdir, 'readme.txt')
@@ -249,31 +219,6 @@ class CRISPRDataLoader(BaseCommandLineTool):
                     line_to_write = self._replace_readme_tokens(line,
                                                                 tokenmap=tokenmap)
                     fout.write(line_to_write)
-
-    def _copy_over_feature_and_register(self,description='',
-                                      keywords=[]):
-        """
-        Copies over --feature file
-        :return:
-        """
-        feature_file = os.path.join(self._outdir, self._cell_line + '_' +
-                                    self._treatment + '_feature_reference.csv')
-        shutil.copy(self._feature, feature_file)
-
-        file_desc = description + ' file'
-        file_keywords = keywords.copy()
-        file_keywords.extend(['file'])
-        return self._provenance_utils.register_dataset(rocrate_path=self._outdir, source_file=feature_file,
-                                                       skip_copy=True,
-                                                       data_dict={'name': 'CRISPRi guide RNA dictionary',
-                                                                  'description': file_desc,
-                                                                  'keywords': file_keywords,
-                                                                  'data-format': 'csv',
-                                                                  'author': self._author,
-                                                                  'version': self._release,
-                                                                  'date-published': date.today().strftime(
-                                                                  '%Y-%m-%d')},
-                                                       guid=self._get_fairscape_id())
 
     def _replace_readme_tokens(self, line, tokenmap=None):
         """
@@ -295,14 +240,16 @@ class CRISPRDataLoader(BaseCommandLineTool):
     def _generate_rocrate_dir_path(self):
         """
         Generates the directory path for the RO-Crate based on project name, gene set, cell line, treatment type,
-        dataset type, and release version.
+        tissue, dataset type, and release version.
         """
         dir_name = self._project_name.lower() + '_'
         if self._gene_set is not None:
             dir_name += self._gene_set.lower() + '_'
         dir_name += self._cell_line.lower() + '_'
+        dir_name += re.sub('[^a-zA-Z0-9\w\n\.]', '_', self._tissue.lower()) + '_'
         dir_name += self._treatment.lower() + '_crispr_'
-        dir_name += self._dataset.lower() + '_'
+        if self._dataset.lower() != '':
+            dir_name += self._dataset.lower() + '_'
         dir_name += self._release.lower()
 
         dir_name = dir_name.replace(' ', '_')
@@ -361,7 +308,10 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
         Version {version}
 
-        {cmd} Loads CRISPR data into a RO-Crate
+        {cmd} Loads CRISPR data into a RO-Crate by creating a 
+        directory, copying over relevant and using FAIRSCAPE CLI to 
+        register the data files in the directory known as an RO-Crate
+
         """.format(version=cellmaps_utils.__version__,
                    cmd=CRISPRDataLoader.COMMAND)
 
@@ -371,20 +321,12 @@ class CRISPRDataLoader(BaseCommandLineTool):
                                        formatter_class=constants.ArgParseFormatter)
         parser.add_argument('outdir',
                             help='Directory where RO-Crate will be created')
-        parser.add_argument('--feature', required=True,
-                            help='ChroCRISPRi-feature-ref-10x.csv file')
-        parser.add_argument('--guiderna', required=True, nargs='+',
-                            help='One or more FASTQ files containing sequence of the guide '
-                                 'RUNA linked to cell barcode. It is assumed these files'
-                                 'have _CRISPRi in name and after has S#_L###_R#_###.fastq.gz')
-        parser.add_argument('--expression', required=True, nargs='+',
-                            help='One or more FASTQ files containing single-cell RNA '
-                                 'expression data. It is assumed these files have _scRNAseq '
-                                 'in name and after has S#_L###_R#_###.fastq.gz')
         parser.add_argument('--skipcopy', action='store_true',
-                            help='If set, --guiderna and --expression files will not be hardlinked, '
-                                 'but instead 0 byte files will be placed in the RO-Crate as placeholders. '
+                            help='If set, --h5ad file will not be copied, '
+                                 'but instead a 0 byte file will be placed in the RO-Crate as a placeholder. '
                                  'It is up to the caller to manually move/copy the files over before distribution')
+        parser.add_argument('--h5ad', required=True,
+                            help='Path to h5ad file')
         parser.add_argument('--author', default='Mali Lab',
                             help='Author that created this data')
         parser.add_argument('--name', default='CRISPR',
@@ -393,19 +335,35 @@ class CRISPRDataLoader(BaseCommandLineTool):
                             help='Name of organization running this tool, needed '
                                  'for FAIRSCAPE. Usually set to lab')
         parser.add_argument('--project_name', default='CM4AI',
-                            help='Name of project running this tool, needed for '
-                                 'FAIRSCAPE. Usually set to funding source')
+                            help='Name of project running this tool, '
+                                 'needed for FAIRSCAPE. Usually set to '
+                                 'funding source')
         parser.add_argument('--release', required=True,
-                            help='Version of release. For example: 0.1 alpha')
+                            help='Version of release. '
+                                 'For example: 0.1 alpha')
         parser.add_argument('--treatment', default='untreated',
                             choices=['paclitaxel', 'vorinostat', 'untreated'],
                             help='Treatment of sample.')
-        parser.add_argument('--dataset', required=True, choices=['1channel', 'subset'],
+        parser.add_argument('--dataset', required=True,
+                            choices=['1channel', 'subset', '4channel'],
                             help='Collection set')
         parser.add_argument('--cell_line', default='MDA-MB-468',
+                            choices=['MDA-MB-468', 'KOLF2.1J'],
                             help='Name of cell line. For example MDA-MB-468')
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
                             default='chromatin',
                             help='Gene set for dataset')
+        parser.add_argument('--tissue', choices=['undifferentiated', 'neuron',
+                                                 'cardiomyocytes', ''],
+                            default='breast; mammary gland',
+                            help='Tissue for dataset. Since the default --cell_line '
+                                 'is MDA-MB-468, this value is set to the tissue '
+                                 'for that cell line')
+        parser.add_argument('--num_perturb_guides', default='6',
+                            help='Number of guides per perturbation')
+        parser.add_argument('--num_non_target_ctrls', default='109',
+                            help='Number of non targeting controls')
+        parser.add_argument('--num_screen_targets', default='108',
+                            help='Number of screen targets')
         return parser
 

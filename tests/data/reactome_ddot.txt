@@ -1,0 +1,7 @@
+geneA	geneB	physical association	other_attr1
+geneA	geneE	physical association	other_attr2
+geneB	geneE	physical association	other_attr3
+geneE	geneF	physical association	other_attr4
+geneE	geneD	physical association	other_attr5
+geneE	geneC	physical association	other_attr6
+geneD	geneC	physical association	other_attr7

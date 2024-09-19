@@ -28,17 +28,17 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 
-requirements = ['fairscape-cli==0.1.14',
+requirements = ['fairscape-cli==0.2.0',
+                'ndex2>=3.8.0,<4.0.0',
                 'scipy',
                 'scikit-learn',
                 'pandas',
                 'numpy',
                 'dill',
-                'tqdm']
+                'tqdm',
+                'requests']
 
 setup_requirements = [ ]
-
-test_requirements = [ ]
 
 setup(
     author=author,
@@ -68,8 +68,6 @@ setup(
                                      'ifimage_readme.txt']},
     scripts=['cellmaps_utils/cellmaps_utilscmd.py'],
     setup_requires=setup_requirements,
-    test_suite='tests',
-    tests_require=test_requirements,
     url=repo_url,
     version=version,
     zip_safe=False)

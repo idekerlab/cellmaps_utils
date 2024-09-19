@@ -1,4 +1,3 @@
-
 import os
 import sys
 import subprocess
@@ -10,6 +9,7 @@ import json
 
 from cellmaps_utils import constants
 from cellmaps_utils.exceptions import CellMapsProvenanceError
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,6 +18,7 @@ class ROCrateProvenanceAttributes(object):
     Wrapper object to hold subset of
     `RO-Crate <https://www.researchobject.org/ro-crate/>`__ provenance attributes
     """
+
     def __init__(self, name='Please enter a name',
                  organization_name='Please enter an organization',
                  project_name='Please enter a project',
@@ -98,6 +99,7 @@ class ProvenanceUtil(object):
     """
     Wrapper around `FAIRSCAPE-cli <https://github.com/fairscape/fairscape-cli>`__ calls
     """
+
     def __init__(self, fairscape_binary='fairscape-cli',
                  default_date_format_str='%Y-%m-%d', raise_on_error=False):
         """
@@ -483,13 +485,27 @@ class ProvenanceUtil(object):
         for entry in rocrate_list:
             prov_attrs = self.get_rocrate_provenance_attributes(entry)
 
-            name_set.add(prov_attrs.get_name())
-            proj_set.add(prov_attrs.get_project_name())
-            org_set.add(prov_attrs.get_organization_name())
-            for index in range(len(prov_attrs.get_keywords())):
-                if index not in keyword_set_dict:
-                    keyword_set_dict[index] = set()
-                keyword_set_dict[index].add(prov_attrs.get_keywords()[index])
+            if prov_attrs.get_name() is not None:
+                name_set.add(prov_attrs.get_name())
+            else:
+                logger.error(f'The name for RO-Crate {str(rocrate)} is missing from the metadata. Please '
+                             f'provide a name to uphold FAIR principles. Execution will proceed without the  name.')
+            if prov_attrs.get_project_name() is not None:
+                proj_set.add(prov_attrs.get_project_name())
+            else:
+                logger.error(f'The project name for RO-Crate {str(rocrate)} is missing from the metadata. Please '
+                             f'provide a name to uphold FAIR principles. Execution will proceed without the  name.')
+            if prov_attrs.get_organization_name() is not None:
+                org_set.add(prov_attrs.get_organization_name())
+            else:
+                logger.error(f'The organization name for RO-Crate {str(rocrate)} is missing from the metadata. Please '
+                             f'provide a name to uphold FAIR principles. Execution will proceed without the  name.')
+            if prov_attrs.get_keywords() is not None:
+                for index in range(len(prov_attrs.get_keywords())):
+                    if index not in keyword_set_dict:
+                        keyword_set_dict[index] = set()
+                    if prov_attrs.get_keywords()[index] is not None:
+                        keyword_set_dict[index].add(prov_attrs.get_keywords()[index])
         logger.debug('keyword_set_dict: ' + str(keyword_set_dict))
 
         if override_name is None:

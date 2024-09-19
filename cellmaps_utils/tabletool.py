@@ -34,6 +34,7 @@ class TableFromROCrates(BaseCommandLineTool):
     TYPE_COL = 'Type'
     CELL_LINE_COL = 'Cell Line'
     TREATMENT_COL = 'Treatment'
+    TISSUE_COL = 'Tissue'
     GENESET_COL = 'Gene set'
     VERSION_COL = 'Version'
 
@@ -46,6 +47,7 @@ class TableFromROCrates(BaseCommandLineTool):
                VERSION_COL,
                TYPE_COL,
                CELL_LINE_COL,
+               TISSUE_COL,
                TREATMENT_COL,
                GENESET_COL,
                GENERATED_COL,
@@ -99,6 +101,8 @@ class TableFromROCrates(BaseCommandLineTool):
         """
         if 'MDA-MB-468' in keywords:
             return 'MDA-MB-468'
+        if 'KOLF2.1J' in keywords:
+            return 'KOLF2.1J'
         return 'Unknown'
 
     def _get_treatment(self, keywords):
@@ -116,6 +120,23 @@ class TableFromROCrates(BaseCommandLineTool):
         if 'paclitaxel' in keywords:
             treatments.append('paclitaxel')
         return ','.join(treatments)
+
+    def _get_tissue(self, keywords):
+        """
+        Gets tissue from keywords
+
+        :param keywords:
+        :return:
+        """
+        if 'undifferentiated' in keywords:
+            return 'undifferentiated'
+        if 'neuron' in keywords:
+            return 'neuron'
+        if 'cardiomyocytes' in keywords:
+            return 'cardiomyocytes'
+        if 'breast; mammary gland' in keywords:
+            return 'breast; mammary gland'
+        return ''
 
     def _get_geneset(self, keywords):
         """
@@ -176,6 +197,7 @@ class TableFromROCrates(BaseCommandLineTool):
                        TableFromROCrates.VERSION_COL: self._version,
                        TableFromROCrates.TYPE_COL: self._get_rocrate_type(comp_name),
                        TableFromROCrates.CELL_LINE_COL: self._get_cell_line(prov_attrs.get_keywords()),
+                       TableFromROCrates.TISSUE_COL: self._get_tissue(prov_attrs.get_keywords()),
                        TableFromROCrates.TREATMENT_COL: self._get_treatment(prov_attrs.get_keywords()),
                        TableFromROCrates.GENESET_COL: self._get_geneset(prov_attrs.get_keywords()),
                        TableFromROCrates.COMPUTATION_COL: comp_name,
@@ -371,7 +393,8 @@ class TableFromROCrates(BaseCommandLineTool):
                             help='Date to list in table for RO-Crates')
         parser.add_argument('--release', default='0.1 alpha',
                             help='Version of release')
-        parser.add_argument('--downloadurlprefix', default='https://g-9b3b6e.9ad93.a567.data.globus.org/Data/cm4ai_0.1alpha/')
+        parser.add_argument('--downloadurlprefix', default='https://g-9b3b6e.9ad93.a567.data.globus.org/Data/cm4ai_0.1alpha/',
+                            help='URL prefix for downloads. MUST END WITH /')
 
         return parser
 

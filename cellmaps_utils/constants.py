@@ -84,6 +84,16 @@ IMAGE_GENE_NODE_ERRORS_FILE = 'image_gene_node_attributes.errors'
 Image gene node attributes errors filename
 """
 
+PERTURBATION_FILE = 'perturbation.h5ad'
+"""
+Perturbation/CRISPRi h5ad file
+"""
+
+ANTIBODY_GENE_TABLE_FILE = 'antibody_gene_table.tsv'
+"""
+Antibody Gene Table file
+"""
+
 IMAGE_GENE_NODE_NAME_COL = 'name'
 """
 Gene Symbol name column
@@ -123,6 +133,11 @@ IMAGE_GENE_NODE_COLS = [IMAGE_GENE_NODE_NAME_COL,
                         IMAGE_GENE_NODE_IMAGEURL_COL]
 """
 Columns in :py:const:`IMAGE_GENE_NODE_ATTR_FILE` file
+"""
+
+APMS_TSV_FILE = 'apms.tsv'
+"""
+AP-MS tsv file
 """
 
 PPI_EDGELIST_FILE = 'ppi_edgelist.tsv'
@@ -174,7 +189,12 @@ PPI_NETWORK_PREFIX = 'ppi'
 
 HIERARCHY_NETWORK_PREFIX = 'hierarchy'
 """
-CX format hierarchy filename
+CX2 format hierarchy filename
+"""
+
+HIERARCHY_PARENT_NETWORK_PREFIX = 'hierarchy_parent'
+"""
+CX2 format hierarchy parent (interactome) filename
 """
 
 HIERARCHY_NODES_FILE = 'hierarchy_node_attributes.tsv'
@@ -281,4 +301,62 @@ HIERARCHYEVAL_STEP_DIR = '5.hierarchyeval'
 Name of directory where hierarchy evaluations are stored
 """
 
+DATASET_INFO_FILE = 'dataset_info.json'
+"""
+Name of file where information about a dataset is stored
+"""
 
+DATASET_NAME = 'name'
+"""
+Name of the dataset
+"""
+
+DATASET_ORGANIZATION_NAME = 'organization_name'
+"""
+Name of the organization
+"""
+
+DATASET_PROJECT_NAME = 'project_name'
+"""
+Name of the project
+"""
+
+DATASET_RELEASE = 'release'
+"""
+Release of the dataset
+"""
+
+DATASET_CELL_LINE = 'cell_line'
+"""
+Cell line
+"""
+
+DATASET_TREATMENT = 'treatment'
+"""
+Treatment
+"""
+
+DATASET_TISSUE = 'tissue'
+"""
+Tissue
+"""
+
+DATASET_AUTHOR = 'author'
+"""
+Author of the dataset
+"""
+
+DATASET_SLICE = 'slice'
+"""
+Slice
+"""
+
+DATASET_GENE_SET = 'gene_set'
+"""
+Gene set
+"""
+
+DATASET_COLLECTION_SET = 'collection_set'
+"""
+Collection set
+"""
