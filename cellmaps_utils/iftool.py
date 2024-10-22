@@ -316,14 +316,20 @@ class IFImageDataConverter(BaseCommandLineTool):
                     os.path.join(self._outdir, 'readme.txt'))
 
         # download the images
-        self._download_data(filtered_df['Baselink'].values.tolist())
+        if 'Baselink' in filtered_df:
+            baselink_name = 'Baselink'
+        else:
+            baselink_name = 'base_web_link'
+
+        self._download_data(filtered_df[baselink_name].values.tolist())
 
         # remove Baselink column
-        filtered_df.drop('Baselink', axis=1, inplace=True)
+        filtered_df.drop(baselink_name, axis=1, inplace=True)
 
         # remove Slice column if set
         if self._slice is not None:
-            filtered_df.drop('Slice', axis=1, inplace=True)
+            if 'Slice' in filtered_df:
+                filtered_df.drop('Slice', axis=1, inplace=True)
 
         file_path = os.path.join(self._outdir, constants.ANTIBODY_GENE_TABLE_FILE)
 
@@ -491,9 +497,16 @@ class IFImageDataConverter(BaseCommandLineTool):
 
         # keep only slice specified
         if self._slice is not None:
-            logger.info('Keeping only slice: ' + str(self._slice))
-            df = df[df['Slice'] == self._slice]
-            logger.debug(str(len(df)) + ' rows remain after slice filter')
+            if 'Slice' in df:
+                logger.info('Keeping only slice: ' + str(self._slice))
+                df = df[df['Slice'] == self._slice]
+                logger.debug(str(len(df)) + ' rows remain after slice filter')
+            else:
+                # attempt to find slice from base_web_link
+                if 'base_web_link' in df:
+                    logger.info('Keeping only slice: ' + str(self._slice) + ' by parsing base_web_link')
+                    df = df[df['base_web_link'].str.contains('_' + self._slice + '_', case=False)]
+                    logger.debug(str(len(df)) + ' rows remain after slice filter')
 
         # keep only treatment specified
         logger.info('Keeping only treatment: ' + str(self._treatment))
@@ -605,7 +618,7 @@ class IFImageDataConverter(BaseCommandLineTool):
                                  'store results in')
         parser.add_argument('--input', required=True,
                             help='Table file with the following '
-                                 'fields: [Antibody ID, ENSEMBL ID, Treatment, Well, Region, Slice, Baselink] ')
+                                 'fields: [Antibody ID, ENSEMBL ID, Treatment, Well, Region, Slice, Baselink|base_web_link] ')
         parser.add_argument('--author', default='Lundberg Lab',
                             help='Author that created this data')
         parser.add_argument('--name', default='IF images',
