@@ -514,6 +514,10 @@ class IFImageDataConverter(BaseCommandLineTool):
         df = df[df['Treatment'].str.contains(self._treatment, case=False)]
         logger.debug(str(len(df)) + ' rows remain after treatment filter')
 
+        # remove negative-ctrl rows
+        logger.debug('Removing NEGATIVE-CTRL rows')
+        df = df[df["ENSG"].str.contains('NEGATIVE-CTRL') == False]
+
         return df
 
     def _register_downloaded_images(self,
@@ -619,7 +623,7 @@ class IFImageDataConverter(BaseCommandLineTool):
                                  'store results in')
         parser.add_argument('--input', required=True,
                             help='Table file with the following '
-                                 'fields: [Antibody ID, ENSEMBL ID, Treatment, Well, Region, Slice, Baselink|base_web_link] ')
+                                 'fields: [Antibody ID, ENSEMBL ID|ENSG, Treatment, Well, Region, Slice, Baselink|base_web_link] ')
         parser.add_argument('--author', default='Lundberg Lab',
                             help='Author that created this data')
         parser.add_argument('--name', default='IF images',
