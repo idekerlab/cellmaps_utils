@@ -352,7 +352,8 @@ class IFImageDataConverter(BaseCommandLineTool):
         gen_dsets.extend(self._register_downloaded_images(description=description,
                                                           keywords=keywords))
         self._register_software(keywords=keywords, description=description)
-        self._register_computation(generated_dataset_ids=gen_dsets,
+        logger.info('Registering only 1st 1000 datasets into computation due to limitations of fairscape-cli')
+        self._register_computation(generated_dataset_ids=gen_dsets[:1000],
                                    description=description,
                                    keywords=keywords)
         return 0
