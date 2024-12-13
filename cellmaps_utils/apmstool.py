@@ -22,6 +22,8 @@ class APMSDataLoader(BaseCommandLineTool):
     """
     COMMAND = 'apmsconverter'
 
+    BAIT_COL_NAME = 'Bait'
+
     def __init__(self, theargs,
                  provenance_utils=ProvenanceUtil()):
         """
@@ -43,14 +45,7 @@ class APMSDataLoader(BaseCommandLineTool):
         self._tissue = theargs.tissue
         self._author = theargs.author
         self._gene_set = theargs.gene_set
-        self._baitfilter = None
-        if self._treatment is not None:
-            if self._treatment == 'untreated':
-                self._baitfilter = '_DMSO'
-            elif self._treatment == 'paclitaxel':
-                self._baitfilter = '_PTXL'
-            elif self._treatment == 'vorinostat':
-                self._baitfilter = '_VRST'
+        self._baitcolname = theargs.baitcolname
         self._set_name = theargs.set_name
         self._provenance_utils = provenance_utils
         self._softwareid = None
@@ -156,22 +151,6 @@ class APMSDataLoader(BaseCommandLineTool):
         dir_name = dir_name.replace(' ', '_')
         self._outdir = os.path.join(self._outdir, dir_name)
 
-    def _filter_by_bait(self, df):
-        """
-        Filters dataframe by baitfilter in place
-        :param df:
-        :type df: :py:class:`~pandas.DataFrame`
-        :return:
-        """
-        if self._baitfilter is not None:
-            logger.debug('Keeping only rows that end with ' +
-                         self._baitfilter + ' in bait')
-            filtered_df = df[df['Bait'].str.endswith(self._baitfilter)]
-            filtered_df.reset_index()
-            filtered_df.loc[:, 'Bait'] = filtered_df.loc[:, 'Bait'].str.removesuffix(self._baitfilter)
-            return filtered_df
-        return df
-
     def _merge_and_save_apms_data(self):
         """
         Merges AP-MS data from input files into a single DataFrame and saves the combined data to a TSV file within
@@ -181,7 +160,13 @@ class APMSDataLoader(BaseCommandLineTool):
         """
         df_list = []
         for input in self._inputs:
-            cur_df = pd.read_csv(input, sep='\t', na_filter=False)
+            thesep = '\t'
+            if input.endswith('.csv'):
+                thesep = ','
+            cur_df = pd.read_csv(input, sep=thesep, na_filter=False)
+            if self._baitcolname != 'Bait':
+                if self._baitcolname in cur_df.columns:
+                    cur_df.rename({self._baitcolname: 'Bait'}, axis=1, inplace=True)
             # Handles case where HDAC2 in initial cm4ai dataset
             # had several columns lacking .x suffix
             # we are fixing this by checking for those columns and if
@@ -198,9 +183,6 @@ class APMSDataLoader(BaseCommandLineTool):
             df_list.append(cur_df)
 
         df = pd.concat(df_list)
-
-
-        df = self._filter_by_bait(df)
 
         apms_path = os.path.join(self._outdir, constants.APMS_TSV_FILE)
 
@@ -303,6 +285,8 @@ class APMSDataLoader(BaseCommandLineTool):
                             help='Tissue for dataset. Since the default --cell_line '
                                  'is MDA-MB-468, this value is set to the tissue '
                                  'for that cell line')
+        parser.add_argument('--baitcolname', default='Bait',
+                            help='Name of bait column in input file(s)')
 
         return parser
 

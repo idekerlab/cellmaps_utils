@@ -26,6 +26,7 @@ class TestAPMSDataLoader(unittest.TestCase):
                                    author='Test Author',
                                    gene_set='Test Set',
                                    set_name=None,
+                                   baitcolname='Bait',
                                    tissue='breast; mammory gland')
         self.loader = APMSDataLoader(self.mock_args)
 
@@ -125,17 +126,6 @@ class TestAPMSDataLoader(unittest.TestCase):
                                                   keywords=['x', 'tools', cellmaps_utils.__name__],
                                                   url=cellmaps_utils.__repo_url__,
                                                   guid='someid')
-
-    def test_filter_by_bait(self):
-        tset = [('untreated', 'foo'), ('paclitaxel', 'blah'), ('vorinostat', 'arg')]
-        df = pd.DataFrame(data={'Bait': ['xxx', 'foo_DMSO', 'blah_PTXL', 'arg_VRST'],
-                                'somecol': ['val1', 'val2', 'val3', 'val4']})
-        for x in tset:
-            self.mock_args.treatment = x[0]
-            self.loader = APMSDataLoader(self.mock_args)
-            filtered_df = self.loader._filter_by_bait(df)
-            self.assertEqual(1, len(filtered_df))
-            self.assertTrue(x[1] in filtered_df['Bait'].values)
 
     def test_merge_and_save_apms_data(self):
         temp_dir = tempfile.mkdtemp()
