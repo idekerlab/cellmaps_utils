@@ -138,13 +138,13 @@ class FakeImageDownloader(ImageDownloader):
                 raise CellMapsError('Unable to download ' +
                                     str(entry))
             fname = os.path.basename(entry[1])
-            color = re.sub('\..*$', '', re.sub('^.*_', '', fname))
+            color = re.sub(r'\..*$', '', re.sub('^.*_', '', fname))
             src_image_dict[color] = entry[1]
 
         for entry in download_list[5:]:
             t.update()
             fname = os.path.basename(entry[1])
-            color = re.sub('\..*$', '', re.sub('^.*_', '', fname))
+            color = re.sub(r'\..*$', '', re.sub('^.*_', '', fname))
             shutil.copy(src_image_dict[color], entry[1])
         return []
 
@@ -515,8 +515,8 @@ class IFImageDataConverter(BaseCommandLineTool):
         logger.debug(str(len(df)) + ' rows remain after treatment filter')
 
         # remove negative-ctrl rows
-        logger.debug('Removing NEGATIVE-CTRL rows')
-        df = df[df["ENSG"].str.contains('NEGATIVE-CTRL') == False]
+        logger.debug('Removing NEGATIVE rows')
+        df = df[df["Antibody ID"].str.contains('NEGATIVE') == False]
 
         return df
 
@@ -642,15 +642,17 @@ class IFImageDataConverter(BaseCommandLineTool):
         parser.add_argument('--cell_line', default='MDA-MB-468',
                             help='Name of cell line. For example MDA-MB-468')
         parser.add_argument('--gene_set', choices=['chromatin', 'metabolic'],
-                            default='chromatin',
-                            help='Gene set for dataset')
+                            help='Gene set for dataset, standard names are '
+                                 + 'chromatin, metabolic, or leave it unset')
         parser.add_argument('--tissue', choices=['undifferentiated', 'neuron',
                                                  'cardiomyocytes', ''],
                             default='breast; mammary gland',
                             help='Tissue for dataset. Since the default --cell_line '
                                  'is MDA-MB-468, this value is set to the tissue '
                                  'for that cell line')
-        parser.add_argument('--slice', default='z01',
-                            help='Slice to keep')
+        parser.add_argument('--slice',
+                            help='Slice to keep. Example names are z01, z02. If unset '
+                                 + 'all slices are kept')
+
         return parser
 
