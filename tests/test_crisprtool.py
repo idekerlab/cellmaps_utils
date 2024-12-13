@@ -204,9 +204,9 @@ class TestCRISPRDataLoader(unittest.TestCase):
                                                                   '\n\n'
                                                                   '        crisprconverter Loads '
                                                                   'CRISPR data into a RO-Crate by '
-                                                                  'creating a \n        directory, '
+                                                                  'creating a\n        directory, '
                                                                   'copying over relevant and using '
-                                                                  'FAIRSCAPE CLI to \n        '
+                                                                  'FAIRSCAPE CLI to\n        '
                                                                   'register the data files in '
                                                                   'the directory known as an '
                                                                   'RO-Crate\n\n        ',
