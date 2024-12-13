@@ -46,6 +46,15 @@ class TestAPMSDataLoader(unittest.TestCase):
                                                                                                                     '_')
         self.assertEqual(self.loader._outdir, expected_dir_name)
 
+    def test_generate_rocrate_dir_path_with_set_name(self):
+        self.mock_args.set_name = 'set1'
+        self.loader = APMSDataLoader(self.mock_args)
+        self.loader._generate_rocrate_dir_path()
+        expected_dir_name = os.path.join('/fakepath',
+                                         'test_project_test_set_test_line_test_treatment_set1_apms_1.0').lower().replace(' ',
+                                                                                                                    '_')
+        self.assertEqual(self.loader._outdir, expected_dir_name)
+
     @patch('shutil.copy')
     @patch('os.path.dirname', return_value='/fake/dir')
     @patch('os.path.join', side_effect=lambda *args: '/'.join(args))
@@ -116,6 +125,17 @@ class TestAPMSDataLoader(unittest.TestCase):
                                                   keywords=['x', 'tools', cellmaps_utils.__name__],
                                                   url=cellmaps_utils.__repo_url__,
                                                   guid='someid')
+
+    def test_filter_by_bait(self):
+        tset = [('untreated', 'foo'), ('paclitaxel', 'blah'), ('vorinostat', 'arg')]
+        df = pd.DataFrame(data={'Bait': ['xxx', 'foo_DMSO', 'blah_PTXL', 'arg_VRST'],
+                                'somecol': ['val1', 'val2', 'val3', 'val4']})
+        for x in tset:
+            self.mock_args.treatment = x[0]
+            self.loader = APMSDataLoader(self.mock_args)
+            filtered_df = self.loader._filter_by_bait(df)
+            self.assertEqual(1, len(filtered_df))
+            self.assertTrue(x[1] in filtered_df['Bait'].values)
 
     def test_merge_and_save_apms_data(self):
         temp_dir = tempfile.mkdtemp()
