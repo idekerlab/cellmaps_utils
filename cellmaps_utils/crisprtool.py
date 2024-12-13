@@ -246,7 +246,7 @@ class CRISPRDataLoader(BaseCommandLineTool):
         if self._gene_set is not None:
             dir_name += self._gene_set.lower() + '_'
         dir_name += self._cell_line.lower() + '_'
-        dir_name += re.sub('[^a-zA-Z0-9\w\n\.]', '_', self._tissue.lower()) + '_'
+        dir_name += re.sub(r'[^a-zA-Z0-9\w\n\.]', '_', self._tissue.lower()) + '_'
         dir_name += self._treatment.lower() + '_crispr_'
         if self._dataset.lower() != '':
             dir_name += self._dataset.lower() + '_'
@@ -308,8 +308,8 @@ class CRISPRDataLoader(BaseCommandLineTool):
 
         Version {version}
 
-        {cmd} Loads CRISPR data into a RO-Crate by creating a 
-        directory, copying over relevant and using FAIRSCAPE CLI to 
+        {cmd} Loads CRISPR data into a RO-Crate by creating a
+        directory, copying over relevant and using FAIRSCAPE CLI to
         register the data files in the directory known as an RO-Crate
 
         """.format(version=cellmaps_utils.__version__,
