@@ -256,8 +256,9 @@ class TestIFImageDataConverter(unittest.TestCase):
         mock_download_images.assert_called_once_with(['http://example.com/image.jpg'])
 
     @patch('pandas.read_csv')
-    def test_filter_apms_data(self, mock_read_csv):
+    def test_filter_ifdata_data(self, mock_read_csv):
         mock_df = pd.DataFrame({
+            'Antibody ID': ['CAB12345', 'CAB56789'],
             'Slice': ['Test Slice', 'Other Slice'],
             'Treatment': ['Test Treatment', 'Other Treatment'],
             'OtherColumn': [1, 2]
