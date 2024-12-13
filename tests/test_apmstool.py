@@ -25,6 +25,7 @@ class TestAPMSDataLoader(unittest.TestCase):
                                    treatment='Test Treatment',
                                    author='Test Author',
                                    gene_set='Test Set',
+                                   set_name=None,
                                    tissue='breast; mammory gland')
         self.loader = APMSDataLoader(self.mock_args)
 
@@ -176,6 +177,7 @@ class TestAPMSDataLoader(unittest.TestCase):
                                        treatment='Test Treatment',
                                        author='Test Author',
                                        gene_set='Test Set',
+                                       set_name=None,
                                        tissue='breast; mammory gland')
             self.loader = APMSDataLoader(self.mock_args)
             # not sure why but magicmock is not doing the right thing
