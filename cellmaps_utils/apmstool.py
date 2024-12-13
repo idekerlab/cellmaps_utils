@@ -43,6 +43,7 @@ class APMSDataLoader(BaseCommandLineTool):
         self._tissue = theargs.tissue
         self._author = theargs.author
         self._gene_set = theargs.gene_set
+        self._baitfilter = None
         if self._treatment is not None:
             if self._treatment == 'untreated':
                 self._baitfilter = '_DMSO'
@@ -50,8 +51,6 @@ class APMSDataLoader(BaseCommandLineTool):
                 self._baitfilter = '_PTXL'
             elif self._treatment == 'vorinostat':
                 self._baitfilter = '_VRST'
-        else:
-            self._baitfilter = None
         self._set_name = theargs.set_name
         self._provenance_utils = provenance_utils
         self._softwareid = None
@@ -154,7 +153,6 @@ class APMSDataLoader(BaseCommandLineTool):
             dir_name += '_' + self._set_name
         dir_name += '_apms_'
         dir_name += self._release.lower()
-
         dir_name = dir_name.replace(' ', '_')
         self._outdir = os.path.join(self._outdir, dir_name)
 
