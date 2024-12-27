@@ -28,15 +28,15 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 
-requirements = ['fairscape-cli==0.2.0',
+requirements = ['fairscape-cli==1.0.2',
                 'ndex2>=3.8.0,<4.0.0',
-                'scipy',
-                'scikit-learn',
-                'pandas',
-                'numpy',
-                'dill',
-                'tqdm',
-                'requests']
+                'scipy>=1.10.1,<1.11',
+                'scikit-learn>=0.19.0,<1.4.0',
+                'pandas>=2.0.0,<3.0.0',
+                'numpy>=1.24.4,<2.0.0',
+                'dill>=0.3.8,<0.4.0',
+                'tqdm>=4.66.6,<5.0.0',
+                'requests>=2.31.0,<3.0.0']
 
 setup_requirements = [ ]
 
