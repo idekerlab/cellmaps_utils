@@ -2,6 +2,12 @@
 History
 =======
 
+0.6.0 (TBD)
+------------------
+
+* Add ``HierarchyDiff`` class with ``compare_hierarchies`` method to compare two hierarchies in CX2 format, and output
+  a hierarchy with robustness score of each system.
+
 0.5.0 (2024-09-05)
 ------------------
 
