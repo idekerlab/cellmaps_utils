@@ -1,8 +1,8 @@
 This data set has been generated in the Emma Lundberg lab (https://ell-core.stanford.edu/)
-in July-August 2023 as part of the CM4AI Research Program (https://cm4ai.org/).
+as part of the CM4AI Research Program (https://cm4ai.org/).
 
-This data set displays the spatial localization of 95 proteins in the breast cancer
-cell line MDA-MB-468. MDA-MB-468 cells were seeded into 96-well glass bottom plates
+This data set displays the spatial localization of proteins in the cell line MDA-MB-468.
+MDA-MB-468 cells were seeded into 96-well glass bottom plates
 and treated either with the chemotherapeutic drug Paclitaxel or with the chemotherapeutic
 drug Vorinostat (SAHA) or not treated. For drug treatment, higher cell numbers were
 seeded than for the cells that were not treated to reach a sufficient amount of
@@ -14,7 +14,7 @@ DAPI (to label nuclei, "blue" channel),
 a Calreticulin antibody (to label the endoplasmic reticulum, "yellow" channel),
 a Tubulin antibody (to label Microtubuli, "red" channel), and an antibody against a
 protein of interest (a different antibody / protein for each well, "green" channel).
-In the green channel, for each well, one of 95 proteins was stained with an antibody
+In the green channel, for each well, each one of the proteins was stained with an antibody
 from the proteinatlas.org project.
 
 The .tsv file describes each image in the data set. Each row represents one image.
