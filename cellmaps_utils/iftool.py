@@ -619,8 +619,7 @@ class IFImageDataConverter(BaseCommandLineTool):
                                        description=desc,
                                        formatter_class=constants.ArgParseFormatter)
         parser.add_argument('outdir',
-                            help='Directory where RO-Crate will be created '
-                                 'store results in')
+                            help='Directory where RO-Crate will be created')
         parser.add_argument('--input', required=True,
                             help='Table file with the following '
                                  'fields: [Antibody ID, ENSEMBL ID|ENSG, Treatment, Well, Region, Slice, Baselink|base_web_link] ')
