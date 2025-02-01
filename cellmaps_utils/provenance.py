@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 import subprocess
@@ -6,6 +7,21 @@ import uuid
 import getpass
 from datetime import date
 import json
+
+try:
+    from fairscape_cli.models.computation import GenerateComputation
+    from fairscape_cli.models.dataset import GenerateDataset
+    from fairscape_cli.models.software import GenerateSoftware
+    from fairscape_cli.models.rocrate import (
+        GenerateROCrate,
+        ReadROCrateMetadata,
+        AppendCrate
+    )
+    FAIRSCAPE_LOADED = True
+except ImportError as ie:
+    FAIRSCAPE_LOADED = False
+    logger.debug('Unable to import fairscape_cli. Relying on fairscape_cli command line' + str(ie))
+
 
 from cellmaps_utils import constants
 from cellmaps_utils.exceptions import CellMapsProvenanceError
@@ -780,6 +796,104 @@ class ProvenanceUtil(object):
         logger.debug('add software out_str: ' + str(out_str))
         logger.debug('add software err_str: ' + str(err_str))
         return out_str
+
+    def register_datasets_in_bulk(self, rocrate_path, datasets=None):
+        """
+        Registers datasets in bulk to existing rocrate specified
+        by **rocrate_path** by adding information to
+        ``ro-crate-metadata.json`` file.
+
+        TODO: Attempting to use example here:
+              https://github.com/fairscape/fairscape-cli/blob/main/tests/test_rocrate_api.py
+              for implementation
+
+        .. note::
+
+           Copy is not available in this mode. This method will attempt
+           to use fairscape-cli API call for speed, but will fall back
+           to command line if API is unavailable.
+
+        Expected format of **datasets**:
+
+        .. code-block::
+
+             [
+              {'name': 'Name of dataset',
+              'author': 'Author of dataset',
+              'version': 'Version of dataset',
+              'url': 'Url of dataset (optional)',
+              'date-published': 'Date dataset was published MM-DD-YYYY',
+              'description': 'Description of dataset',
+              'data-format': 'Format of data',
+              'schema': Path or URL to schema file in JSON format,
+              'keywords': ['keyword1','keyword2'],
+              'guid': unique id for dataset
+                      (set to None or omit to have one generated),
+              'source_file': Path to source file of dataset}
+             ]
+
+        :param rocrate_path: Path to directory with registered rocrate
+        :type rocrate_path: str
+        :param datasets: list of dicts representing datasets
+                         to register. See above for format of dict
+        :type datasets: list
+        :return: dataset ids
+        :rtype: list
+        """
+        if rocrate_path is None:
+            raise CellMapsProvenanceError('rocrate_path is None')
+        if datasets is None:
+            raise CellMapsProvenanceError('No datasets to register')
+        if FAIRSCAPE_LOADED is False:
+            logger.debug('Fairscape-cli unavailable. Falling back to CLI')
+            return self._register_datasets_in_bulk_via_cli(rocrate_path,
+                                                           datasets=datasets)
+        dset_list = []
+        dsets = []
+        for entry in datasets:
+
+            dset_meta = {'guid': entry.get('guid'),
+                         'name': entry.get('name'),
+                         'keywords': entry.get('keywords'),
+                         'description': entry.get('description'),
+                         'author': entry.get('author'),
+                         'datePublished': entry.get('date-published'),
+                         'dataFormat': entry.get('data-format'),
+                         'schema': entry.get('schema'),
+                         'filepath': f"file://" + entry.get('source_file'),
+                         'cratePath': rocrate_path}
+            if dset_meta['guid'] is None:
+                dset_meta['guid'] = self._generate_guid(rocrate_path=rocrate_path,
+                                                        data_type='dataset')
+            dsets.append(dset_meta['guid'])
+            dset_list.append(GenerateDataset(**dset_meta))
+        AppendCrate(self.rocratePath, dset_list)
+        return dsets
+
+    def _register_datasets_in_bulk_via_cli(self, rocrate_path, datasets=None):
+        """
+
+        :param rocrate_path:
+        :param datasets:
+        :return:
+        """
+        if not isinstance(datasets, list):
+            raise CellMapsProvenanceError('datasets should be a list of dicts,'
+                                          ' but got: ' + str(type(datasets)))
+        dset_ids = []
+        for entry in datasets:
+            data_dict = copy.deepcopy(entry)
+            for key in ['guid', 'source_file']:
+                if key in data_dict:
+                    del data_dict[key]
+            guidval = None
+            if 'guid' in entry:
+                guidval = entry['guidval']
+            dset_ids.append(self.register_dataset(rocrate_path=rocrate_path,
+                                                  source_file=entry['source_file'],
+                                                  skip_copy=true, guid=guidval))
+        return dset_ids
+
 
     def register_dataset(self, rocrate_path, data_dict=None,
                          source_file=None, skip_copy=True,
