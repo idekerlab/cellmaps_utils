@@ -85,6 +85,36 @@ Contains classes that convert a hierarchy network (in CX2 format) to a HiDeF for
    :undoc-members:
    :show-inheritance:
 
+cellmaps\_utils.ddotconverter (DDOT) module
+----------------------------------------------
+
+Contains classes that convert a interaction or hierarchical network (in CX2 format) to a DDOT format and vice versa.
+
+.. automodule:: cellmaps_utils.ddotconverter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+cellmaps\_utils.hcx_utils (HCX) module
+----------------------------------------------
+
+Contains classes that annotates a CX2 network with HCX annotations.
+
+.. automodule:: cellmaps_utils.hcx_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+cellmaps\_utils.hierdiff (Hierarchy comparison) module
+----------------------------------------------------------
+
+Contains class that compare hierarchies (Jaccard similarity)
+
+.. automodule:: cellmaps_utils.hierdiff
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 cellmaps\_utils.music_utils module
 ------------------------------------
 

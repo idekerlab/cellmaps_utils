@@ -4,8 +4,8 @@ Usage
 
 Below are examples on how to use the cellmaps_utils package
 
-In a project
--------------
+In a project (RO-Crate)
+------------------------
 
 To use cellmaps_utils in a project::
 
@@ -464,6 +464,239 @@ and let them know if this table is to append or overwrite existing
 data
 
 
+CX2 format related conversions
+-------------------------------
+
+The `CX2`_ format is fully compatible with the Cell Maps tools, making it the recommended format for use. If user has
+a network in another common format, the Cell Maps Utils package provides utilities to convert it to CX2.
+
+For hierarchical networks, if the user wishes to display network subsystems in Cytoscape, the necessary format is
+`HCX`_ — a specialized version of CX2 with additional annotations. This package includes utilities to facilitate
+the seamless creation of HCX format from CX2 networks.
+
+1) HiDeF Converters
+=====================
+
+HiDeF converters are designed to facilitate the transformation between CX2 and HiDeF network formats. These converters
+allow users to generate HiDeF-compatible files (.nodes and .edges) from hierarchical networks in CX2 format, as well as
+reconstruct hierarchical networks in HCX format from HiDeF data. This is particularly useful for integrating
+hierarchical networks into Cytoscape while maintaining structural annotations.
+
+**Example: Converting a CX2 Hierarchy to HiDeF Format**
+
+To convert a CX2 hierarchical network into HiDeF format, use the HierarchyToHiDeFConverter class:
+
+.. code-block::
+
+    from cellmaps_utils.hidefconverter import HierarchyToHiDeFConverter
+
+    converter = HierarchyToHiDeFConverter(input_dir="path/to/cx2_network", output_dir="path/to/output")
+    nodes_file, edges_file = converter.generate_hidef_files()
+
+This will produce two files:
+
+- ``hidef_output_gene_names.nodes`` – containing node attributes
+- ``hidef_output_gene_names.edges`` – defining hierarchical relationships
+
+**Example: Converting HiDeF Files to an HCX Hierarchical Network**
+
+To convert HiDeF files into an HCX hierarchical network, the HiDeFToHierarchyConverter should be used.
+
+.. code-block::
+
+    from cellmaps_utils.hidefconverter import HiDeFToHierarchyConverter
+
+    converter = HiDeFToHierarchyConverter(
+        output_dir="path/to/output",
+        nodes_file_path="path/to/hidef_output_gene_names.nodes",
+        edges_file_path="path/to/hidef_output_gene_names.edges",
+        parent_edgelist_path="path/to/parent_network.edgelist"
+    )
+    converter.generate_hierarchy_hcx_file()
+
+Expected Output:
+
+- ``hierarchy.cx2`` – The reconstructed hierarchical network in HCX format.
+- ``hierarchy_parent.cx2`` – The corresponding interactome (if a parent network was specified).
+
+2) DDOT Converters
+=====================
+
+
+DDOT converters facilitate the transformation between CX2 and DDOT formats for both interaction networks and
+hierarchical networks. The DDOT format is structurally similar to HiDeF but is commonly used for representing
+interactomes and ontologies.
+
+**Example 1: Converting a CX2 Interaction Network to DDOT Format**
+
+To convert a CX2 interactome into a DDOT file, use the InteractomeToDDOTConverter class:
+
+.. code-block::
+
+    from cellmaps_utils.ddotconverter import InteractomeToDDOTConverter
+
+    converter = InteractomeToDDOTConverter(
+        output_dir="path/to/output",
+        interactome_path="path/to/interactome.cx2"
+    )
+    converter.generate_ddot_format_file()
+
+Expected Output: ``interactome_ddot.txt``
+
+.. code-block::
+
+    GeneA    GeneB    interaction_type
+    GeneC    GeneD    interaction_type
+
+**Example 2: Converting a DDOT Interaction Network Back to CX2**
+
+To convert a DDOT interactome into a CX2 format, use the DDOTToInteractomeConverter class:
+
+.. code-block::
+
+    from cellmaps_utils.ddotconverter import DDOTToInteractomeConverter
+
+    converter = DDOTToInteractomeConverter(
+        output_dir="path/to/output",
+        interactome_ddot_path="path/to/interactome_ddot.txt"
+    )
+    converter.generate_interactome_file()
+
+Expected Output: ``interactome.cx2``
+
+**Example 3: Converting a CX2 Hierarchical Network to DDOT Ontology Format**
+
+To convert a hierarchical network (CX2) into DDOT ontology format, use HierarchyToDDOTConverter:
+
+.. code-block::
+
+    from cellmaps_utils.ddotconverter import HierarchyToDDOTConverter
+
+    converter = HierarchyToDDOTConverter(
+        output_dir="path/to/output",
+        hierarchy_path="path/to/hierarchy.cx2"
+    )
+    converter.generate_ontology_ddot_file()
+
+Expected Output: ``ontology.ont``
+
+.. code-block::
+
+    Cluster1    Cluster2    default
+    Cluster1    GeneA    gene
+
+**Example 4: Converting a DDOT Ontology Back to a CX2 Hierarchical Network**
+
+To convert a DDOT ontology into CX2 hierarchical format (HCX), use DDOTToHierarchyConverter:
+
+.. code-block::
+
+    from cellmaps_utils.ddotconverter import DDOTToHierarchyConverter
+
+    converter = DDOTToHierarchyConverter(
+        output_dir="path/to/output",
+        ontology_ddot_path="path/to/ontology.ont",
+        parent_ddot_path="path/to/interactome_ddot.txt"  # Optional: Parent interactome
+    )
+    converter.generate_hierarchy_hcx_file()
+
+Expected Output:
+
+- ``hierarchy.cx2`` – The reconstructed hierarchical network.
+- ``hierarchy_parent.cx2`` (if parent interactome was used).
+
+3) CX2 to HCX conversion
+=========================
+
+The CX2 to HCX conversion process enhances a CX2 hierarchical network by adding HCX-specific annotations.
+The HCX format is a specialized version of CX2 that enables hierarchical visualization in Cytoscape,
+ensuring that relationships and interactome information are properly structured.
+
+Why Convert to HCX?
+
+- Enables hierarchical network visualization in Cytoscape.
+- Adds interactome annotations to define relationships.
+- Supports integration with NDEx, allowing retrieval of interactome data.
+
+**Example 1: Converting a CX2 Hierarchical Network to HCX**
+
+To convert a CX2 hierarchical network into an HCX format, use the ``convert_hierarchical_network_to_hcx`` function:
+
+.. code-block::
+
+    from cellmaps_utils.hcx_utils import convert_hierarchical_network_to_hcx
+
+    hierarchy_path = "path/to/hierarchy.cx2"
+    interactome_url = "https://www.ndexbio.org/network/uuid"
+
+    hcx_network = convert_hierarchical_network_to_hcx(
+        hierarchy=hierarchy_path,
+        interactome_url=interactome_url
+    )
+
+    hcx_network.write_as_raw_cx2("path/to/output/hierarchy_hcx.cx2")
+
+Expected Output: ``hierarchy_hcx.cx2`` – The HCX hierarchical network, enriched with interactome annotations.
+
+**Example 2: Converting a CX2 Hierarchy with a Local Interactome**
+
+If you have a local interactome file instead of an NDEx link, you can still convert a CX2 hierarchy to HCX:
+
+.. code-block::
+
+    from ndex2.cx2 import RawCX2NetworkFactory
+    from cellmaps_utils.hcx_utils import add_hcx_network_annotations, add_hcx_members_annotation, add_isroot_node_attribute, get_root_nodes
+
+    hierarchy_path = "path/to/hierarchy.cx2"
+    interactome_path = "path/to/interactome.cx2"
+
+    # Load hierarchy network and interactome
+    factory = RawCX2NetworkFactory()
+    hierarchy = factory.get_cx2network(hierarchy_path)
+    interactome = factory.get_cx2network(interactome_path)
+
+    # Add HCX annotations
+    hierarchy = add_hcx_network_annotations(hierarchy, interactome=interactome, outdir='path/to/output/')
+
+    # Add HCX::members attribute to node attributes
+    add_hcx_members_annotation(hierarchy, interactome)
+
+    # Add isRoot attribute to node attributes
+    add_isroot_node_attribute(hierarchy, get_root_nodes(hierarchy))
+
+    # Save HCX file
+    hierarchy.write_as_raw_cx2("path/to/output/hierarchy.cx2")
+
+Expected Output:
+
+- ``hierarchy_hcx.cx2`` – HCX hierarchical network with interactome annotations.
+- ``hierarchy_parent.cx2``
+
+To properly make use of Cell View and subnetworks vizualization in Cytoscape Web, it is necessary to upload both
+interactome and hierarchy. It is important to properly switch network annotations, which is detailed in `HCX`_ format
+documentation. Cell Maps Utils package provides a class ``NDExHierarchyUploader`` to simplify the process.
+
+.. code-block::
+
+    import os
+    import ndex2
+    from ndex2.cx2 import RawCX2NetworkFactory
+    from cellmaps_utils.ndexupload import NDExHierarchyUploader
+
+    #Specify NDEx server
+    ndexserver = 'www.ndexbio.org''
+    ndexuser = '<USER>'
+    ndexpassword = '<PASSWORD>'
+
+    # Initialize NDExHierarchyUploader with the specified NDEx server and credentials
+    uploader = NDExHierarchyUploader(ndexserver, ndexuser, ndexpassword, visibility=True)
+
+    # Upload the hierarchy and parent network to NDEx
+    parent_uuid, parenturl, hierarchy_uuid, hierarchyurl = uploader.save_hierarchy_and_parent_network(hierarchy, interactome)
+
+    print(f"Parent network UUID is {parent_uuid} and its URL in NDEx is {parenturl}")
+    print(f"Hierarchy network UUID is {hierarchy_uuid} and its URL in NDEx is {hierarchyurl}")
+
 .. _CM4AI: https://cm4ai.org
 .. _RO-Crate: https://www.researchobject.org/ro-crate
 .. _FAIRSCAPE CLI: https://fairscape.github.io/fairscape-cli
@@ -476,3 +709,5 @@ data
 .. _h5ad: https://github.com/scverse/anndata/issues/180
 .. _tsv: https://en.wikipedia.org/wiki/Tab-separated_values
 .. _csv: https://en.wikipedia.org/wiki/Comma-separated_values
+.. _CX2: https://cytoscape.org/cx/cx2/specification/cytoscape-exchange-format-specification-(version-2)
+.. _HCX: https://cytoscape.org/cx/cx2/hcx-specification
