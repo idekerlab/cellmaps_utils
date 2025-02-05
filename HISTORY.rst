@@ -2,11 +2,18 @@
 History
 =======
 
-0.6.0 (TBD)
+0.6.0 (2025-02-05)
 ------------------
 
 * Add ``HierarchyDiff`` class with ``compare_hierarchies`` method to compare two hierarchies in CX2 format, and output
   a hierarchy with robustness score of each system.
+
+* Add version bounds for required packages.
+
+* Add ``convert_hierarchical_network_to_hcx`` (utility function that aids convertion of a hierarchical network in CX2 to
+  HCX) and ``add_hcx_members_annotation`` (adds 'HCX::members' attribute to nodes) to ``hcx_utils``
+
+* Fixes in IF and APMS tools
 
 0.5.0 (2024-09-05)
 ------------------
