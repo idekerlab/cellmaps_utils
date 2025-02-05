@@ -464,8 +464,8 @@ and let them know if this table is to append or overwrite existing
 data
 
 
-CX2 format related conversions
--------------------------------
+Hierarchical networks support (CX2/ HCX)
+-----------------------------------------
 
 The `CX2`_ format is fully compatible with the Cell Maps tools, making it the recommended format for use. If user has
 a network in another common format, the Cell Maps Utils package provides utilities to convert it to CX2.
@@ -473,6 +473,8 @@ a network in another common format, the Cell Maps Utils package provides utiliti
 For hierarchical networks, if the user wishes to display network subsystems in Cytoscape, the necessary format is
 `HCX`_ — a specialized version of CX2 with additional annotations. This package includes utilities to facilitate
 the seamless creation of HCX format from CX2 networks.
+
+Cell Maps Utils package provide utility for simple
 
 1) HiDeF Converters
 =====================
@@ -638,6 +640,8 @@ To convert a CX2 hierarchical network into an HCX format, use the ``convert_hier
 
 Expected Output: ``hierarchy_hcx.cx2`` – The HCX hierarchical network, enriched with interactome annotations.
 
+.. _Example 2:
+
 **Example 2: Converting a CX2 Hierarchy with a Local Interactome**
 
 If you have a local interactome file instead of an NDEx link, you can still convert a CX2 hierarchy to HCX:
@@ -667,20 +671,24 @@ If you have a local interactome file instead of an NDEx link, you can still conv
     # Save HCX file
     hierarchy.write_as_raw_cx2("path/to/output/hierarchy.cx2")
 
-Expected Output:
+Expected Output (Hierarchy and interactome will be saved in the same directory ``path/to/output/``):
 
 - ``hierarchy_hcx.cx2`` – HCX hierarchical network with interactome annotations.
 - ``hierarchy_parent.cx2``
+
+4) Uploading interactome and hierarchy to NDEx
+=================================================
 
 To properly make use of Cell View and subnetworks vizualization in Cytoscape Web, it is necessary to upload both
 interactome and hierarchy. It is important to properly switch network annotations, which is detailed in `HCX`_ format
 documentation. Cell Maps Utils package provides a class ``NDExHierarchyUploader`` to simplify the process.
 
+This code block below uses the hierarchy and interactome from `Example 2`_ above.
+
 .. code-block::
 
     import os
     import ndex2
-    from ndex2.cx2 import RawCX2NetworkFactory
     from cellmaps_utils.ndexupload import NDExHierarchyUploader
 
     #Specify NDEx server
@@ -696,6 +704,72 @@ documentation. Cell Maps Utils package provides a class ``NDExHierarchyUploader`
 
     print(f"Parent network UUID is {parent_uuid} and its URL in NDEx is {parenturl}")
     print(f"Hierarchy network UUID is {hierarchy_uuid} and its URL in NDEx is {hierarchyurl}")
+
+It is possible to also directly upload from files (this will replace the ``HCX::interactionNetworkName`` network
+annotation with ``HCX::interactionNetworkUUID``):
+
+.. code-block::
+
+    import os
+    import ndex2
+    from cellmaps_utils.ndexupload import NDExHierarchyUploader
+
+    #Specify NDEx server
+    ndexserver = 'www.ndexbio.org''
+    ndexuser = '<USER>'
+    ndexpassword = '<PASSWORD>'
+
+    # Initialize NDExHierarchyUploader with the specified NDEx server and credentials
+    uploader = NDExHierarchyUploader(ndexserver, ndexuser, ndexpassword, visibility=True)
+
+    # Upload the hierarchy and parent network to NDEx
+    parent_uuid, parenturl, hierarchy_uuid, hierarchyurl = uploader.upload_hierarchy_and_parent_network_from_files(hierarchy_path='path/to/output/hierarchy.cx2', parent_path='path/to/interactome.cx2')
+
+    print(f"Parent network UUID is {parent_uuid} and its URL in NDEx is {parenturl}")
+    print(f"Hierarchy network UUID is {hierarchy_uuid} and its URL in NDEx is {hierarchyurl}")
+
+If your hierarchy already has ``HCX::interactionNetworkUUID`` annotation, there is no need to use
+``NDExHierarchyUploader`` and it can be directly saved to NDEx:
+
+.. code-block::
+
+    import os
+    import ndex2
+
+    #Specify NDEx server
+    ndexserver = 'www.ndexbio.org''
+    ndexuser = '<USER>'
+    ndexpassword = '<PASSWORD>'
+
+    ndexclient = ndex2.client.Ndex2(host=ndexserver, username=ndexuser, password=ndexpassword)
+    ndexclient.save_new_cx2_network(hierarchy.to_cx2(), visibility=self._visibility)
+
+
+4) Comparing Hierarchies
+=========================
+
+When working with hierarchical networks, it is often necessary to compare different versions of hierarchies to assess
+their structural similarities and robustness. The ``HierarchyDiff`` class provides a method to compare two
+CX2 hierarchical networks. The currently implemented method computes an overlap score for each node based on the
+intersection and union of member lists, assign a robustness score to each node, representing its stability across the
+two hierarchies and generate a new CX2 network with the computed robustness scores embedded in the node attributes.
+
+**Example: Comparing Two Hierarchical Networks**
+
+.. code-block::
+
+    from cellmaps_utils.hierdiff import HierarchyDiff
+
+    hierarchy_a_path = "path/to/hierarchy_a.cx2"
+    hierarchy_b_path = "path/to/hierarchy_b.cx2"
+
+    diff = HierarchyDiff()
+    result_hierarchy = diff.compare_hierarchies_from_files(hierarchy_a_path, hierarchy_b_path)
+
+    result_hierarchy.write_as_raw_cx2("path/to/output/comparison_result.cx2")
+
+Expected Output: ``comparison_result.cx2`` – A hierarchical network with robustness scores added to each node.
+
 
 .. _CM4AI: https://cm4ai.org
 .. _RO-Crate: https://www.researchobject.org/ro-crate
