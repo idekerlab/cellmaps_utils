@@ -115,6 +115,16 @@ Contains class that compare hierarchies (Jaccard similarity)
    :undoc-members:
    :show-inheritance:
 
+cellmaps\_utils.ndexupload (NDEx upload) module
+----------------------------------------------------------
+
+Contains class that aids uploading hierarchy and interactome to NDEx
+
+.. automodule:: cellmaps_utils.ndexupload
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 cellmaps\_utils.music_utils module
 ------------------------------------
 
