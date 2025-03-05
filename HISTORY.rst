@@ -2,6 +2,13 @@
 History
 =======
 
+0.7.0 (2025-03-05)
+------------------
+
+* Add ``compute_hierarchy_robustness`` method to ``HierarchyDiff`` class to assess the robustness of a hierarchy
+  based on Jaccard similarity across multiple alternative hierarchies.
+
+
 0.6.0 (2025-02-05)
 ------------------
 
