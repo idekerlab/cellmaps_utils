@@ -19,3 +19,6 @@ the seamless creation of HCX format from CX2 networks.
    cx2_to_hcx_conversion
    upload_to_ndex
    hierarchy_robustness
+
+.. _CX2: https://cytoscape.org/cx/cx2/specification/cytoscape-exchange-format-specification-(version-2)
+.. _HCX: https://cytoscape.org/cx/cx2/hcx-specification
