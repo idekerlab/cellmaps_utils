@@ -2,6 +2,7 @@ import copy
 import os
 import sys
 import subprocess
+from pathlib import Path
 import logging
 import uuid
 import getpass
@@ -205,10 +206,12 @@ class ProvenanceUtil(object):
         """
         logger.debug('Running command under ' + str(cwd) +
                      ' path: ' + str(cmd))
+
         p = subprocess.Popen(cmd, cwd=cwd,
                              text=True,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
+
         try:
             out, err = p.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -678,6 +681,94 @@ class ProvenanceUtil(object):
         """
         if date_created is None:
             date_created = date.today().strftime(self._default_date_fmt_str)
+        if FAIRSCAPE_LOADED == False:
+            return self._register_computation_via_cli(rocrate_path=rocrate_path,
+                                                      name=name,
+                                                      run_by=run_by,
+                                                      date_created=date_created,
+                                                      description=description,
+                                                      used_software=used_software,
+                                                      used_dataset=used_dataset,
+                                                      generated=generated,
+                                                      keywords=keywords,
+                                                      guid=guid,
+                                                      timeout=timeout)
+        comp_metadata = {
+            "guid": guid,  # Made more specific
+            "name": name,
+            "runBy": run_by,
+            "dateCreated": date_created,
+            "description": description,
+            "keywords": self._get_list_version_of_value(keywords),
+            "usedSoftware": self._get_list_version_of_value(used_software),
+            "usedDataset": self._get_list_version_of_value(used_dataset),
+            "generated": self._get_list_version_of_value(generated)
+        }
+        if comp_metadata['guid'] is None:
+            comp_metadata['guid'] = self._generate_guid(rocrate_path=rocrate_path,
+                                                        data_type='computation')
+        try:
+            AppendCrate(Path(rocrate_path),
+                        [GenerateComputation(**comp_metadata)])
+            return comp_metadata['guid']
+        except Exception as e:
+            logger.warning('Received exception trying to register computation. '
+                           'Falling back to cli call: ' + str(e))
+            return self._register_computation_via_cli(rocrate_path=rocrate_path,
+                                                      name=name,
+                                                      run_by=run_by,
+                                                      date_created=date_created,
+                                                      description=description,
+                                                      used_software=used_software,
+                                                      used_dataset=used_dataset,
+                                                      generated=generated,
+                                                      keywords=keywords,
+                                                      guid=guid,
+                                                      timeout=timeout)
+
+    def _register_computation_via_cli(self, rocrate_path, name='',
+                                      run_by='', command='',
+                                      date_created=None,
+                                      description='Must be at least 10 characters',
+                                      used_software=[],
+                                      used_dataset=[], generated=[],
+                                      keywords=[''],
+                                      guid=None,
+                                      timeout=60):
+
+        """
+        Registers computation adding information to
+        ``ro-crate-metadata.json`` file stored in **rocrate_path**
+        directory.
+
+        :param rocrate_path: Path to existing `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+                             directory
+        :type rocrate_path: str
+        :param name:
+        :type name: str
+        :param run_by:
+        :type run_by: str
+        :param command:
+        :type command: str
+        :param date_created:
+        :type date_created:
+        :param description:
+        :type description: str
+        :param used_software: list of `FAIRSCAPE <https://fairscape.github.io>`__ software ids
+        :type used_software: list
+        :param used_dataset: list of `FAIRSCAPE <https://fairscape.github.io>`__ dataset ids used
+                             by this computation
+        :type used_dataset: list
+        :param generated: list of `FAIRSCAPE <https://fairscape.github.io>`__ dataset ids for datasets
+                          generated by this computation
+        :type generated: list
+        :param keywords:
+        :type keywords: list
+        :param guid: ID for `RO-Crate <https://www.researchobject.org/ro-crate/>`__
+        :type guid: str
+        :param timeout: Time in seconds to wait for registration of computation to complete
+        :type timeout: float
+        """
         cmd = [self._python, self._binary, 'rocrate', 'register',
                'computation',
                '--name', name,
@@ -825,6 +916,10 @@ class ProvenanceUtil(object):
               'date-published': 'Date dataset was published MM-DD-YYYY',
               'description': 'Description of dataset',
               'data-format': 'Format of data',
+              'associatedPublication': 'Publication',
+              'additionalDocumentation': 'Additional documentation',
+              'derivedFrom': ['list of ids'],
+              'usedBy': ['list of ids'],
               'schema': Path or URL to schema file in JSON format,
               'keywords': ['keyword1','keyword2'],
               'guid': unique id for dataset
@@ -848,27 +943,53 @@ class ProvenanceUtil(object):
             logger.debug('Fairscape-cli unavailable. Falling back to CLI')
             return self._register_datasets_in_bulk_via_cli(rocrate_path,
                                                            datasets=datasets)
-        dset_list = []
-        dsets = []
-        for entry in datasets:
+        try:
+            dset_list = []
+            dsets = []
+            for entry in datasets:
+                dset_meta = {'guid': entry.get('guid'),
+                             'name': entry.get('name'),
+                             'version': entry.get('version'),
+                             'associatedPublication': entry.get('associatedPublication'),
+                             'additionalDocumentation': entry.get('additionalDocumentation'),
+                             'derivedFrom': self._get_list_version_of_value(entry.get('derivedFrom')),
+                             'usedBy': self._get_list_version_of_value(entry.get('usedBy')),
+                             'url': entry.get('url'),
+                             'keywords': self._get_list_version_of_value(entry.get('keywords')),
+                             'description': entry.get('description'),
+                             'author': entry.get('author'),
+                             'datePublished': entry.get('date-published'),
+                             'dataFormat': entry.get('data-format'),
+                             'schema': entry.get('schema'),
+                             'filepath': entry.get('source_file'),
+                             'cratePath': rocrate_path}
+                if dset_meta['guid'] is None:
+                    dset_meta['guid'] = self._generate_guid(rocrate_path=rocrate_path,
+                                                            data_type='dataset')
+                dsets.append(dset_meta['guid'])
+                dset_list.append(GenerateDataset(**dset_meta))
+            AppendCrate(Path(rocrate_path), dset_list)
+            return dsets
+        except Exception as e:
+            logger.warning('Unable to register these datasets in fairscape: ' + str(dsets))
+            raise CellMapsProvenanceError('Error registering datasets in bulk via api: ' +
+                                          str(e))
+            return []
 
-            dset_meta = {'guid': entry.get('guid'),
-                         'name': entry.get('name'),
-                         'keywords': entry.get('keywords'),
-                         'description': entry.get('description'),
-                         'author': entry.get('author'),
-                         'datePublished': entry.get('date-published'),
-                         'dataFormat': entry.get('data-format'),
-                         'schema': entry.get('schema'),
-                         'filepath': f"file://" + entry.get('source_file'),
-                         'cratePath': rocrate_path}
-            if dset_meta['guid'] is None:
-                dset_meta['guid'] = self._generate_guid(rocrate_path=rocrate_path,
-                                                        data_type='dataset')
-            dsets.append(dset_meta['guid'])
-            dset_list.append(GenerateDataset(**dset_meta))
-        AppendCrate(self.rocratePath, dset_list)
-        return dsets
+
+    def _get_list_version_of_value(self, value):
+        """
+        Some attributes must be a in a list. and this
+        :param value:
+        :type str or list
+        :return:
+        :rtype: list
+        """
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return value
+        return [str(value)]
 
     def _register_datasets_in_bulk_via_cli(self, rocrate_path, datasets=None):
         """
@@ -882,6 +1003,7 @@ class ProvenanceUtil(object):
                                           ' but got: ' + str(type(datasets)))
         dset_ids = []
         for entry in datasets:
+            print(entry)
             data_dict = copy.deepcopy(entry)
             for key in ['guid', 'source_file']:
                 if key in data_dict:
@@ -889,9 +1011,11 @@ class ProvenanceUtil(object):
             guidval = None
             if 'guid' in entry:
                 guidval = entry['guidval']
+            print(data_dict)
             dset_ids.append(self.register_dataset(rocrate_path=rocrate_path,
+                                                  data_dict=data_dict,
                                                   source_file=entry['source_file'],
-                                                  skip_copy=true, guid=guidval))
+                                                  skip_copy=True, guid=guidval))
         return dset_ids
 
 
@@ -948,12 +1072,12 @@ class ProvenanceUtil(object):
 
         cmd = [self._python, self._binary, 'rocrate', operation_name,
                'dataset',
-               '--name', data_dict['name'],
-               '--version', data_dict['version'],
-               '--data-format', data_dict['data-format'],
-               '--description', data_dict['description'],
-               '--date-published', data_dict['date-published'],
-               '--author', data_dict['author']]
+               '--name', data_dict.get('name'),
+               '--version', data_dict.get('version'),
+               '--data-format', data_dict.get('data-format'),
+               '--description', data_dict.get('description'),
+               '--date-published', data_dict.get('date-published'),
+               '--author', data_dict.get('author')]
 
         if 'url' in data_dict:
             cmd.extend(['--url', data_dict['url']])

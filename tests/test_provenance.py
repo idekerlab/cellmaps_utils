@@ -56,6 +56,19 @@ class TestProvenanceUtil(unittest.TestCase):
         except CellMapsProvenanceError as ce:
             self.assertTrue('Keywords must' in str(ce))
 
+    def test_generate_guid(self):
+        prov = ProvenanceUtil(raise_on_error=True)
+        # test with data type
+        res = prov._generate_guid(rocrate_path='/crate',
+                                  data_type='fun')
+        self.assertTrue(res.endswith(':fun::crate'))
+        self.assertTrue(len(res)> 11)
+
+        # test no data type
+        res = prov._generate_guid(rocrate_path='/crate')
+        self.assertTrue(res.endswith(':::crate'))
+        self.assertTrue(len(res) > 10)
+
     def test_example_dataset_provenance(self):
 
         # default
@@ -357,6 +370,93 @@ class TestProvenanceUtil(unittest.TestCase):
                                                     'data-format': 'Format of data'})
             self.assertIsNotNone(d_id)
 
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_datasets_in_bulk(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            dset_data = []
+            for x in range(5):
+                afile = os.path.abspath(os.path.join(temp_dir, 'file.' + str(x)))
+                with open(afile, 'w') as f:
+                    f.write('Contents of file ' + str(x))
+                dset_data.append({'name': str(x),
+                                  'author': 'smith',
+                                  'version': '1.0',
+                                  'url': 'http://dataset.url.com',
+                                  'date-published': '01-01-2000',
+                                  'description': str(x) + ' dataset which must be 10 chars',
+                                  'data-format': 'txt',
+                                  'schema': 'http://myschema.com',
+                                  'keywords': ['keyword1','keyword2'],
+                                  'source_file': afile})
+
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='some 10 character name',
+                                  description='some 10 character desc')
+            dsets = prov.register_datasets_in_bulk(temp_dir,
+                                                   datasets=dset_data)
+
+
+            self.assertEqual(len(dsets), 5)
+            for entry in dsets:
+                self.assertTrue(len(entry) > 0)
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_datasets_in_bulk_alreadyhave_guid(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            dset_data = []
+            for x in range(1):
+                afile = os.path.abspath(os.path.join(temp_dir, 'file.' + str(x)))
+                with open(afile, 'w') as f:
+                    f.write('Contents of file ' + str(x))
+                dset_data.append({'name': str(x),
+                                  'author': 'smith',
+                                  'version': '1.0',
+                                  'date-published': '01-01-2000',
+                                  'description': str(x) + ' dataset which must be 10 chars',
+                                  'data-format': 'txt',
+                                  'schema': 'http://myschema.com',
+                                  'keywords': 'keyword2',
+                                  'guid': 'myidxxxx',
+                                  'source_file': afile})
+
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='some 10 character name',
+                                  description='some 10 character desc')
+            dsets = prov.register_datasets_in_bulk(temp_dir,
+                                                   datasets=dset_data)
+
+
+            self.assertEqual(len(dsets), 1)
+            self.assertEqual(dsets[0],'myidxxxx')
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_register_datasets_in_bulk_fails(self):
+
+        temp_dir = tempfile.mkdtemp()
+        try:
+            dset_data = []
+            for x in range(1):
+                afile = os.path.abspath(os.path.join(temp_dir, 'file.' + str(x)))
+                with open(afile, 'w') as f:
+                    f.write('Contents of file ' + str(x))
+                dset_data.append({'source_file': afile})
+
+            prov = ProvenanceUtil()
+            prov.register_rocrate(temp_dir, name='some 10 sdfasdfasdfasdfasdf',
+                                  description='some 10 character desclkj;ljl;kj')
+            dsets = prov.register_datasets_in_bulk(temp_dir,
+                                                   datasets=dset_data)
+            self.fail('Expected CellMapsProvenanceError')
+        except CellMapsProvenanceError as e:
+            self.assertEqual(str(e).startswith('Error registering datasets in bulk'))
         finally:
             shutil.rmtree(temp_dir)
 
