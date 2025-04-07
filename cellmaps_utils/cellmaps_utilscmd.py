@@ -17,6 +17,7 @@ from cellmaps_utils.apmstool import APMSDataLoader
 from cellmaps_utils.iftool import IFImageDataConverter
 from cellmaps_utils.crisprtool import CRISPRDataLoader
 from cellmaps_utils.tabletool import TableFromROCrates
+from cellmaps_utils.challenge import TwoReplCoelutionChallengeGenerator
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,7 @@ def _parse_arguments(desc, args):
     IFImageDataConverter.add_subparser(subparsers)
     CRISPRDataLoader.add_subparser(subparsers)
     TableFromROCrates.add_subparser(subparsers)
+    TwoReplCoelutionChallengeGenerator.add_subparser(subparsers)
 
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
@@ -104,6 +106,8 @@ Version {version}
             cmd = CRISPRDataLoader(theargs)
         elif theargs.command == TableFromROCrates.COMMAND:
             cmd = TableFromROCrates(theargs)
+        elif theargs.command == TwoReplCoelutionChallengeGenerator.COMMAND:
+            cmd = TwoReplCoelutionChallengeGenerator(theargs)
         else:
             raise CellMapsError('Invalid command: ' + str(theargs.command))
         return cmd.run()
