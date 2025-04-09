@@ -115,6 +115,41 @@ class TestChallengeModule(unittest.TestCase):
         self.assertTrue(list(res['1']) == ['3', '4'])
         self.assertTrue(list(res['2']) == ['2', '6'])
 
+    def test_get_col_repl_map_invalid_inputs(self):
+        try:
+            get_col_repl_map(prefix=None, columns=[])
+            self.fail('Expected CellMapsError')
+        except CellMapsError as e:
+            self.assertTrue('prefix is' in str(e))
+
+        try:
+            get_col_repl_map(prefix='foo', columns=None)
+            self.fail('Expected CellMapsError')
+        except CellMapsError as e:
+            self.assertTrue('columns is' in str(e))
+
+        try:
+            get_col_repl_map(prefix='foo', columns=[], idcol=None)
+            self.fail('Expected CellMapsError')
+        except CellMapsError as e:
+            self.assertTrue('idcol is' in str(e))
+
+    def test_get_col_repl_map(self):
+        res = get_col_repl_map(prefix='repl1_', columns=['xxx','xxxy','z'])
+        self.assertTrue(len(res.keys()) == 3)
+        self.assertEqual(res['xxx'], 'xxx')
+        self.assertEqual(res['xxxy'], 'repl1_xxxy')
+        self.assertEqual(res['z'], 'repl1_z')
+
+    def test_get_system_to_gene_count(self):
+        gene_to_system_mapping = {'gene1': [1, 2, 3],
+                                  'gene2': [1]}
+        res = get_system_to_gene_count(gene_to_system_mapping)
+        self.assertTrue(len(res) == 3)
+        self.assertTrue(res[1] == 2)
+        self.assertTrue(res[2] == 1)
+        self.assertTrue(res[3] == 1)
+
 
 if __name__ == '__main__':
     unittest.main()

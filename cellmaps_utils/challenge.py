@@ -171,28 +171,47 @@ def set_id_col_and_rename_othercols(df=None, id_mapping=None, col_name=None,
 
 def write_tsv_file(df=None, outfile=None):
     """
+    Writes out a pandas dataframe in tab separated
+    format with a header and no index
 
-    :param df:
-    :param outfile:
-    :return:
+    :param df: data to write
+    :type df: :py:class:`pandas.DataFrame`
+    :param outfile: destination file path
+    :type outfile: str
     """
     df.to_csv(outfile, index=False, sep='\t', header=True)
 
 
-def get_col_repl_map(prefix=None, columns=None):
+def get_col_repl_map(prefix=None, columns=None, idcol='xxx'):
     """
+    Given a list of strings in **columns** create a
+    dict where the key is the value from **columns**
+    and the value is the **prefix** prepended to the value
+    from the **columns**
 
     :param prefix:
+    :type prefix: str
     :param columns:
-    :return:
+    :type columns: list
+    :return: column name => prefix + column name unless column name
+             matches **idcol** in which case do not add prefix
+    :rtype: dict
     """
+    if prefix is None:
+        raise CellMapsError('prefix is None')
+    if columns is None:
+        raise CellMapsError('columns is None')
+    if idcol is None:
+        raise CellMapsError('idcol is None')
+
     cmap = {}
     for c in columns:
-        if c == 'xxx':
+        if c == idcol:
             cmap[c] = c
         else:
             cmap[c] = prefix + str(c)
     return cmap
+
 
 def merge_replicate_dataframes(repl1_df=None, repl2_df=None, idcol='xxx'):
     """
@@ -211,6 +230,102 @@ def merge_replicate_dataframes(repl1_df=None, repl2_df=None, idcol='xxx'):
                                             columns=repl2_df.columns.tolist()),
                     inplace=True, axis=1)
     return pd.merge(repl1_df,repl2_df, on=idcol, how='outer')
+
+
+def merge_uniprot_gene_mapping(file1, file2, mapped_column):
+    df1 = pd.read_table(file1)
+    df2 = pd.read_table(file2)
+    df1_filtered = df1[[mapped_column, "PG.Genes"]]
+    df2_filtered = df2[[mapped_column, "PG.Genes"]]
+
+    merged_df = pd.concat([df1_filtered, df2_filtered], ignore_index=True)
+
+    uniprot_gene_dict = {}
+    gene_uniprot_dict = {}
+    for _, row in merged_df.iterrows():
+        uniprot_ids = row[mapped_column].split(";")
+        gene_names = row["PG.Genes"].split(";")
+
+        for uniprot_id, gene_name in zip(uniprot_ids, gene_names):
+            uniprot_gene_dict[uniprot_id] = gene_name
+            gene_uniprot_dict[gene_name] = uniprot_id
+
+    return uniprot_gene_dict, gene_uniprot_dict
+
+
+def get_network(uuid_of_net):
+    client = ndex2.client.Ndex2()
+    factory = RawCX2NetworkFactory()
+    client_resp = client.get_network_as_cx2_stream(uuid_of_net)
+    net = factory.get_cx2network(json.loads(client_resp.content))
+    return net
+
+
+def get_system_to_gene_count(gene_to_system_mapping):
+    """
+    Given a dict of gene => [ node ids ]
+    this function returns a new dict
+    where key is node id aka system and value is count of genes
+    in that system: node id => count of genes
+
+    :param gene_to_system_mapping: gene => [ node ids ]
+    :type gene_to_system_mapping: dict
+    :return: node id => count of genes
+    :rtype: dict
+    """
+    system_to_gene_count = {}
+    for gene, systems in gene_to_system_mapping.items():
+        for system in set(systems):
+            if system in system_to_gene_count:
+                system_to_gene_count[system] += 1
+            else:
+                system_to_gene_count[system] = 1
+    return system_to_gene_count
+
+
+def get_uniprot_mappings(data, id_mapping_file):
+    repl1 = data.get("repl1.tsv", None)
+    repl2 = data.get("repl2.tsv", None)
+    uniprot_gene_dict = None
+    gene_uniprot_dict = {}
+    if repl1 and repl2:
+        mapped_column = data.get("mapped_column_name", "PG.ProteinAccessions") #"PG.ProteinAccessions"
+        dir_path = os.path.dirname(id_mapping_file)
+        uniprot_gene_dict, gene_uniprot_dict = merge_uniprot_gene_mapping(os.path.join(dir_path, repl1), os.path.join(dir_path, repl2), mapped_column)
+    return uniprot_gene_dict, gene_uniprot_dict
+
+
+def get_genes_and_uniprots(forward_dict, uniprot_gene_dict):
+    uniprots = None
+    if uniprot_gene_dict is None:
+        genes = list(forward_dict.keys())
+    else:
+        uniprots = list(forward_dict.keys())
+        genes = []
+        for uniprot in uniprots:
+            gene = uniprot_gene_dict.get(uniprot, None)
+            if gene:
+                genes.append(gene)
+    return genes, uniprots
+
+
+def get_gene_to_system_mapping(genes, uniprots, gene_uniprot_dict, file_path="systems.csv",
+                               prefix='perturb'):
+    gene_to_system_mapping = {}
+
+    df = pd.read_csv(file_path)
+    df.columns = df.iloc[0]
+    df = df.iloc[1:].reset_index(drop=True)
+
+    for system in df.columns:
+        for gene in df[system].dropna().values:
+            if gene in genes:
+                if uniprots:
+                    gene_to_system_mapping.setdefault(gene_uniprot_dict[gene], []).append(prefix + str(system))
+                else:
+                    gene_to_system_mapping.setdefault(gene, []).append(prefix + (system))
+
+    return gene_to_system_mapping
 
 
 class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
