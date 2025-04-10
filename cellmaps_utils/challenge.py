@@ -649,7 +649,8 @@ class SolutionGenerator(BaseCommandLineTool):
                                                                                    genes=genes,
                                                                                    gene_uniprot_dict=gene_uniprot_dict,
                                                                                    prefix=prefix,
-                                                                                   net=get_network(source))
+                                                                                   net=get_network(source),
+                                                                                   uniprots=uniprots)
 
         system_to_gene_count = get_system_to_gene_count(gene_to_system_mapping)
 
@@ -659,7 +660,7 @@ class SolutionGenerator(BaseCommandLineTool):
                 systems_too_small.add(system)
 
         self._write_solution(outfile=os.path.join(self._outdir, prefix + '_solution.csv'),
-                             systems_too_small=systems_too_small,
+                             systems_too_small=systems_too_small, forward_dict=forward_dict,
                              gene_to_system_mapping=gene_to_system_mapping)
 
         self._remove_too_small_systems(systems_too_small=systems_too_small,
@@ -691,6 +692,7 @@ class SolutionGenerator(BaseCommandLineTool):
             del system_to_gene_count[system]
 
     def _write_solution(self, outfile=None, gene_to_system_mapping=None,
+                        forward_dict=None,
                         systems_too_small=set()):
         """
 
@@ -703,8 +705,37 @@ class SolutionGenerator(BaseCommandLineTool):
                 for system in set(systems):
                     if system in systems_too_small:
                         continue
-                    f.write(f"{cntr},{gene},{system},Public\n")
+                    f.write(f"{cntr},{forward_dict[gene]},{system},Public\n")
                     cntr += 1
+
+    def _get_combined_solution(self):
+        """
+        Looks in output directory for all _solution.csv files and
+        creates a new solution file concating the entries and resetting
+        id column values to start from 1 and go to N
+        :return:
+        """
+        dframes = []
+        for entry in os.listdir(self._outdir):
+            fp = os.path.join(self._outdir, entry)
+            if not os.path.isfile(fp):
+                continue
+            if not entry.endswith('_solution.csv'):
+                continue
+            dframes.append(pd.read_csv(fp))
+        df = pd.concat(dframes, ignore_index=True)
+        df['id'] = df.index
+        return df
+
+    def _write_combined_solution(self, df):
+        """
+        Writes **df** as a CSV file
+        :param df:
+        :type df: :py:class:`pandas.DataFrame`
+        """
+        df.to_csv(os.path.join(self._outdir, 'combined_sol.csv'),
+                  index=False, header=True)
+
     def run(self):
         """
 
@@ -740,6 +771,10 @@ class SolutionGenerator(BaseCommandLineTool):
                                                  minsize=entry[SolutionGenerator.MINSIZE],
                                                  prefix=entry[SolutionGenerator.PREFIX],
                                                  genes_column=entry[SolutionGenerator.COL_NAME])
+
+        df = self._get_combined_solution()
+
+        self._write_combined_solution(df)
 
         gen_dsets = []
 
