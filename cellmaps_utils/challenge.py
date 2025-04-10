@@ -9,7 +9,11 @@ import random
 import time
 import string
 import json
+import numpy as np
 import cellmaps_utils
+import ndex2
+from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory
+
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
 from cellmaps_utils.exceptions import CellMapsError
 from cellmaps_utils import constants
@@ -232,11 +236,11 @@ def merge_replicate_dataframes(repl1_df=None, repl2_df=None, idcol='xxx'):
     return pd.merge(repl1_df,repl2_df, on=idcol, how='outer')
 
 
-def merge_uniprot_gene_mapping(file1, file2, mapped_column):
+def merge_uniprot_gene_mapping(file1, file2, mapped_column, col_name='PG.Genes'):
     df1 = pd.read_table(file1)
     df2 = pd.read_table(file2)
-    df1_filtered = df1[[mapped_column, "PG.Genes"]]
-    df2_filtered = df2[[mapped_column, "PG.Genes"]]
+    df1_filtered = df1[[mapped_column, col_name]]
+    df2_filtered = df2[[mapped_column, col_name]]
 
     merged_df = pd.concat([df1_filtered, df2_filtered], ignore_index=True)
 
@@ -244,7 +248,7 @@ def merge_uniprot_gene_mapping(file1, file2, mapped_column):
     gene_uniprot_dict = {}
     for _, row in merged_df.iterrows():
         uniprot_ids = row[mapped_column].split(";")
-        gene_names = row["PG.Genes"].split(";")
+        gene_names = row[col_name].split(";")
 
         for uniprot_id, gene_name in zip(uniprot_ids, gene_names):
             uniprot_gene_dict[uniprot_id] = gene_name
@@ -283,18 +287,6 @@ def get_system_to_gene_count(gene_to_system_mapping):
     return system_to_gene_count
 
 
-def get_uniprot_mappings(data, id_mapping_file):
-    repl1 = data.get("repl1.tsv", None)
-    repl2 = data.get("repl2.tsv", None)
-    uniprot_gene_dict = None
-    gene_uniprot_dict = {}
-    if repl1 and repl2:
-        mapped_column = data.get("mapped_column_name", "PG.ProteinAccessions") #"PG.ProteinAccessions"
-        dir_path = os.path.dirname(id_mapping_file)
-        uniprot_gene_dict, gene_uniprot_dict = merge_uniprot_gene_mapping(os.path.join(dir_path, repl1), os.path.join(dir_path, repl2), mapped_column)
-    return uniprot_gene_dict, gene_uniprot_dict
-
-
 def get_genes_and_uniprots(forward_dict, uniprot_gene_dict):
     uniprots = None
     if uniprot_gene_dict is None:
@@ -307,25 +299,6 @@ def get_genes_and_uniprots(forward_dict, uniprot_gene_dict):
             if gene:
                 genes.append(gene)
     return genes, uniprots
-
-
-def get_gene_to_system_mapping(genes, uniprots, gene_uniprot_dict, file_path="systems.csv",
-                               prefix='perturb'):
-    gene_to_system_mapping = {}
-
-    df = pd.read_csv(file_path)
-    df.columns = df.iloc[0]
-    df = df.iloc[1:].reset_index(drop=True)
-
-    for system in df.columns:
-        for gene in df[system].dropna().values:
-            if gene in genes:
-                if uniprots:
-                    gene_to_system_mapping.setdefault(gene_uniprot_dict[gene], []).append(prefix + str(system))
-                else:
-                    gene_to_system_mapping.setdefault(gene, []).append(prefix + (system))
-
-    return gene_to_system_mapping
 
 
 class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
@@ -557,5 +530,339 @@ class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
                             help='Tissue for dataset. Since the default --cell_line '
                                  'is MDA-MB-468, this value is set to the tissue '
                                  'for that cell line')
+        return parser
+
+
+class SolutionGenerator(BaseCommandLineTool):
+    """
+    Creates solution from a challenge dataset
+    """
+    COMMAND = 'solutiongenerator'
+
+    SOURCE = 'source'
+    COL_NAME = 'col_name'
+    PREFIX = 'prefix'
+    MINSIZE = 'minsize'
+    def __init__(self, theargs,
+                 provenance_utils=ProvenanceUtil()):
+        """
+        Constructor
+
+        :param theargs: Command line arguments that at minimum need
+                        to have the following attributes:
+        :type theargs: :py:class:`~python.argparse.Namespace`
+        """
+        super().__init__()
+        self._outdir = os.path.abspath(theargs.outdir)
+        self._input = theargs.input
+        self._id_mapping_file = os.path.join(self._input, theargs.id_mapping_file)
+        self._standards = theargs.standards
+        self._provenance_utils = provenance_utils
+        self._softwareid = None
+        self._input_data_dict = theargs.__dict__
+
+    def _get_uniprot_gene_dicts(self):
+        """
+
+        :return:
+        """
+        with open(self._id_mapping_file, "r") as file:
+            data = json.load(file)
+
+        repl1 = data.get("repl1.tsv", None)
+        repl2 = data.get("repl2.tsv", None)
+        uniprot_gene_dict = None
+        gene_uniprot_dict = {}
+        if repl1 and repl2:
+            mapped_column = data.get("mapped_column_name", "PG.ProteinAccessions")  # "PG.ProteinAccessions"
+            dir_path = os.path.dirname(self._id_mapping_file)
+            uniprot_gene_dict, gene_uniprot_dict = merge_uniprot_gene_mapping(os.path.join(dir_path, repl1),
+                                                                              os.path.join(dir_path, repl2),
+                                                                              mapped_column)
+        return uniprot_gene_dict, gene_uniprot_dict, data.get('forward', {})
+
+    def _get_gene_to_system_mapping_from_network(self, genes_column=None, net=None, minsize=4, genes=None,
+                                                 uniprots=None, gene_uniprot_dict=None, prefix=None):
+        """
+
+        :return:
+        """
+        nodes_to_remove = []
+        gene_to_system_mapping = {}
+        for node_id, node_obj in net.get_nodes().items():
+            if genes_column not in node_obj['v']:
+                nodes_to_remove.append(node_id)
+                continue
+            gene_names = node_obj['v'].get(genes_column, [])
+            if isinstance(gene_names, str):
+                gene_names = gene_names.split(',')
+            if len(gene_names) < minsize:
+                nodes_to_remove.append(node_id)
+                continue
+
+            if not all(gene in genes for gene in gene_names):
+                nodes_to_remove.append(node_id)
+            else:
+                for gene in gene_names:
+                    if gene in genes:
+                        if uniprots:
+                            gene_to_system_mapping.setdefault(gene_uniprot_dict[gene], []).append(prefix + str(node_id))
+                        else:
+                            gene_to_system_mapping.setdefault(gene, []).append(prefix + str(node_id))
+        return gene_to_system_mapping
+
+    def _get_gene_to_system_mapping(self, genes=None, uniprots=None, gene_uniprot_dict=None,
+                                    source=None,
+                                   prefix=None):
+        gene_to_system_mapping = {}
+
+        df = pd.read_csv(source)
+        df.columns = df.iloc[0]
+        df = df.iloc[1:].reset_index(drop=True)
+
+        for system in df.columns:
+            for gene in df[system].dropna().values:
+                if gene in genes:
+                    if uniprots:
+                        gene_to_system_mapping.setdefault(gene_uniprot_dict[gene], []).append(prefix + str(system))
+                    else:
+                        gene_to_system_mapping.setdefault(gene, []).append(prefix + (system))
+
+        return gene_to_system_mapping
+
+    def _generate_solution_for_standard(self, uniprot_gene_dict=None, gene_uniprot_dict=None,
+                                        forward_dict=None, source=None, genes_column=None,
+                                        minsize=4, prefix=''):
+        """
+
+        :return:
+        """
+        genes, uniprots = get_genes_and_uniprots(forward_dict, uniprot_gene_dict)
+
+        if os.path.isfile(source):
+            gene_to_system_mapping = self._get_gene_to_system_mapping(uniprots=uniprots,
+                                                                      gene_uniprot_dict=gene_uniprot_dict,
+                                                                      source=source)
+        else:
+            gene_to_system_mapping = self._get_gene_to_system_mapping_from_network(genes_column=genes_column,
+                                                                                   minsize=minsize,
+                                                                                   genes=genes,
+                                                                                   gene_uniprot_dict=gene_uniprot_dict,
+                                                                                   prefix=prefix,
+                                                                                   net=get_network(source))
+
+        system_to_gene_count = get_system_to_gene_count(gene_to_system_mapping)
+
+        systems_too_small = set()
+        for system, cnt in system_to_gene_count.items():
+            if cnt < minsize:
+                systems_too_small.add(system)
+
+        self._write_solution(outfile=os.path.join(self._outdir, prefix + '_solution.csv'),
+                             systems_too_small=systems_too_small,
+                             gene_to_system_mapping=gene_to_system_mapping)
+
+        self._remove_too_small_systems(systems_too_small=systems_too_small,
+                                       system_to_gene_count=system_to_gene_count)
+
+        # Convert the values to a list
+        gene_counts = list(system_to_gene_count.values())
+        # Calculate mean and variance
+        mean_gene_count = np.mean(gene_counts)
+        variance_gene_count = np.var(gene_counts)
+
+        with open(os.path.join(self._outdir, prefix + '_readme.txt'), 'w') as f:
+            f.write(f"Mean number of genes per system: {mean_gene_count}\n")
+            f.write(f"Variance of number of genes per system: {variance_gene_count}\n")
+
+        with open(os.path.join(self._outdir, prefix + '_systemsizes.json'), 'w') as f:
+            json.dump(system_to_gene_count, f)
+
+    def _remove_too_small_systems(self, systems_too_small=None,
+                                  system_to_gene_count=None):
+        """
+
+        :param systems_to_small:
+        :param system_to_gene_count:
+        :return:
+        """
+        # remove the too small systems for stats
+        for system in systems_too_small:
+            del system_to_gene_count[system]
+
+    def _write_solution(self, outfile=None, gene_to_system_mapping=None,
+                        systems_too_small=set()):
+        """
+
+        :return:
+        """
+        cntr = 1
+        with open(outfile, 'w') as f:
+            f.write("id,xxx,solution,Usage\n")
+            for gene, systems in gene_to_system_mapping.items():
+                for system in set(systems):
+                    if system in systems_too_small:
+                        continue
+                    f.write(f"{cntr},{gene},{system},Public\n")
+                    cntr += 1
+    def run(self):
+        """
+
+
+        :return:
+        """
+        self._generate_rocrate_dir_path()
+        if os.path.exists(self._outdir):
+            raise CellMapsError(self._outdir + ' already exists')
+
+        logger.debug('Creating directory ' + str(self._outdir))
+        os.makedirs(self._outdir, mode=0o755)
+
+
+        self._provenance_utils.register_rocrate(self._outdir,
+                                                name=os.path.basename(self._input) + ' solution',
+                                                organization_name='NEED TO SET THIS',
+                                                project_name='NEED TO SET THIS',
+                                                description='NEED TO SET THIS',
+                                                keywords=['solution'],
+                                                guid=self._get_fairscape_id())
+
+        uniprot_gene_dict, gene_uniprot_dict, forward_dict = self._get_uniprot_gene_dicts()
+
+        for entry in self._get_standards_as_dicts():
+            #uniprot_gene_dict = None, gene_uniprot_dict = None,
+            #forward_dict = None, source = None, genes_column = None,
+            #minsize = 4, prefix = ''
+            self._generate_solution_for_standard(uniprot_gene_dict=uniprot_gene_dict,
+                                                 gene_uniprot_dict=gene_uniprot_dict,
+                                                 forward_dict=forward_dict,
+                                                 source=entry[SolutionGenerator.SOURCE],
+                                                 minsize=entry[SolutionGenerator.MINSIZE],
+                                                 prefix=entry[SolutionGenerator.PREFIX],
+                                                 genes_column=entry[SolutionGenerator.COL_NAME])
+
+        gen_dsets = []
+
+
+
+        # self._register_software(keywords=keywords, description=description)
+        # self._register_computation(generated_dataset_ids=gen_dsets,
+        #                          description=description,
+        #                           keywords=keywords)
+        return 0
+
+    def _get_standards_as_dicts(self):
+        """
+
+        :return:
+        """
+        for entry in self._standards:
+            curstandard = re.split('\s*,\s*', entry)
+            if len(curstandard) != 4:
+                raise CellMapsError('Expected 4 values got: ' + str(curstandard))
+            yield {SolutionGenerator.SOURCE: curstandard[0],
+                   SolutionGenerator.COL_NAME: curstandard[1],
+                   SolutionGenerator.PREFIX: curstandard[2],
+                   SolutionGenerator.MINSIZE: int(curstandard[3])}
+
+    def _get_fairscape_id(self):
+        """
+        Creates a unique id
+        :return:
+        """
+        return str(uuid.uuid4()) + ':' + os.path.basename(self._outdir)
+
+    def _generate_rocrate_dir_path(self):
+        """
+        Generates the directory path for the RO-Crate based on project name, gene set, cell line, treatment type,
+        tissue, dataset type, and release version.
+        """
+        input_rocrate = self._provenance_utils.get_rocrate_as_dict(self._input)
+        dir_name = os.path.basename(self._input) + '_solution'
+        self._outdir = os.path.join(self._outdir, dir_name)
+
+    def _register_computation(self, generated_dataset_ids=[],
+                              description='',
+                              keywords=[]):
+        """
+        Registers the computation.
+        # Todo: added in used dataset, software and what is being generated
+        :return:
+        """
+        logger.debug('Getting id of input rocrate')
+        comp_keywords = keywords.copy()
+        comp_keywords.extend(['computation'])
+        description = description + ' run of ' + cellmaps_utils.__name__
+        self._provenance_utils.register_computation(self._outdir,
+                                                    name=SolutionGenerator.COMMAND,
+                                                    run_by=str(self._provenance_utils.get_login()),
+                                                    command=str(self._input_data_dict),
+                                                    description=description,
+                                                    keywords=comp_keywords,
+                                                    used_software=[self._softwareid],
+                                                    generated=generated_dataset_ids,
+                                                    guid=self._get_fairscape_id())
+
+    def _register_software(self, description='',
+                           keywords=[]):
+        """
+        Registers this tool
+
+        :raises CellMapsImageEmbeddingError: If fairscape call fails
+        """
+        software_keywords = keywords.copy()
+        software_keywords.extend(['tools', cellmaps_utils.__name__])
+        software_description = description + ' ' + \
+                               cellmaps_utils.__description__
+        self._softwareid = self._provenance_utils.register_software(self._outdir,
+                                                                    name=cellmaps_utils.__name__,
+                                                                    description=software_description,
+                                                                    author=cellmaps_utils.__author__,
+                                                                    version=cellmaps_utils.__version__,
+                                                                    file_format='py',
+                                                                    keywords=software_keywords,
+                                                                    url=cellmaps_utils.__repo_url__,
+                                                                    guid=self._get_fairscape_id())
+
+    def add_subparser(subparsers):
+        """
+        Adds a subparser for the coleution challenge creator.
+
+        :return:
+        """
+        desc = """
+
+        Version {version}
+
+        {cmd} Given an RO-Crate with a Challenge dataset, this
+        tool creates a solution RO-Crate using standards passed
+        in via --standard flag
+
+        Each --standard should have the following fields delimited by a
+        comma: <NDEx UUID | CSV file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>
+
+         <NDEx UUID | CSV file>: Either UUID of network on NDEx https://www.ndexbio.org or a path to CSV file
+         <COLUMN NAME>: Name of column in network where genes reside
+         <PREFIX>: Name to prefix on solution
+         <MINSIZE OF CLUSTER>: Minimum number of genes needed in cluster to be included
+
+
+
+        """.format(version=cellmaps_utils.__version__,
+                   cmd=SolutionGenerator.COMMAND)
+
+        parser = subparsers.add_parser(SolutionGenerator.COMMAND,
+                                       help='Generates solution for challenge dataset',
+                                       description=desc,
+                                       formatter_class=constants.ArgParseFormatter)
+        parser.add_argument('outdir',
+                            help='Directory where RO-Crate will be created')
+        parser.add_argument("--input", type=str,
+                            help="Path to Challenge RO-Crate")
+        parser.add_argument('--id_mapping_file', default='repl1_repl2_id_mapping.json',
+                            help='Name of json file containing id mapping')
+        parser.add_argument('--standards', nargs='*',
+                            help=('Standards to use which is a comma delimited list'
+                                  'of <NDEx UUID | CSV file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>'))
         return parser
 
