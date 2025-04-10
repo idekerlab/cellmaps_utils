@@ -640,9 +640,9 @@ class SolutionGenerator(BaseCommandLineTool):
         genes, uniprots = get_genes_and_uniprots(forward_dict, uniprot_gene_dict)
 
         if os.path.isfile(source):
-            gene_to_system_mapping = self._get_gene_to_system_mapping(uniprots=uniprots,
+            gene_to_system_mapping = self._get_gene_to_system_mapping(uniprots=uniprots, genes=genes,
                                                                       gene_uniprot_dict=gene_uniprot_dict,
-                                                                      source=source)
+                                                                      source=source, prefix=prefix)
         else:
             gene_to_system_mapping = self._get_gene_to_system_mapping_from_network(genes_column=genes_column,
                                                                                    minsize=minsize,
@@ -758,12 +758,19 @@ class SolutionGenerator(BaseCommandLineTool):
         """
         for entry in self._standards:
             curstandard = re.split('\s*,\s*', entry)
-            if len(curstandard) != 4:
-                raise CellMapsError('Expected 4 values got: ' + str(curstandard))
-            yield {SolutionGenerator.SOURCE: curstandard[0],
-                   SolutionGenerator.COL_NAME: curstandard[1],
-                   SolutionGenerator.PREFIX: curstandard[2],
-                   SolutionGenerator.MINSIZE: int(curstandard[3])}
+            if len(curstandard) == 3:
+                yield {SolutionGenerator.SOURCE: curstandard[0],
+                       SolutionGenerator.PREFIX: curstandard[1],
+                       SolutionGenerator.MINSIZE: int(curstandard[2]),
+                       SolutionGenerator.COL_NAME: None}
+            elif len(curstandard) == 4:
+                yield {SolutionGenerator.SOURCE: curstandard[0],
+                       SolutionGenerator.COL_NAME: curstandard[1],
+                       SolutionGenerator.PREFIX: curstandard[2],
+                       SolutionGenerator.MINSIZE: int(curstandard[3])}
+            else:
+                raise CellMapsError('Expected 4 values got: ' +
+                                    str(curstandard))
 
     def _get_fairscape_id(self):
         """
@@ -863,6 +870,7 @@ class SolutionGenerator(BaseCommandLineTool):
                             help='Name of json file containing id mapping')
         parser.add_argument('--standards', nargs='*',
                             help=('Standards to use which is a comma delimited list'
-                                  'of <NDEx UUID | CSV file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>'))
+                                  'of <NDEx UUID>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER> or'
+                                  '   <CSV FILE>,<PREFIX>,<MINSIZE OF CLUSTER>'))
         return parser
 
