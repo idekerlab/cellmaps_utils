@@ -29,7 +29,7 @@ REPL_ONE_TWO_COMBINED = 'repl1_repl2_combined.tsv'
 NEW_ID_COLNAME = 'xxx'
 
 
-def get_dataframe(inputfile=None):
+def _get_dataframe(inputfile=None):
     """
     Loads TSV as dataframe
 
@@ -41,7 +41,7 @@ def get_dataframe(inputfile=None):
     return pd.read_csv(inputfile, sep='\t')
 
 
-def get_set_of_all_values_of_column_from_dataframes(dataframes=[], col_name=None):
+def _get_set_of_all_values_of_column_from_dataframes(dataframes=[], col_name=None):
     """
     Iterates across all dataframes and pulls values from column specified by **col_name**
 
@@ -67,10 +67,10 @@ def get_set_of_all_values_of_column_from_dataframes(dataframes=[], col_name=None
     return col_values
 
 
-def generate_mapping(col_vals=None, num_chars=9,
-                     mapping_col_name=None,
-                     input_repl_one=None,
-                     input_repl_two=None):
+def _generate_mapping(col_vals=None, num_chars=9,
+                      mapping_col_name=None,
+                      input_repl_one=None,
+                      input_repl_two=None):
     """
     Uses random string generator of capitalized characters and numbers
     to create a mapping of values
@@ -111,21 +111,6 @@ def generate_mapping(col_vals=None, num_chars=9,
             REPL_TWO_TSV: input_repl_two,
             'forward': forward_mapping,
             'reverse': reverse_mapping}
-
-
-def write_id_mapping_file(outdir, id_mapping=None):
-    """
-    Writes out mapping file as json to file with **REPL_MAPPING** as name
-
-    See generate_mapping function for expected format of **id_mapping**
-
-    :param outdir:
-    :param id_mapping:
-    :type id_mapping: dict
-    :return:
-    """
-    with open(os.path.join(outdir, REPL_MAPPING), 'w') as f:
-        json.dump(id_mapping, f, indent=2)
 
 
 def set_id_col_and_rename_othercols(df=None, id_mapping=None, col_name=None,
@@ -219,42 +204,27 @@ def get_col_repl_map(prefix=None, columns=None, idcol='xxx'):
 
 def merge_replicate_dataframes(repl1_df=None, repl2_df=None, idcol='xxx'):
     """
-    Merges two replicate dataframes by outer join
+    Merges two replicate dataframes by outer join on **idcol** column
+    When doing the merge the **repl1_df** column names are prefixed
+    with ``repl1_`` and the **repl2_df** column names are p
 
-    :param repl1:
-    :param repl2:
-    :param idcol:
-    :return:
+    :param repl1_df:
+    :type repl1_df: :py:class:`pandas.DataFrame`
+    :param repl2_df:
+    :type repl2_df: :py:class:`pandas.DataFrame`
+    :param idcol: Name of column to join dataframes by
+    :type idcol: str
+    :return: Merged DataFrame
+    :rtype: :py:class:`pandas.DataFrame`
     """
-    repl1_df.rename(mapper=get_col_repl_map('repl1_',
-                                            columns=repl1_df.columns.tolist()),
-                    inplace=True, axis=1)
+    newrepl1 = repl1_df.rename(mapper=get_col_repl_map('repl1_',
+                               columns=repl1_df.columns.tolist()),
+                               inplace=False, axis=1)
 
-    repl2_df.rename(mapper=get_col_repl_map('repl2_',
-                                            columns=repl2_df.columns.tolist()),
-                    inplace=True, axis=1)
-    return pd.merge(repl1_df,repl2_df, on=idcol, how='outer')
-
-
-def merge_uniprot_gene_mapping(file1, file2, mapped_column, col_name='PG.Genes'):
-    df1 = pd.read_table(file1)
-    df2 = pd.read_table(file2)
-    df1_filtered = df1[[mapped_column, col_name]]
-    df2_filtered = df2[[mapped_column, col_name]]
-
-    merged_df = pd.concat([df1_filtered, df2_filtered], ignore_index=True)
-
-    uniprot_gene_dict = {}
-    gene_uniprot_dict = {}
-    for _, row in merged_df.iterrows():
-        uniprot_ids = row[mapped_column].split(";")
-        gene_names = row[col_name].split(";")
-
-        for uniprot_id, gene_name in zip(uniprot_ids, gene_names):
-            uniprot_gene_dict[uniprot_id] = gene_name
-            gene_uniprot_dict[gene_name] = uniprot_id
-
-    return uniprot_gene_dict, gene_uniprot_dict
+    newrepl2 = repl2_df.rename(mapper=get_col_repl_map('repl2_',
+                               columns=repl2_df.columns.tolist()),
+                               inplace=False, axis=1)
+    return pd.merge(newrepl1,newrepl2, on=idcol, how='outer')
 
 
 def get_network(uuid_of_net):
@@ -371,12 +341,12 @@ class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
         shutil.copy(self._repl1_tsv, self._outdir)
         shutil.copy(self._repl2_tsv, self._outdir)
 
-        raw_repl1 = get_dataframe(self._repl1_tsv)
-        raw_repl2 = get_dataframe(self._repl2_tsv)
+        raw_repl1 = _get_dataframe(self._repl1_tsv)
+        raw_repl2 = _get_dataframe(self._repl2_tsv)
 
         id_mapping = self._generate_mapping(raw_repl1, raw_repl2)
 
-        write_id_mapping_file(self._outdir, id_mapping=id_mapping)
+        self.write_id_mapping_file(id_mapping=id_mapping)
 
         repl1 = set_id_col_and_rename_othercols(raw_repl1,
                                                 col_name=self._mapping_col_name,
@@ -393,6 +363,19 @@ class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
                                    keywords=keywords)
         return 0
 
+    def write_id_mapping_file(self, id_mapping=None):
+        """
+        Writes out mapping file as json to file with **REPL_MAPPING** as name
+
+        See generate_mapping function for expected format of **id_mapping**
+
+        :param outdir:
+        :param id_mapping:
+        :type id_mapping: dict
+        :return:
+        """
+        with open(os.path.join(self._outdir, REPL_MAPPING), 'w') as f:
+            json.dump(id_mapping, f, indent=2)
     def _generate_mapping(self, raw_repl1, raw_repl2):
         """
 
@@ -400,13 +383,13 @@ class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
         :param raw_repl2:
         :return:
         """
-        col_values = get_set_of_all_values_of_column_from_dataframes([raw_repl1, raw_repl2],
-                                                                     col_name=self._mapping_col_name)
+        col_values = _get_set_of_all_values_of_column_from_dataframes([raw_repl1, raw_repl2],
+                                                                      col_name=self._mapping_col_name)
 
-        return generate_mapping(col_vals=col_values,
-                                mapping_col_name=self._mapping_col_name,
-                                input_repl_one=self._repl1_tsv,
-                                input_repl_two=self._repl2_tsv)
+        return _generate_mapping(col_vals=col_values,
+                                 mapping_col_name=self._mapping_col_name,
+                                 input_repl_one=self._repl1_tsv,
+                                 input_repl_two=self._repl2_tsv)
 
 
 
@@ -576,10 +559,30 @@ class SolutionGenerator(BaseCommandLineTool):
         if repl1 and repl2:
             mapped_column = data.get("mapped_column_name", "PG.ProteinAccessions")  # "PG.ProteinAccessions"
             dir_path = os.path.dirname(self._id_mapping_file)
-            uniprot_gene_dict, gene_uniprot_dict = merge_uniprot_gene_mapping(os.path.join(dir_path, repl1),
-                                                                              os.path.join(dir_path, repl2),
-                                                                              mapped_column)
+            uniprot_gene_dict, gene_uniprot_dict = self._merge_uniprot_gene_mapping(os.path.join(dir_path, repl1),
+                                                                                    os.path.join(dir_path, repl2),
+                                                                                    mapped_column)
         return uniprot_gene_dict, gene_uniprot_dict, data.get('forward', {})
+
+    def _merge_uniprot_gene_mapping(self, file1, file2, mapped_column, col_name='PG.Genes'):
+        df1 = pd.read_table(file1)
+        df2 = pd.read_table(file2)
+        df1_filtered = df1[[mapped_column, col_name]]
+        df2_filtered = df2[[mapped_column, col_name]]
+
+        merged_df = pd.concat([df1_filtered, df2_filtered], ignore_index=True)
+
+        uniprot_gene_dict = {}
+        gene_uniprot_dict = {}
+        for _, row in merged_df.iterrows():
+            uniprot_ids = row[mapped_column].split(";")
+            gene_names = row[col_name].split(";")
+
+            for uniprot_id, gene_name in zip(uniprot_ids, gene_names):
+                uniprot_gene_dict[uniprot_id] = gene_name
+                gene_uniprot_dict[gene_name] = uniprot_id
+
+        return uniprot_gene_dict, gene_uniprot_dict
 
     def _get_gene_to_system_mapping_from_network(self, genes_column=None, net=None, minsize=4, genes=None,
                                                  uniprots=None, gene_uniprot_dict=None, prefix=None):
