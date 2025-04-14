@@ -257,20 +257,6 @@ def get_system_to_gene_count(gene_to_system_mapping):
     return system_to_gene_count
 
 
-def get_genes_and_uniprots(forward_dict, uniprot_gene_dict):
-    uniprots = None
-    if uniprot_gene_dict is None:
-        genes = list(forward_dict.keys())
-    else:
-        uniprots = list(forward_dict.keys())
-        genes = []
-        for uniprot in uniprots:
-            gene = uniprot_gene_dict.get(uniprot, None)
-            if gene:
-                genes.append(gene)
-    return genes, uniprots
-
-
 class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
     """
     Creates coelution challenge dataset suitable for Kaggle from
@@ -376,6 +362,7 @@ class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
         """
         with open(os.path.join(self._outdir, REPL_MAPPING), 'w') as f:
             json.dump(id_mapping, f, indent=2)
+
     def _generate_mapping(self, raw_repl1, raw_repl2):
         """
 
@@ -614,6 +601,18 @@ class SolutionGenerator(BaseCommandLineTool):
                             gene_to_system_mapping.setdefault(gene, []).append(prefix + str(node_id))
         return gene_to_system_mapping
 
+    def _get_genes_and_uniprots(self, forward_dict, uniprot_gene_dict):
+        uniprots = None
+        if uniprot_gene_dict is None:
+            genes = list(forward_dict.keys())
+        else:
+            uniprots = list(forward_dict.keys())
+            genes = []
+            for uniprot in uniprots:
+                gene = uniprot_gene_dict.get(uniprot, None)
+                if gene:
+                    genes.append(gene)
+        return genes, uniprots
     def _get_gene_to_system_mapping(self, genes=None, uniprots=None, gene_uniprot_dict=None,
                                     source=None,
                                    prefix=None):
@@ -640,7 +639,7 @@ class SolutionGenerator(BaseCommandLineTool):
 
         :return:
         """
-        genes, uniprots = get_genes_and_uniprots(forward_dict, uniprot_gene_dict)
+        genes, uniprots = self._get_genes_and_uniprots(forward_dict, uniprot_gene_dict)
 
         if os.path.isfile(source):
             gene_to_system_mapping = self._get_gene_to_system_mapping(uniprots=uniprots, genes=genes,
