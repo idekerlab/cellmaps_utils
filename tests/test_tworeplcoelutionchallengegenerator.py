@@ -3,6 +3,7 @@
 import os
 import shutil
 import tempfile
+import time
 import unittest
 import pandas as pd
 from unittest.mock import MagicMock
@@ -85,7 +86,22 @@ class TestTwoReplCoelutionChallengeGenerator(unittest.TestCase):
             self.assertTrue(list(df.columns), ['xxx', 'repl1_1',
                                                'repl1_2', 'repl1_3', 'repl2_1',
                                                'repl2_2', 'repl2_3'])
-            # self.assertEqual(list(df['xxx']), ['YXHLNEYOI', 'Z6VDIUIGI'])
+            self.assertEqual(len(df['xxx']), 2)
+            result_loc = df.loc[df['xxx'] == data['forward']['P04637']]
+            self.assertTrue(str(df.head()), pd.isna(result_loc['repl1_1'].tolist()[0]))
+            self.assertAlmostEqual(result_loc['repl1_2'].tolist()[0], 0.1)
+            self.assertAlmostEqual(result_loc['repl1_3'].tolist()[0], 0.2)
+            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_1'].tolist()[0]))
+            self.assertAlmostEqual(result_loc['repl2_2'].tolist()[0], 0.1)
+            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_3'].tolist()[0]))
+
+            result_loc = df.loc[df['xxx'] == data['forward']['A6NCE7;Q9GZQ8']]
+            self.assertTrue(str(df.head()), pd.isna(result_loc['repl1_1'].tolist()[0]))
+            self.assertAlmostEqual(result_loc['repl1_2'].tolist()[0], 0.44)
+            self.assertAlmostEqual(result_loc['repl1_3'].tolist()[0], 0.55)
+            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_1'].tolist()[0]))
+            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_2'].tolist()[0]))
+            self.assertAlmostEqual(result_loc['repl2_3'].tolist()[0], 0.55)
         finally:
             shutil.rmtree(temp_dir)
 

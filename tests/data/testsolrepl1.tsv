@@ -1,0 +1,7 @@
+PG.ProteinGroups	PG.ProteinAccessions	PG.Genes	PG.UniProtIds	PG.ProteinNames	[1]biosep
+U_A	U_A	A	U_A	A_HUMAN	0.2
+U_B U_B B	U_B	B_HUMAN	0.4
+U_C U_C C	U_C	C_HUMAN	0.6
+U_D U_D D	U_D	D_HUMAN	0.8
+U_E U_E E	U_E	E_HUMAN	1.0
+U_F U_F F	U_F	F_HUMAN	1.1

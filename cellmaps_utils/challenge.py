@@ -17,6 +17,7 @@ from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory
 from cellmaps_utils.basecmdtool import BaseCommandLineTool
 from cellmaps_utils.exceptions import CellMapsError
 from cellmaps_utils import constants
+from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
 
 logger = logging.getLogger(__name__)
@@ -227,10 +228,13 @@ def merge_replicate_dataframes(repl1_df=None, repl2_df=None, idcol='xxx'):
     return pd.merge(newrepl1,newrepl2, on=idcol, how='outer')
 
 
-def get_network(uuid_of_net):
+def get_network(uuid_or_path_to_net):
     client = ndex2.client.Ndex2()
     factory = RawCX2NetworkFactory()
-    client_resp = client.get_network_as_cx2_stream(uuid_of_net)
+    if os.path.isfile(uuid_or_path_to_net):
+        return factory.get_cx2network(uuid_or_path_to_net)
+
+    client_resp = client.get_network_as_cx2_stream(uuid_or_path_to_net)
     net = factory.get_cx2network(json.loads(client_resp.content))
     return net
 
@@ -289,6 +293,8 @@ class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
         self._provenance_utils = provenance_utils
         self._softwareid = None
         self._input_data_dict = theargs.__dict__
+        self._start_time = int(time.time())
+        self._end_time = -1
 
     def run(self):
         """
@@ -299,55 +305,86 @@ class TwoReplCoelutionChallengeGenerator(BaseCommandLineTool):
 
         :return:
         """
-        self._generate_rocrate_dir_path()
-        if os.path.exists(self._outdir):
-            raise CellMapsError(self._outdir + ' already exists')
+        exitcode = 99
+        try:
+            self._generate_rocrate_dir_path()
+            if os.path.exists(self._outdir):
+                raise CellMapsError(self._outdir + ' already exists')
 
-        logger.debug('Creating directory ' + str(self._outdir))
-        os.makedirs(self._outdir, mode=0o755)
-
-        keywords = [self._project_name,
-                    self._cell_line, self._treatment,
-                    self._tissue]
+            logger.debug('Creating directory ' + str(self._outdir))
+            os.makedirs(self._outdir, mode=0o755)
 
 
-        description = ' '.join(keywords)
+            logutils.setup_filelogger(outdir=self._outdir,
+                                      handlerprefix='cellmaps_utilscmd')
+            self._write_task_start_json()
 
-        self._provenance_utils.register_rocrate(self._outdir,
-                                                name=self._name,
-                                                organization_name=self._organization_name,
-                                                project_name=self._project_name,
-                                                description=description,
-                                                keywords=keywords,
-                                                guid=self._get_fairscape_id())
+            keywords = [self._project_name,
+                        self._cell_line, self._treatment,
+                        self._tissue]
 
 
+            description = ' '.join(keywords)
 
-        gen_dsets = []
-        shutil.copy(self._repl1_tsv, self._outdir)
-        shutil.copy(self._repl2_tsv, self._outdir)
+            self._provenance_utils.register_rocrate(self._outdir,
+                                                    name=self._name,
+                                                    organization_name=self._organization_name,
+                                                    project_name=self._project_name,
+                                                    description=description,
+                                                    keywords=keywords,
+                                                    guid=self._get_fairscape_id())
 
-        raw_repl1 = _get_dataframe(self._repl1_tsv)
-        raw_repl2 = _get_dataframe(self._repl2_tsv)
 
-        id_mapping = self._generate_mapping(raw_repl1, raw_repl2)
 
-        self.write_id_mapping_file(id_mapping=id_mapping)
+            gen_dsets = []
+            shutil.copy(self._repl1_tsv, self._outdir)
+            shutil.copy(self._repl2_tsv, self._outdir)
 
-        repl1 = set_id_col_and_rename_othercols(raw_repl1,
-                                                col_name=self._mapping_col_name,
-                                                id_mapping=id_mapping)
-        repl2 = set_id_col_and_rename_othercols(raw_repl2,
-                                                col_name=self._mapping_col_name,
-                                                id_mapping=id_mapping)
-        merged_df = merge_replicate_dataframes(repl1_df=repl1, repl2_df=repl2)
-        write_tsv_file(merged_df,
-                       os.path.join(self._outdir, REPL_ONE_TWO_COMBINED))
-        self._register_software(keywords=keywords, description=description)
-        self._register_computation(generated_dataset_ids=gen_dsets,
-                                   description=description,
-                                   keywords=keywords)
-        return 0
+            raw_repl1 = _get_dataframe(self._repl1_tsv)
+            raw_repl2 = _get_dataframe(self._repl2_tsv)
+
+            id_mapping = self._generate_mapping(raw_repl1, raw_repl2)
+
+            self.write_id_mapping_file(id_mapping=id_mapping)
+
+            repl1 = set_id_col_and_rename_othercols(raw_repl1,
+                                                    col_name=self._mapping_col_name,
+                                                    id_mapping=id_mapping)
+            repl2 = set_id_col_and_rename_othercols(raw_repl2,
+                                                    col_name=self._mapping_col_name,
+                                                    id_mapping=id_mapping)
+            merged_df = merge_replicate_dataframes(repl1_df=repl1, repl2_df=repl2)
+            write_tsv_file(merged_df,
+                           os.path.join(self._outdir, REPL_ONE_TWO_COMBINED))
+            self._register_software(keywords=keywords, description=description)
+            self._register_computation(generated_dataset_ids=gen_dsets,
+                                       description=description,
+                                       keywords=keywords)
+            exitcode = 0
+            return exitcode
+        finally:
+            self._end_time = int(time.time())
+            # write a task finish file
+            logutils.write_task_finish_json(outdir=self._outdir,
+                                            start_time=self._start_time,
+                                            end_time=self._end_time,
+                                            status=exitcode)
+
+    def _write_task_start_json(self):
+        """
+        Writes task_start.json file with information about
+        what is to be run
+
+        """
+        data = {}
+
+        if self._input_data_dict is not None:
+            data.update({'commandlineargs': self._input_data_dict})
+
+        logutils.write_task_start_json(outdir=self._outdir,
+                                       start_time=self._start_time,
+                                       version=cellmaps_utils.__version__,
+                                       data=data)
 
     def write_id_mapping_file(self, id_mapping=None):
         """
@@ -613,6 +650,7 @@ class SolutionGenerator(BaseCommandLineTool):
                 if gene:
                     genes.append(gene)
         return genes, uniprots
+
     def _get_gene_to_system_mapping(self, genes=None, uniprots=None, gene_uniprot_dict=None,
                                     source=None,
                                    prefix=None):
@@ -641,11 +679,11 @@ class SolutionGenerator(BaseCommandLineTool):
         """
         genes, uniprots = self._get_genes_and_uniprots(forward_dict, uniprot_gene_dict)
 
-        if os.path.isfile(source):
+        if os.path.isfile(source) and source.endswith('.csv'):
             gene_to_system_mapping = self._get_gene_to_system_mapping(uniprots=uniprots, genes=genes,
                                                                       gene_uniprot_dict=gene_uniprot_dict,
                                                                       source=source, prefix=prefix)
-        else:
+        elif not os.path.isfile(source) or (source.endswith('.cx') or source.endswith('.cx2')):
             gene_to_system_mapping = self._get_gene_to_system_mapping_from_network(genes_column=genes_column,
                                                                                    minsize=minsize,
                                                                                    genes=genes,
@@ -885,7 +923,8 @@ class SolutionGenerator(BaseCommandLineTool):
         Each --standard should have the following fields delimited by a
         comma: <NDEx UUID | CSV file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>
 
-         <NDEx UUID | CSV file>: Either UUID of network on NDEx https://www.ndexbio.org or a path to CSV file
+         <NDEx UUID | CX2 file (.cx|.cx2) | CSV file (.csv)>: One of the following UUID of network on NDEx https://www.ndexbio.org,
+                path to a cx file (.cx|.cx2) or path to CSV file (.csv)
          <COLUMN NAME>: Name of column in network where genes reside
          <PREFIX>: Name to prefix on solution
          <MINSIZE OF CLUSTER>: Minimum number of genes needed in cluster to be included
@@ -907,7 +946,7 @@ class SolutionGenerator(BaseCommandLineTool):
                             help='Name of json file containing id mapping')
         parser.add_argument('--standards', nargs='*',
                             help=('Standards to use which is a comma delimited list'
-                                  'of <NDEx UUID>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER> or'
-                                  '   <CSV FILE>,<PREFIX>,<MINSIZE OF CLUSTER>'))
+                                  'of <NDEx UUID|CX2 File (.cx|.cx2)>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER> or'
+                                  '   <CSV FILE (.csv)>>,<PREFIX>,<MINSIZE OF CLUSTER>'))
         return parser
 
