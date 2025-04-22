@@ -586,6 +586,9 @@ class SolutionGenerator(BaseCommandLineTool):
             uniprot_gene_dict, gene_uniprot_dict = self._merge_uniprot_gene_mapping(os.path.join(dir_path, repl1),
                                                                                     os.path.join(dir_path, repl2),
                                                                                     mapped_column)
+        logger.debug('uniprot_gene_dict: ' + str(uniprot_gene_dict))
+        logger.debug('gene_uniprot_dict: ' + str(gene_uniprot_dict))
+        logger.debug('forward: ' + str(data['forward']))
         return uniprot_gene_dict, gene_uniprot_dict, data.get('forward', {})
 
     def _merge_uniprot_gene_mapping(self, file1, file2, mapped_column, col_name='PG.Genes'):
@@ -616,30 +619,38 @@ class SolutionGenerator(BaseCommandLineTool):
         """
         nodes_to_remove = []
         gene_to_system_mapping = {}
+        logger.debug('Looking for systems with these genes' + str(genes))
         for node_id, node_obj in net.get_nodes().items():
             if genes_column not in node_obj['v']:
+                logger.debug('Skipping, ' + genes_column +
+                             ' not found ' + str(node_obj))
                 nodes_to_remove.append(node_id)
                 continue
             gene_names = node_obj['v'].get(genes_column, [])
             if isinstance(gene_names, str):
                 gene_names = gene_names.split(',')
             if len(gene_names) < minsize:
+                logger.debug('Skipping, system too small: ' + str(node_obj))
                 nodes_to_remove.append(node_id)
                 continue
 
             if not all(gene in genes for gene in gene_names):
+                logger.debug('Skipping, not all genes in mapping ' +
+                             str(node_obj))
                 nodes_to_remove.append(node_id)
-            else:
-                for gene in gene_names:
-                    if gene in genes:
-                        if uniprots:
-                            gene_to_system_mapping.setdefault(gene_uniprot_dict[gene], []).append(prefix + str(node_id))
-                        else:
-                            gene_to_system_mapping.setdefault(gene, []).append(prefix + str(node_id))
+                continue
+
+            for gene in gene_names:
+                if gene in genes:
+                    if uniprots:
+                        gene_to_system_mapping.setdefault(gene_uniprot_dict[gene], []).append(prefix + str(node_id))
+                    else:
+                        gene_to_system_mapping.setdefault(gene, []).append(prefix + str(node_id))
         return gene_to_system_mapping
 
     def _get_genes_and_uniprots(self, forward_dict, uniprot_gene_dict):
         uniprots = None
+        logger.debug('Found ' + str(forward_dict) + ' in forward_dict')
         if uniprot_gene_dict is None:
             genes = list(forward_dict.keys())
         else:
@@ -649,6 +660,7 @@ class SolutionGenerator(BaseCommandLineTool):
                 gene = uniprot_gene_dict.get(uniprot, None)
                 if gene:
                     genes.append(gene)
+        logger.debug('Found ' + str(len(genes)) + ' in mapping file')
         return genes, uniprots
 
     def _get_gene_to_system_mapping(self, genes=None, uniprots=None, gene_uniprot_dict=None,
@@ -691,13 +703,15 @@ class SolutionGenerator(BaseCommandLineTool):
                                                                                    prefix=prefix,
                                                                                    net=get_network(source),
                                                                                    uniprots=uniprots)
-
+        logger.debug('gene_to_system_mapping: ' + str(gene_to_system_mapping))
         system_to_gene_count = get_system_to_gene_count(gene_to_system_mapping)
 
         systems_too_small = set()
+        logger.debug('Found: ' + str(len(system_to_gene_count)) + ' raw systems')
         for system, cnt in system_to_gene_count.items():
             if cnt < minsize:
                 systems_too_small.add(system)
+        logger.debug('Found: ' + str(len(systems_too_small)) + ' too small systems')
 
         self._write_solution(outfile=os.path.join(self._outdir, prefix + '_solution.csv'),
                              systems_too_small=systems_too_small, forward_dict=forward_dict,
@@ -728,6 +742,8 @@ class SolutionGenerator(BaseCommandLineTool):
         :return:
         """
         # remove the too small systems for stats
+        logger.debug('There are: ' + str(len(systems_too_small)) +
+                     ' systems that are too small to use')
         for system in systems_too_small:
             del system_to_gene_count[system]
 
@@ -799,7 +815,9 @@ class SolutionGenerator(BaseCommandLineTool):
                                                 guid=self._get_fairscape_id())
 
         uniprot_gene_dict, gene_uniprot_dict, forward_dict = self._get_uniprot_gene_dicts()
-
+        logger.debug('uniprod_gene_dict: ' + str(uniprot_gene_dict))
+        logger.debug('gene_uniprot_dict: ' + str(gene_uniprot_dict))
+        logger.debug('forward_dict: ' + str(forward_dict))
         for entry in self._get_standards_as_dicts():
             #uniprot_gene_dict = None, gene_uniprot_dict = None,
             #forward_dict = None, source = None, genes_column = None,
@@ -920,12 +938,18 @@ class SolutionGenerator(BaseCommandLineTool):
         tool creates a solution RO-Crate using standards passed
         in via --standard flag
 
-        Each --standard should have the following fields delimited by a
-        comma: <NDEx UUID | CSV file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>
+        Each --standard should look like the following:
+
+        For NDEx UUID or CX2 file:
+        <NDEx UUID | CX2 file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>
+
+        For CSV file:
+
+        <CSV file>,<PREFIX>,<MINSIZE OF CLUSTER>
 
          <NDEx UUID | CX2 file (.cx|.cx2) | CSV file (.csv)>: One of the following UUID of network on NDEx https://www.ndexbio.org,
                 path to a cx file (.cx|.cx2) or path to CSV file (.csv)
-         <COLUMN NAME>: Name of column in network where genes reside
+         <COLUMN NAME>: Name of column in network where genes reside (ONLY FOR NDEX UUID or CX2 file)
          <PREFIX>: Name to prefix on solution
          <MINSIZE OF CLUSTER>: Minimum number of genes needed in cluster to be included
 
