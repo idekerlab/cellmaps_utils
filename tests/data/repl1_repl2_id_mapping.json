@@ -2,20 +2,21 @@
   "mapped_column_name": "PG.ProteinAccessions",
   "repl1.tsv": "testsolrepl1.tsv",
   "repl2.tsv": "testsolrepl2.tsv",
+
   "forward": {
-    "orig_a": "A",
-    "orig_b": "B",
-    "orig_c": "C",
-    "orig_d": "D",
-    "orig_e": "E",
-    "orig_f": "F"
+    "U_A": "orig_a",
+    "U_B": "orig_b",
+    "U_C": "orig_c",
+    "U_D": "orig_d",
+    "U_E": "orig_e",
+    "U_F": "orig_f"
   },
   "reverse": {
-    "A": "orig_a",
-    "B": "orig_b",
-    "C": "orig_c",
-    "D": "orig_d",
-    "E": "orig_e",
-    "F": "orig_f"
+    "orig_a": "U_A",
+    "orig_b": "U_B",
+    "orig_c": "U_C",
+    "orig_d": "U_D",
+    "orig_e": "U_E",
+    "orig_f": "U_F"
   }
 }
