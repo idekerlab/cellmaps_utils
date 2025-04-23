@@ -2,7 +2,7 @@
 History
 =======
 
-0.8.0 (TBD)
+0.8.0 (2025-04-23)
 -------------------
 
 * Set maximum supported version of scipy to <1.11
