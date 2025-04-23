@@ -79,7 +79,7 @@ Output:
    dist                 builds source and wheel package
    install              install the package to the active Python's site-packages
 
-Before running tests, please install ``pip install -r requirements_dev``
+Before running tests, please install ``pip install -r requirements_dev.txt``
 
 For developers
 -------------------------------------------
