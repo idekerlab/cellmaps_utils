@@ -550,6 +550,7 @@ class SolutionGenerator(BaseCommandLineTool):
     COL_NAME = 'col_name'
     PREFIX = 'prefix'
     MINSIZE = 'minsize'
+    SKIP_PARTIAL = 'skip_partial'
     def __init__(self, theargs,
                  provenance_utils=ProvenanceUtil()):
         """
@@ -612,7 +613,8 @@ class SolutionGenerator(BaseCommandLineTool):
         return uniprot_gene_dict, gene_uniprot_dict
 
     def _get_gene_to_system_mapping_from_network(self, genes_column=None, net=None, minsize=4, genes=None,
-                                                 uniprots=None, gene_uniprot_dict=None, prefix=None):
+                                                 uniprots=None, gene_uniprot_dict=None, prefix=None,
+                                                 skip_partial=True):
         """
 
         :return:
@@ -634,7 +636,7 @@ class SolutionGenerator(BaseCommandLineTool):
                 nodes_to_remove.append(node_id)
                 continue
 
-            if not all(gene in genes for gene in gene_names):
+            if skip_partial is True and not all(gene in genes for gene in gene_names):
                 logger.debug('Skipping, not all genes in mapping ' +
                              str(node_obj))
                 nodes_to_remove.append(node_id)
@@ -660,31 +662,51 @@ class SolutionGenerator(BaseCommandLineTool):
                 gene = uniprot_gene_dict.get(uniprot, None)
                 if gene:
                     genes.append(gene)
-        logger.debug('Found ' + str(len(genes)) + ' in mapping file')
+        logger.debug('Found ' + str(len(genes)) + ' genes in mapping file')
         return genes, uniprots
 
     def _get_gene_to_system_mapping(self, genes=None, uniprots=None, gene_uniprot_dict=None,
-                                    source=None,
-                                   prefix=None):
+                                    source=None, prefix=None, skip_partial=False):
+        """
+        Generates gene to system mapping
+        :param genes:
+        :type genes: list
+        :param uniprots:
+        :param gene_uniprot_dict:
+        :param source:
+        :param prefix:
+        :return:
+        """
         gene_to_system_mapping = {}
 
         df = pd.read_csv(source)
+        # the 1st row has a numeric counter value just
+        # use that for column labels
         df.columns = df.iloc[0]
-        df = df.iloc[1:].reset_index(drop=True)
 
+        # drop the 1st row
+        df = df.iloc[1:].reset_index(drop=True)
+        logger.debug(df.head())
         for system in df.columns:
+            logger.debug('Examining system: ' + system)
+            gene_names = set(df[system].dropna().values)
+            if skip_partial is True and not all(gene in genes for gene in gene_names):
+                logger.debug('Skipping, not all genes in mapping ' +
+                             str(system))
+                continue
             for gene in df[system].dropna().values:
                 if gene in genes:
                     if uniprots:
                         gene_to_system_mapping.setdefault(gene_uniprot_dict[gene], []).append(prefix + str(system))
                     else:
-                        gene_to_system_mapping.setdefault(gene, []).append(prefix + (system))
-
+                        gene_to_system_mapping.setdefault(gene, []).append(prefix + str(system))
+                else:
+                    logger.debug(gene + ' not in genes. Not adding to map')
         return gene_to_system_mapping
 
     def _generate_solution_for_standard(self, uniprot_gene_dict=None, gene_uniprot_dict=None,
                                         forward_dict=None, source=None, genes_column=None,
-                                        minsize=4, prefix=''):
+                                        minsize=4, prefix='', skip_partial=True):
         """
 
         :return:
@@ -692,17 +714,21 @@ class SolutionGenerator(BaseCommandLineTool):
         genes, uniprots = self._get_genes_and_uniprots(forward_dict, uniprot_gene_dict)
 
         if os.path.isfile(source) and source.endswith('.csv'):
+            logger.debug('Processing csv file: ' + source)
             gene_to_system_mapping = self._get_gene_to_system_mapping(uniprots=uniprots, genes=genes,
                                                                       gene_uniprot_dict=gene_uniprot_dict,
-                                                                      source=source, prefix=prefix)
+                                                                      source=source, prefix=prefix,
+                                                                      skip_partial=skip_partial)
         elif not os.path.isfile(source) or (source.endswith('.cx') or source.endswith('.cx2')):
+            logger.debug('Processing network: ' + source)
             gene_to_system_mapping = self._get_gene_to_system_mapping_from_network(genes_column=genes_column,
                                                                                    minsize=minsize,
                                                                                    genes=genes,
                                                                                    gene_uniprot_dict=gene_uniprot_dict,
                                                                                    prefix=prefix,
                                                                                    net=get_network(source),
-                                                                                   uniprots=uniprots)
+                                                                                   uniprots=uniprots,
+                                                                                   skip_partial=skip_partial)
         logger.debug('gene_to_system_mapping: ' + str(gene_to_system_mapping))
         system_to_gene_count = get_system_to_gene_count(gene_to_system_mapping)
 
@@ -828,20 +854,17 @@ class SolutionGenerator(BaseCommandLineTool):
                                                  source=entry[SolutionGenerator.SOURCE],
                                                  minsize=entry[SolutionGenerator.MINSIZE],
                                                  prefix=entry[SolutionGenerator.PREFIX],
-                                                 genes_column=entry[SolutionGenerator.COL_NAME])
+                                                 genes_column=entry[SolutionGenerator.COL_NAME],
+                                                 skip_partial=entry[SolutionGenerator.SKIP_PARTIAL])
 
         df = self._get_combined_solution()
 
         self._write_combined_solution(df)
 
-        gen_dsets = []
-
-
-
-        # self._register_software(keywords=keywords, description=description)
-        # self._register_computation(generated_dataset_ids=gen_dsets,
-        #                          description=description,
-        #                           keywords=keywords)
+        self._register_software(keywords=['solution'], description='NEED TO SET THIS')
+        self._register_computation(generated_dataset_ids=[],
+                                   description='NEED TO SET THIS',
+                                   keywords=['solution'])
         return 0
 
     def _get_standards_as_dicts(self):
@@ -851,16 +874,18 @@ class SolutionGenerator(BaseCommandLineTool):
         """
         for entry in self._standards:
             curstandard = re.split('\s*,\s*', entry)
-            if len(curstandard) == 3:
+            if len(curstandard) == 4:
                 yield {SolutionGenerator.SOURCE: curstandard[0],
                        SolutionGenerator.PREFIX: curstandard[1],
                        SolutionGenerator.MINSIZE: int(curstandard[2]),
+                       SolutionGenerator.SKIP_PARTIAL: str(curstandard[3]).lower() == 'true',
                        SolutionGenerator.COL_NAME: None}
-            elif len(curstandard) == 4:
+            elif len(curstandard) == 5:
                 yield {SolutionGenerator.SOURCE: curstandard[0],
                        SolutionGenerator.COL_NAME: curstandard[1],
                        SolutionGenerator.PREFIX: curstandard[2],
-                       SolutionGenerator.MINSIZE: int(curstandard[3])}
+                       SolutionGenerator.MINSIZE: int(curstandard[3]),
+                       SolutionGenerator.SKIP_PARTIAL: str(curstandard[4]).lower() == 'true'}
             else:
                 raise CellMapsError('Expected 4 values got: ' +
                                     str(curstandard))
@@ -941,17 +966,20 @@ class SolutionGenerator(BaseCommandLineTool):
         Each --standard should look like the following:
 
         For NDEx UUID or CX2 file:
-        <NDEx UUID | CX2 file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>
+        <NDEx UUID | CX2 file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL true|false>
 
         For CSV file:
 
-        <CSV file>,<PREFIX>,<MINSIZE OF CLUSTER>
+        <CSV file>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL true|false>
 
          <NDEx UUID | CX2 file (.cx|.cx2) | CSV file (.csv)>: One of the following UUID of network on NDEx https://www.ndexbio.org,
                 path to a cx file (.cx|.cx2) or path to CSV file (.csv)
          <COLUMN NAME>: Name of column in network where genes reside (ONLY FOR NDEX UUID or CX2 file)
          <PREFIX>: Name to prefix on solution
          <MINSIZE OF CLUSTER>: Minimum number of genes needed in cluster to be included
+         <SKIP PARTIAL true|false>: If true, clusters missing one or more genes in input will be omitted
+                                    any other value implies false.
+
 
 
 
@@ -971,6 +999,6 @@ class SolutionGenerator(BaseCommandLineTool):
         parser.add_argument('--standards', nargs='*',
                             help=('Standards to use which is a comma delimited list'
                                   'of <NDEx UUID|CX2 File (.cx|.cx2)>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER> or'
-                                  '   <CSV FILE (.csv)>>,<PREFIX>,<MINSIZE OF CLUSTER>'))
+                                  '   <CSV FILE (.csv)>>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL true|false>'))
         return parser
 
