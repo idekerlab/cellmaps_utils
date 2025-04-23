@@ -9,4 +9,8 @@ Sphinx>=1.8.1
 twine>=1.12.1
 sphinx-rtd-theme
 pytest
+setuptools>=58.0.0
+build
+tox-conda
+virtualenv
 
