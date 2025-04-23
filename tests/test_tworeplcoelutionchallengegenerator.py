@@ -1,22 +1,25 @@
 #! /usr/bin/env python
 
 import os
-import shutil
 import tempfile
-import time
 import unittest
+import json
+import shutil
 import pandas as pd
-from unittest.mock import MagicMock
 import argparse
 from cellmaps_utils.challenge import *
+from cellmaps_utils.challenge import REPL_MAPPING
+from cellmaps_utils.challenge import TwoReplCoelutionChallengeGenerator
 import cellmaps_utils
+from cellmaps_utils.constants import ArgParseFormatter
 
 
 class TestTwoReplCoelutionChallengeGenerator(unittest.TestCase):
 
     def setUp(self):
+        fmt = constants.ArgParseFormatter
         self._parser = argparse.ArgumentParser(description='foo',
-                                               formatter_class=constants.ArgParseFormatter)
+                                               formatter_class=fmt)
         subparsers = self._parser.add_subparsers(dest='command',
                                                  help='Command to run. '
                                                       'Type <command> -h for '
@@ -26,7 +29,6 @@ class TestTwoReplCoelutionChallengeGenerator(unittest.TestCase):
         self._parser.add_argument('--version', action='version',
                                    version=('%(prog)s ' +
                                    cellmaps_utils.__version__))
-
 
     def tearDown(self):
         pass
@@ -67,7 +69,8 @@ class TestTwoReplCoelutionChallengeGenerator(unittest.TestCase):
                                       'tworeplcoelution_challenge_kolf'
                                       '2.1j_undifferentiated_untreated')
             self.assertTrue(os.path.isdir(result_dir))
-            mapping_file = os.path.join(result_dir, 'repl1_repl2_id_mapping.json')
+            mapping_file = os.path.join(result_dir,
+                                        'repl1_repl2_id_mapping.json')
             with open(mapping_file, 'r') as f:
                 data = json.load(f)
             self.assertTrue(os.path.isfile(os.path.join(result_dir,
@@ -77,30 +80,42 @@ class TestTwoReplCoelutionChallengeGenerator(unittest.TestCase):
             self.assertTrue('forward' in data)
             self.assertTrue('reverse' in data)
             self.assertTrue(data['forward']['P04637'] in data['reverse'])
-            self.assertTrue(data['forward']['A6NCE7;Q9GZQ8'] in data['reverse'])
-            self.assertEqual('P04637', data['reverse'][data['forward']['P04637']])
-            self.assertTrue('A6NCE7;Q9GZQ8' in data['reverse'][data['forward']['A6NCE7;Q9GZQ8']])
+            self.assertTrue(data['forward']
+                            ['A6NCE7;Q9GZQ8'] in data['reverse'])
+            self.assertEqual('P04637',
+                             data['reverse'][data['forward']
+                                                 ['P04637']])
+            self.assertTrue('A6NCE7;Q9GZQ8' in
+                            data['reverse'][data['forward']['A6NCE7;Q9GZQ8']])
 
-            df = pd.read_table(os.path.join(result_dir, 'repl1_repl2_combined.tsv'))
+            df = pd.read_table(os.path.join(result_dir,
+                                            'repl1_repl2_combined.tsv'))
             self.assertEqual(2, len(df))
             self.assertTrue(list(df.columns), ['xxx', 'repl1_1',
-                                               'repl1_2', 'repl1_3', 'repl2_1',
+                                               'repl1_2', 'repl1_3',
+                                               'repl2_1',
                                                'repl2_2', 'repl2_3'])
             self.assertEqual(len(df['xxx']), 2)
             result_loc = df.loc[df['xxx'] == data['forward']['P04637']]
-            self.assertTrue(str(df.head()), pd.isna(result_loc['repl1_1'].tolist()[0]))
+            self.assertTrue(str(df.head()),
+                            pd.isna(result_loc['repl1_1'].tolist()[0]))
             self.assertAlmostEqual(result_loc['repl1_2'].tolist()[0], 0.1)
             self.assertAlmostEqual(result_loc['repl1_3'].tolist()[0], 0.2)
-            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_1'].tolist()[0]))
+            self.assertTrue(str(df.head()),
+                            pd.isna(result_loc['repl2_1'].tolist()[0]))
             self.assertAlmostEqual(result_loc['repl2_2'].tolist()[0], 0.1)
-            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_3'].tolist()[0]))
+            self.assertTrue(str(df.head()),
+                            pd.isna(result_loc['repl2_3'].tolist()[0]))
 
             result_loc = df.loc[df['xxx'] == data['forward']['A6NCE7;Q9GZQ8']]
-            self.assertTrue(str(df.head()), pd.isna(result_loc['repl1_1'].tolist()[0]))
+            self.assertTrue(str(df.head()),
+                            pd.isna(result_loc['repl1_1'].tolist()[0]))
             self.assertAlmostEqual(result_loc['repl1_2'].tolist()[0], 0.44)
             self.assertAlmostEqual(result_loc['repl1_3'].tolist()[0], 0.55)
-            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_1'].tolist()[0]))
-            self.assertTrue(str(df.head()), pd.isna(result_loc['repl2_2'].tolist()[0]))
+            self.assertTrue(str(df.head()),
+                            pd.isna(result_loc['repl2_1'].tolist()[0]))
+            self.assertTrue(str(df.head()),
+                            pd.isna(result_loc['repl2_2'].tolist()[0]))
             self.assertAlmostEqual(result_loc['repl2_3'].tolist()[0], 0.55)
         finally:
             shutil.rmtree(temp_dir)
