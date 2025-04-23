@@ -3,7 +3,8 @@
 {"networkAttributes":[{"name":"testsolution"}]},
 {"nodes":[{"id":184,"x":-58.0,"y":-39.0,"v":{"name":"Node 2","genes":"E,F"}},
           {"id":179,"x":-205.0,"y":-40.0,"v":{"name":"Node 1","genes":"A,B,C,D"}},
-          {"id":180,"x":-1,"y":-2,"v":{"name":"Node 3","genes":"A,notinlist,notinlist2,notinlist3,notinlist4"}}
+          {"id":180,"x":-1,"y":-2,"v":{"name":"Node 3","genes":"A,notinlist,notinlist2,notinlist3,notinlist4"}},
+          {"id":182,"x":-205.0,"y":-40.0,"v":{"name":"Node 1","genes":"A,B,F,D,notinlist4"}}
 ]},
 {"edges":[{"id":189,"s":184,"t":179,"v":{"interaction":"interacts with"}}]},
 {"visualEditorProperties":[{"properties":{"nodeSizeLocked":false,"arrowColorMatchesEdge":false,"nodeCustomGraphicsSizeSync":true,"NETWORK_CENTER_Y_LOCATION":0.0,"NETWORK_CENTER_X_LOCATION":0.0,"NETWORK_SCALE_FACTOR":1.0}}]},
