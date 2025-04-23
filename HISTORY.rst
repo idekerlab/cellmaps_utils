@@ -2,6 +2,16 @@
 History
 =======
 
+0.8.0 (TBD)
+-------------------
+
+* Set maximum supported version of scipy to <1.11
+
+* Added ``tworeplchallenge`` and ``solution_generator`` commands to ``cellmaps_utilscmd.py``.
+  These commands generate a Kaggle challenge and solution from a SEC-MS dataset
+
+* Added ``pyproject.toml`` and other changes to switch to a PEP 517 compliant build system
+
 0.7.0 (2025-03-05)
 ------------------
 
