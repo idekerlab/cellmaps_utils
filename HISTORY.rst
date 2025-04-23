@@ -10,7 +10,7 @@ History
 * Added ``tworeplchallenge`` and ``solution_generator`` commands to ``cellmaps_utilscmd.py``.
   These commands generate a Kaggle challenge and solution from a SEC-MS dataset
 
-* Added ``pyproject.toml`` and other changes to switch to a PEP 517 compliant build system
+* Updated to PEP 517 compliant build system
 
 0.7.0 (2025-03-05)
 ------------------
