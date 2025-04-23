@@ -13,10 +13,11 @@ python:
 install:
     - pip install -r requirements.txt
     - pip install coveralls
+    - pip install pytest
 
 # Command to run tests, e.g. python setup.py test
 script:
-    - coverage run --source cellmaps_utils -m unittest discover
+    - coverage run --source cellmaps_utils -m pytest
 
 after_success: coveralls
 
