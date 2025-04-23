@@ -831,7 +831,6 @@ class SolutionGenerator(BaseCommandLineTool):
         logger.debug('Creating directory ' + str(self._outdir))
         os.makedirs(self._outdir, mode=0o755)
 
-
         self._provenance_utils.register_rocrate(self._outdir,
                                                 name=os.path.basename(self._input) + ' solution',
                                                 organization_name='NEED TO SET THIS',
@@ -887,7 +886,7 @@ class SolutionGenerator(BaseCommandLineTool):
                        SolutionGenerator.MINSIZE: int(curstandard[3]),
                        SolutionGenerator.SKIP_PARTIAL: str(curstandard[4]).lower() == 'true'}
             else:
-                raise CellMapsError('Expected 4 values got: ' +
+                raise CellMapsError('Expected 4 or 5 values got: ' +
                                     str(curstandard))
 
     def _get_fairscape_id(self):
@@ -961,27 +960,24 @@ class SolutionGenerator(BaseCommandLineTool):
 
         {cmd} Given an RO-Crate with a Challenge dataset, this
         tool creates a solution RO-Crate using standards passed
-        in via --standard flag
+        in via --standards flag
 
-        Each --standard should look like the following:
+        Each --standards should look like the following:
 
         For NDEx UUID or CX2 file:
-        <NDEx UUID | CX2 file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL true|false>
+        <NDEx UUID | CX2 file>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL>
 
         For CSV file:
 
-        <CSV file>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL true|false>
+        <CSV file>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL>
 
          <NDEx UUID | CX2 file (.cx|.cx2) | CSV file (.csv)>: One of the following UUID of network on NDEx https://www.ndexbio.org,
                 path to a cx file (.cx|.cx2) or path to CSV file (.csv)
          <COLUMN NAME>: Name of column in network where genes reside (ONLY FOR NDEX UUID or CX2 file)
          <PREFIX>: Name to prefix on solution
          <MINSIZE OF CLUSTER>: Minimum number of genes needed in cluster to be included
-         <SKIP PARTIAL true|false>: If true, clusters missing one or more genes in input will be omitted
-                                    any other value implies false.
-
-
-
+         <SKIP PARTIAL>: If set to 'true', clusters missing one or more genes in input will be omitted
+                         any other value implies false.
 
         """.format(version=cellmaps_utils.__version__,
                    cmd=SolutionGenerator.COMMAND)
@@ -998,7 +994,7 @@ class SolutionGenerator(BaseCommandLineTool):
                             help='Name of json file containing id mapping')
         parser.add_argument('--standards', nargs='*',
                             help=('Standards to use which is a comma delimited list'
-                                  'of <NDEx UUID|CX2 File (.cx|.cx2)>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER> or'
-                                  '   <CSV FILE (.csv)>>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL true|false>'))
+                                  'of <NDEx UUID|CX2 File (.cx|.cx2)>,<COLUMN NAME>,<PREFIX>,<MINSIZE OF CLUSTER><SKIP PARTIAL> or'
+                                  '   <CSV FILE (.csv)>>,<PREFIX>,<MINSIZE OF CLUSTER>,<SKIP PARTIAL>'))
         return parser
 
