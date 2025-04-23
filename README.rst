@@ -13,6 +13,10 @@ Cell Maps Pipeline Utilities
         :target: https://cellmaps-utils.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
+.. image:: https://coveralls.io/repos/github/idekerlab/cellmaps_utils/badge.svg?branch=main
+        :target: https://coveralls.io/github/idekerlab/cellmaps_utils?branch=main
+        :alt: Code Coverage
+
 .. image:: https://zenodo.org/badge/599754117.svg
         :target: https://zenodo.org/doi/10.5281/zenodo.10607322
         :alt: Zenodo DOI badge
