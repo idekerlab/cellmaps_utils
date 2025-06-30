@@ -9,6 +9,7 @@ import mygene
 
 CELL_LINES = ['MDA-MB-468', 'Kolf2.1J']
 
+
 @lru_cache(maxsize=10000)
 def query_gene_symbols(ensembl_id_tuple):
     mg = mygene.MyGeneInfo()
@@ -21,9 +22,11 @@ def query_gene_symbols(ensembl_id_tuple):
             mapping[entry['query']] = f"UNKNOWN:{entry['query']}"
     return mapping
 
+
 def get_gene_symbols_from_ensembl_ids(ensembl_ids):
     unique_ids = set(ensembl_ids)
     return query_gene_symbols(tuple(unique_ids))
+
 
 def extract_cell_line_names(json_path):
     known_cell_lines = CELL_LINES
@@ -58,11 +61,13 @@ def extract_cell_line_names(json_path):
     except Exception as e:
         return [f"Error reading file: {e}"]
 
+
 def find_first_csv_or_tsv(folder):
     for fname in os.listdir(folder):
         if fname.lower().endswith(".csv") or fname.lower().endswith(".tsv"):
             return os.path.join(folder, fname)
     return None
+
 
 def get_ensembl_ids(file_path):
     try:
@@ -75,6 +80,7 @@ def get_ensembl_ids(file_path):
     except Exception:
         pass
     return []
+
 
 def get_protein_names(file_path):
     try:
@@ -91,6 +97,7 @@ def get_protein_names(file_path):
     except Exception:
         pass
     return set()
+
 
 def count_unique_image_filenames_per_cell_line(images_crates):
     channels = ['blue', 'green', 'red', 'yellow']
@@ -113,6 +120,7 @@ def count_unique_image_filenames_per_cell_line(images_crates):
                 cell_line_to_filenames[cl].update(filenames)
 
     return {cl: len(files) for cl, files in cell_line_to_filenames.items()}
+
 
 def check_and_aggregate_images(images_crates):
     cell_line_to_ensembl = defaultdict(set)
@@ -144,6 +152,7 @@ def check_and_aggregate_images(images_crates):
         print(f"{cl}: {len(all_gene_symbols[cl])} unique proteins")
     return all_gene_symbols
 
+
 def check_and_aggregate_interactions(interaction_crates):
     cell_line_to_proteins = defaultdict(set)
 
@@ -168,6 +177,7 @@ def check_and_aggregate_interactions(interaction_crates):
     for cl in CELL_LINES:
         print(f"{cl}: {len(cell_line_to_proteins[cl])} unique proteins")
     return cell_line_to_proteins
+
 
 def save_summary_table(proteins, interactions, image_counts, output_file="statistics.csv"):
     data = []
@@ -196,24 +206,20 @@ def save_summary_table(proteins, interactions, image_counts, output_file="statis
 
     df = pd.DataFrame(data)
     df.to_csv(output_file, index=False)
-    print(f"\n📝 Summary table saved to: {output_file}")
+    print(f"\nSummary table saved to: {output_file}")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate statistics for datasets")
-    parser.add_argument("--interaction_crates", nargs='+', help="List of interaction RO-Crate folder paths.")
-    parser.add_argument("--images_crates", nargs='+', help="List of image RO-Crate folder paths.")
-    args = parser.parse_args()
 
+def generate_dataset_statistics(images_crates, interaction_crates):
     proteins = defaultdict(set)
     interactions = defaultdict(set)
     image_counts = defaultdict(int)
 
-    if args.images_crates:
-        proteins = check_and_aggregate_images(args.images_crates)
-        image_counts = count_unique_image_filenames_per_cell_line(args.images_crates)
+    if images_crates:
+        proteins = check_and_aggregate_images(images_crates)
+        image_counts = count_unique_image_filenames_per_cell_line(images_crates)
 
-    if args.interaction_crates:
-        interactions = check_and_aggregate_interactions(args.interaction_crates)
+    if interaction_crates:
+        interactions = check_and_aggregate_interactions(interaction_crates)
 
     print("\nAll:")
     for cl in CELL_LINES:
@@ -221,3 +227,11 @@ if __name__ == "__main__":
         print(f"{cl}: {len(union)} unique proteins")
 
     save_summary_table(proteins, interactions, image_counts)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate statistics for datasets")
+    parser.add_argument("--interaction_crates", nargs='+', help="List of interaction RO-Crate folder paths.")
+    parser.add_argument("--images_crates", nargs='+', help="List of image RO-Crate folder paths.")
+    args = parser.parse_args()
+
+    generate_dataset_statistics(args.images_crates, args.interaction_crates)
