@@ -2,6 +2,13 @@
 History
 =======
 
+0.9.0 (2025-07-03)
+-------------------
+
+* Add statistics generator for ro-crates
+
+* Fix provenance bugs for new versions of ro-crate
+
 0.8.0 (2025-04-23)
 -------------------
 
