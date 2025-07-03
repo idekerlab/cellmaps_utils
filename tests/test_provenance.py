@@ -753,3 +753,57 @@ class TestProvenanceUtil(unittest.TestCase):
             import time
             print(os.listdir(os.path.join(temp_dir, 'test_rocrate')))
             shutil.rmtree(temp_dir)
+
+    def test_get_rocrate_provenance_attributes_from_valid_dict(self):
+        prov = ProvenanceUtil()
+        rocrate_dict = {
+            'name': 'Test Crate',
+            'description': 'Crate for testing',
+            'keywords': ['proj', 'v1.0', 'HeLa', 'drugA', 'embedding'],
+            'isPartOf': [
+                {'@type': 'Organization', 'name': 'TestOrg'},
+                {'@type': 'Project', 'name': 'TestProject'}
+            ]
+        }
+
+        attrs = prov.get_rocrate_provenance_attributes(rocrate_dict)
+        self.assertEqual(attrs.get_name(), 'Test Crate')
+        self.assertEqual(attrs.get_description(), 'Crate for testing')
+        self.assertEqual(attrs.get_organization_name(), 'TestOrg')
+        self.assertEqual(attrs.get_project_name(), 'TestProject')
+        self.assertEqual(attrs.get_keywords(), ['proj', 'v1.0', 'HeLa', 'drugA', 'embedding'])
+
+    def test_get_rocrate_provenance_attributes_missing_fields(self):
+        prov = ProvenanceUtil()
+        rocrate_dict = {
+            'name': 'Test Crate',
+            'description': 'Missing project/org',
+            'keywords': ['x'],
+            'isPartOf': []
+        }
+
+        attrs = prov.get_rocrate_provenance_attributes(rocrate_dict)
+        self.assertEqual(attrs.get_project_name(), None)
+        self.assertEqual(attrs.get_organization_name(), None)
+
+    def test_get_id_of_rocrate_from_graph_structure(self):
+        prov = ProvenanceUtil()
+        crate_dict = {
+            '@graph': [
+                {'@id': 'ignored'},
+                {'@id': 'expected_id'}
+            ]
+        }
+        result = prov.get_id_of_rocrate(crate_dict)
+        self.assertEqual(result, 'expected_id')
+
+    def test_get_id_of_rocrate_fails_if_id_not_found(self):
+        prov = ProvenanceUtil()
+        crate_dict = {
+            '@graph': [
+                {'@id': 'ignored'},
+                {'wrongkey': 'oops'}
+            ]
+        }
+        with self.assertRaises(CellMapsProvenanceError):
+            prov.get_id_of_rocrate(crate_dict)
