@@ -361,7 +361,13 @@ class ProvenanceUtil(object):
             data = rocrate
         else:
             data = self.get_rocrate_as_dict(rocrate)
-        return data['@id']
+        if '@id' not in data.keys():
+            rocrate_id = data.get('@graph')[1].get('@id', None)
+            if rocrate_id is None:
+                raise CellMapsProvenanceError('ID of ro-crate not found')
+            return rocrate_id
+        else:
+            return data['@id']
 
     def get_name_project_org_of_rocrate(self, rocrate):
         """
@@ -394,6 +400,9 @@ class ProvenanceUtil(object):
             data = rocrate
         else:
             data = self.get_rocrate_as_dict(rocrate)
+
+        if 'name' not in data.keys():
+            data = data.get('@graph')[1]
 
         name = data['name']
         description = data['description']
