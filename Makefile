@@ -91,8 +91,8 @@ install: clean ## install the package to the active Python's site-packages
 
 dockerbuild: ## build docker image and store in local repository
 	@cv=`grep '__version__' cellmaps_utils/__init__.py | sed "s/^.*= *'//" | sed "s/'.*//"`; \
-	docker buildx build --platform linux/amd64 -t idekerlab/cellmaps_utils:$$cv -f docker/Dockerfile .
+	docker buildx build --platform linux/amd64 -t cm4ai/cellmaps_utils:$$cv -f docker/Dockerfile .
 
 dockerpush: ## push image to dockerhub
 	@cv=`grep '__version__' cellmaps_utils/__init__.py | sed "s/^.*= *'//" | sed "s/'.*//"`; \
-	docker push idekerlab/cellmaps_utils:$$cv
+	docker push cm4ai/cellmaps_utils:$$cv
