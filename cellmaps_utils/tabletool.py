@@ -84,7 +84,7 @@ class TableFromROCrates(BaseCommandLineTool):
         :return:
         :rtype: str
         """
-        if compname in ['IF images', 'AP-MS', 'CRISPR']:
+        if compname in ['IF images', 'AP-MS', 'CRISPR', 'SEC-MS']:
             return TableFromROCrates.DATA_ROCRATE
         if compname in ['Hierarchy']:
             return TableFromROCrates.MODEL_ROCRATE
@@ -262,9 +262,9 @@ class TableFromROCrates(BaseCommandLineTool):
         if not '@graph' in rocrate_dict:
             raise CellMapsError('No @graph, but found: ' + str(rocrate_dict.keys()))
         for graph_entry in rocrate_dict['@graph']:
-            if 'metadataType' not in graph_entry:
-                continue
-            if 'EVI#Software' in graph_entry['metadataType']:
+            entry_type = graph_entry.get('metadataType', graph_entry.get('@type', ''))
+            entry_types = entry_type if isinstance(entry_type, list) else [entry_type]
+            if any('EVI#Software' in value for value in entry_types):
                 yield graph_entry
 
     def _get_next_computation_from_rocrate_dict(self, rocrate_dict=None):
@@ -282,9 +282,9 @@ class TableFromROCrates(BaseCommandLineTool):
         if not '@graph' in rocrate_dict:
             raise CellMapsError('No @graph, but found: ' + str(rocrate_dict.keys()))
         for graph_entry in rocrate_dict['@graph']:
-            if 'metadataType' not in graph_entry:
-                continue
-            if 'EVI#Computation' in graph_entry['metadataType']:
+            entry_type = graph_entry.get('metadataType', graph_entry.get('@type', ''))
+            entry_types = entry_type if isinstance(entry_type, list) else [entry_type]
+            if any('EVI#Computation' in value for value in entry_types):
                 yield graph_entry
 
     def _get_computation_name(self, rocrate_dict=None):
@@ -397,4 +397,3 @@ class TableFromROCrates(BaseCommandLineTool):
                             help='URL prefix for downloads. MUST END WITH /')
 
         return parser
-

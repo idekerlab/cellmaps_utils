@@ -140,6 +140,14 @@ APMS_TSV_FILE = 'apms.tsv'
 AP-MS tsv file
 """
 
+SECMS_TSV_FILE = 'sec_ms.tsv'
+SECMS_REPLICATES_FILE = 'secms_replicates.tsv'
+SECMS_GROUPS_FILE = 'secms_protein_groups.tsv'
+SECMS_RUNS_FILE = 'secms_runs.tsv'
+SECMS_ROWS_FILE = 'secms_rows.tsv'
+SECMS_SOURCES_FILE = 'secms_sources.tsv'
+SECMS_QC_FILE = 'secms_qc.json'
+
 PPI_EDGELIST_FILE = 'ppi_edgelist.tsv'
 """
 Protein to Protein interaction edgelist file name
@@ -359,4 +367,9 @@ Gene set
 DATASET_COLLECTION_SET = 'collection_set'
 """
 Collection set
+"""
+
+DATASET_REPLICATES = 'replicates'
+"""
+Replicates
 """
