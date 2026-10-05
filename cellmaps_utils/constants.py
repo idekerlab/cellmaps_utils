@@ -140,6 +140,23 @@ APMS_TSV_FILE = 'apms.tsv'
 AP-MS tsv file
 """
 
+APMS_UNFILTERED_TSV_FILE = 'apms_unfiltered.tsv'
+"""
+AP-MS tsv file containing the complete pre-filter matrix. Same schema
+as :py:const:`APMS_TSV_FILE`
+"""
+
+APMS_DRUG_EFFECT_TSV_FILE = 'apms_drug_effect.tsv'
+"""
+MSstats drug effect tsv file. Only written for the treated RO-Crate.
+Joins to :py:const:`APMS_TSV_FILE` on Batch, Bait, Prey
+"""
+
+APMS_QC_FILE = 'apms_qc.json'
+"""
+AP-MS QC/summary statistics file
+"""
+
 SECMS_TSV_FILE = 'sec_ms.tsv'
 SECMS_REPLICATES_FILE = 'secms_replicates.tsv'
 SECMS_GROUPS_FILE = 'secms_protein_groups.tsv'

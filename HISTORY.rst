@@ -2,6 +2,24 @@
 History
 =======
 
+0.10.0 (UNRELEASED)
+--------------------
+
+* Added ``--input_format zmadex_saint`` to ``cellmaps_utilscmd.py apmsconverter`` which
+  consumes the Zmadex/SAINT AP-MS analysis and writes a normalized ``apms.tsv``. The
+  legacy input format is unchanged and remains the default
+
+* ``apmsconverter`` now writes ``apms_unfiltered.tsv`` with the complete pre-filter
+  matrix alongside the filtered ``apms.tsv``, controlled by ``--filter`` and
+  ``--no_unfiltered``
+
+* ``apmsconverter`` now accepts ``--drug_effect_input`` holding MSstats drug effect
+  results, published as a separate ``apms_drug_effect.tsv`` so ``apms.tsv`` keeps the
+  same schema in every RO-Crate. Row selection is controlled by ``--drug_effect_rows``
+
+* ``apmsconverter`` now writes ``apms_qc.json`` summarizing row counts, join coverage
+  and gene set membership
+
 0.9.0 (2025-07-03)
 -------------------
 

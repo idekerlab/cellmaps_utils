@@ -64,6 +64,7 @@ setup(
     packages=find_packages(include=['cellmaps_utils']),
     package_dir={'cellmaps_utils': 'cellmaps_utils'},
     package_data={'cellmaps_utils': ['apms_readme.txt',
+                                     'apms_zmadex_saint_readme.txt',
                                      'crispr_readme.txt',
                                      'ifimage_readme.txt',
                                      'secms_readme.txt']},
