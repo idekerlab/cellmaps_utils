@@ -2,7 +2,7 @@
 History
 =======
 
-0.10.0 (UNRELEASED)
+0.10.0 (2026-10-12)
 --------------------
 
 * Added ``--input_format zmadex_saint`` to ``cellmaps_utilscmd.py apmsconverter`` which
@@ -19,6 +19,18 @@ History
 
 * ``apmsconverter`` now writes ``apms_qc.json`` summarizing row counts, join coverage
   and gene set membership
+
+* Added ``cellmaps_utilscmd.py secmsconverter`` to package Spectronaut SEC-MS TSV
+  exports into a RO-Crate. ``--inputs`` accepts file/replicate pairs, copied as
+  ``secms_<replicate>.tsv`` with quantities and missing values preserved and
+  without averaging replicates
+
+* ``secmsconverter`` writes dataset metadata, including replicate labels, to
+  ``data_info.json``, registers datasets, software and computation provenance,
+  and includes a SEC-MS ``readme.txt`` describing the data and column labels
+
+* Added SEC-MS conversion documentation and updated RO-Crate release tables to
+  classify SEC-MS crates as data
 
 0.9.0 (2025-07-03)
 -------------------
