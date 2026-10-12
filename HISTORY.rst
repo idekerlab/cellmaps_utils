@@ -29,8 +29,6 @@ History
   ``data_info.json``, registers datasets, software and computation provenance,
   and includes a SEC-MS ``readme.txt`` describing the data and column labels
 
-* Added SEC-MS conversion documentation and updated RO-Crate release tables to
-  classify SEC-MS crates as data
 
 0.9.0 (2025-07-03)
 -------------------
